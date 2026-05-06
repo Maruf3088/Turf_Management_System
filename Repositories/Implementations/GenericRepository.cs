@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using turf_management_system.Data;
 using turf_management_system.Models.Pagination;
 using turf_management_system.Repositories.Interfaces;
-
+//shalman
 namespace turf_management_system.Repositories.Implementations
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
@@ -76,6 +76,7 @@ namespace turf_management_system.Repositories.Implementations
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize
+
             };
         }
     }

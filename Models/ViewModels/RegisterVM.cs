@@ -26,5 +26,9 @@ namespace turf_management_system.Models.ViewModels
         [Phone]
         [Display(Name = "Phone Number")]
         public string? PhoneNumber { get; set; }
+
+        [Required(ErrorMessage = "Role is required")]
+        [Display(Name = "I want to register as")]
+        public int RoleId { get; set; }
     }
 }

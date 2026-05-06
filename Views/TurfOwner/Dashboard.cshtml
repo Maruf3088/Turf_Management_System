@@ -1,0 +1,98 @@
+@model turf_management_system.Models.ViewModels.TurfOwnerDashboardVM
+@{
+    Layout = "_TurfOwnerLayout";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold">Welcome back, @Model.FullName!</h2>
+    <p class="text-muted">Here's what's happening with your turfs today.</p>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #1a472a !important;">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-light p-3 me-3">
+                    <i class="fas fa-map-marker-alt fa-2x" style="color: #1a472a;"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-0">My Turfs</h6>
+                    <h3 class="fw-bold mb-0">@Model.MyTurfs</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #f4a300 !important;">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-light p-3 me-3">
+                    <i class="fas fa-calendar-day fa-2x" style="color: #f4a300;"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-0">Today's Bookings</h6>
+                    <h3 class="fw-bold mb-0">@Model.TodaysBookings</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #0d6efd !important;">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-light p-3 me-3">
+                    <i class="fas fa-history fa-2x" style="color: #0d6efd;"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-0">Total Bookings</h6>
+                    <h3 class="fw-bold mb-0">@Model.TotalBookings</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid @(Model.IsActive ? "#198754" : "#dc3545") !important;">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-light p-3 me-3">
+                    <i class="fas @(Model.IsActive ? "fa-check-circle" : "fa-times-circle") fa-2x" style="color: @(Model.IsActive ? "#198754" : "#dc3545");"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-0">My Status</h6>
+                    <h3 class="fw-bold mb-0 @(Model.IsActive ? "text-success" : "text-danger")">@(Model.IsActive ? "Active" : "Inactive")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-5 text-center">
+    <div class="mb-4">
+        <div class="bg-light d-inline-block rounded-circle p-4 mb-3">
+            <i class="fas fa-tools fa-3x text-muted"></i>
+        </div>
+        <h3 class="fw-bold">Turf Management Features</h3>
+        <p class="text-muted mx-auto" style="max-width: 500px;">
+            We are working hard to bring you the best tools to manage your turfs, set availability, and track revenue.
+        </p>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="bg-light p-4 rounded-3 border border-dashed" style="border: 2px dashed #dee2e6 !important;">
+                <h5 class="fw-bold mb-3"><i class="fas fa-rocket me-2 text-warning"></i> Coming Soon</h5>
+                <ul class="list-unstyled text-start d-inline-block mx-auto">
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Real-time Availability Calendar</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Price Management per Slot</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Revenue Analytics & Reports</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Customer Chat & Notifications</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .border-dashed {
+            border-style: dashed !important;
+        }
+    </style>
+}

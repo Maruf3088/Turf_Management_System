@@ -24,12 +24,15 @@ namespace turf_management_system.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Users(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+        public async Task<IActionResult> Users(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, int? roleId = null)
         {
+            ViewBag.Roles = await _unitOfWork.Roles.GetAllAsync();
+
             var pagedUsers = await _unitOfWork.Users.GetPagedAsync(
                 pageNumber, 
                 pageSize, 
-                u => string.IsNullOrEmpty(searchTerm) || u.FullName.Contains(searchTerm) || u.Email.Contains(searchTerm),
+                u => (string.IsNullOrEmpty(searchTerm) || u.FullName.Contains(searchTerm) || u.Email.Contains(searchTerm))
+                     && (roleId == null || u.RoleId == roleId),
                 query => query.OrderByDescending(u => u.CreatedAt),
                 "Role"
             );
@@ -37,7 +40,8 @@ namespace turf_management_system.Controllers
             var viewModel = new UserListVM
             {
                 PagedUsers = pagedUsers,
-                SearchTerm = searchTerm
+                SearchTerm = searchTerm,
+                RoleId = roleId
             };
 
             return View(viewModel);

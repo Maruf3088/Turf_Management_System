@@ -1,0 +1,82 @@
+@model turf_management_system.Models.ViewModels.RegisterVM
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="row justify-content-center align-items-center min-vh-100 py-5">
+    <div class="col-md-6">
+        <div class="card shadow-lg p-4">
+            <div class="text-center mb-4">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-user-plus fa-2x"></i>
+                </div>
+                <h2 class="fw-bold">Create Account</h2>
+                <p class="text-muted">Join TurfMaster to start booking</p>
+            </div>
+
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
+                        <input asp-for="FullName" class="form-control border-start-0 bg-light" placeholder="John Doe" />
+                    </div>
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-envelope text-muted"></i></span>
+                        <input asp-for="Email" class="form-control border-start-0 bg-light" placeholder="example@email.com" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-key text-muted"></i></span>
+                            <input asp-for="Password" class="form-control border-start-0 bg-light" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-check text-muted"></i></span>
+                            <input asp-for="ConfirmPassword" class="form-control border-start-0 bg-light" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PhoneNumber" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-phone text-muted"></i></span>
+                        <input asp-for="PhoneNumber" class="form-control border-start-0 bg-light" placeholder="+1..." />
+                    </div>
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success btn-lg py-3">
+                        Register Account <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+
+                <div class="text-center mt-4">
+                    <p class="mb-0">Already have an account? <a asp-action="Login" class="text-success fw-bold text-decoration-none">Login Here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

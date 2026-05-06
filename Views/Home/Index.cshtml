@@ -1,8 +1,67 @@
-﻿@{
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Section -->
+<div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center bg-dark text-white rounded-5 shadow-lg" 
+     style="background: linear-gradient(rgba(26, 71, 42, 0.8), rgba(26, 71, 42, 0.8)), url('https://images.unsplash.com/photo-1556056504-517cf0121f3c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') center/cover;">
+    <div class="col-md-8 p-lg-5 mx-auto my-5">
+        <h1 class="display-3 fw-bold mb-4">Your Game, Our Turf.</h1>
+        <p class="lead fw-normal mb-5">Experience the finest synthetic turf in the city. Book your slot now and play like a pro.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill fw-bold" href="#">
+                <i class="fas fa-calendar-check me-2"></i> Book Now
+            </a>
+            <a class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold" href="#">
+                <i class="fas fa-info-circle me-2"></i> View Schedule
+            </a>
+        </div>
+    </div>
 </div>
+
+<!-- Features Section -->
+<div class="container mt-5 py-5">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold" style="color: var(--primary-green);">Explore Our Features</h2>
+        <div class="bg-success mx-auto" style="width: 60px; height: 4px;"></div>
+    </div>
+    
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm hover-up">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px;">
+                    <i class="fas fa-futbol fa-2x text-success"></i>
+                </div>
+                <h3>Premium Fields</h3>
+                <p class="text-muted">High-quality FIFA standard synthetic grass for the best playing experience.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm hover-up">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px;">
+                    <i class="fas fa-bolt fa-2x text-warning"></i>
+                </div>
+                <h3>Instant Booking</h3>
+                <p class="text-muted">Real-time availability and instant confirmation for your convenience.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm hover-up">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px;">
+                    <i class="fas fa-medal fa-2x text-info"></i>
+                </div>
+                <h3>Top Amenities</h3>
+                <p class="text-muted">Clean changing rooms, parking, and refreshment stands available.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-up {
+        transition: transform 0.3s;
+    }
+    .hover-up:hover {
+        transform: translateY(-10px);
+    }
+</style>

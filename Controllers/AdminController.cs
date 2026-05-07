@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using turf_management_system.Models.Domain;
 using turf_management_system.Models.ViewModels;
 using turf_management_system.Repositories.Interfaces;
 
@@ -63,5 +64,123 @@ namespace turf_management_system.Controllers
 
             return RedirectToAction(nameof(Users));
         }
+
+        #region Role Management
+
+        public async Task<IActionResult> Roles(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+        {
+            var pagedRoles = await _unitOfWork.Roles.GetPagedAsync(
+                pageNumber,
+                pageSize,
+                r => string.IsNullOrEmpty(searchTerm) || r.RoleName.Contains(searchTerm),
+                query => query.OrderBy(r => r.RoleName)
+            );
+
+            var viewModel = new RoleListVM
+            {
+                PagedRoles = pagedRoles,
+                SearchTerm = searchTerm
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public IActionResult CreateRole()
+        {
+            return View(new RoleVM());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRole(RoleVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var existingRole = await _unitOfWork.Roles.FindAsync(r => r.RoleName == model.RoleName);
+                if (existingRole != null)
+                {
+                    ModelState.AddModelError("RoleName", "Role already exists.");
+                    return View(model);
+                }
+
+                var role = new Role
+                {
+                    RoleName = model.RoleName,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.Roles.AddAsync(role);
+                await _unitOfWork.CompleteAsync();
+
+                TempData["Success"] = "Role created successfully.";
+                return RedirectToAction(nameof(Roles));
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditRole(int id)
+        {
+            var role = await _unitOfWork.Roles.GetByIdAsync(id);
+            if (role == null) return NotFound();
+
+            var viewModel = new RoleVM
+            {
+                RoleId = role.RoleId,
+                RoleName = role.RoleName
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRole(RoleVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var role = await _unitOfWork.Roles.GetByIdAsync(model.RoleId);
+                if (role == null) return NotFound();
+
+                var existingRole = await _unitOfWork.Roles.FindAsync(r => r.RoleName == model.RoleName && r.RoleId != model.RoleId);
+                if (existingRole != null)
+                {
+                    ModelState.AddModelError("RoleName", "Another role with this name already exists.");
+                    return View(model);
+                }
+
+                role.RoleName = model.RoleName;
+                _unitOfWork.Roles.Update(role);
+                await _unitOfWork.CompleteAsync();
+
+                TempData["Success"] = "Role updated successfully.";
+                return RedirectToAction(nameof(Roles));
+            }
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteRole(int roleId)
+        {
+            var role = await _unitOfWork.Roles.GetByIdAsync(roleId);
+            if (role != null)
+            {
+                // Check if any users are assigned to this role
+                var usersWithRole = await _unitOfWork.Users.GetCountAsync(u => u.RoleId == roleId);
+                if (usersWithRole > 0)
+                {
+                    TempData["Error"] = "Cannot delete role as it is assigned to existing users.";
+                    return RedirectToAction(nameof(Roles));
+                }
+
+                _unitOfWork.Roles.Delete(role);
+                await _unitOfWork.CompleteAsync();
+                TempData["Success"] = "Role deleted successfully.";
+            }
+            return RedirectToAction(nameof(Roles));
+        }
+
+        #endregion
     }
 }

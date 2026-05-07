@@ -122,6 +122,9 @@
                 <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")">
                     <a asp-controller="Admin" asp-action="Users"><i class="fas fa-users"></i> Users</a>
                 </li>
+                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" || ViewContext.RouteData.Values["action"]?.ToString().Contains("Role") == true ? "active" : "")">
+                    <a asp-controller="Admin" asp-action="Roles"><i class="fas fa-user-tag"></i> Roles</a>
+                </li>
                 <li>
                     <a href="#"><i class="fas fa-calendar-alt"></i> Bookings</a>
                 </li>

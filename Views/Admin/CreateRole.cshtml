@@ -1,0 +1,42 @@
+@model turf_management_system.Models.ViewModels.RoleVM
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Create Role";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Roles" class="btn btn-sm btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h3 class="fw-bold mb-0">Create New Role</h3>
+            </div>
+
+            <form asp-action="CreateRole" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-4">
+                    <label asp-for="RoleName" class="form-label fw-bold"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-tag text-muted"></i></span>
+                        <input asp-for="RoleName" class="form-control border-start-0 bg-light" placeholder="e.g. Moderator" />
+                    </div>
+                    <span asp-validation-for="RoleName" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg py-3 fw-bold">
+                        Save Role <i class="fas fa-save ms-2"></i>
+                    </button>
+                    <a asp-action="Roles" class="btn btn-light py-2">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

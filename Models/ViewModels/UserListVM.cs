@@ -7,5 +7,6 @@ namespace turf_management_system.Models.ViewModels
     {
         public PagedResult<User> PagedUsers { get; set; } = new PagedResult<User>();
         public string? SearchTerm { get; set; }
+        public int? RoleId { get; set; }
     }
 }

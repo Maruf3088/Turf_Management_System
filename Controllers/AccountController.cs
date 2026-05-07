@@ -18,10 +18,13 @@ namespace turf_management_system.Controllers
         }
 
         [HttpGet]
-        public IActionResult Register()
+        public async Task<IActionResult> Register()
         {
             if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
+
+            var roles = await _unitOfWork.Roles.GetAllAsync();
+            ViewBag.Roles = roles.Where(r => r.RoleName != "Admin").ToList();
 
             return View();
         }
@@ -45,7 +48,7 @@ namespace turf_management_system.Controllers
                     Email = model.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                     PhoneNumber = model.PhoneNumber,
-                    RoleId = 2, // Default Role: User
+                    RoleId = model.RoleId,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -67,6 +70,8 @@ namespace turf_management_system.Controllers
             {
                 if (User.IsInRole("Admin"))
                     return RedirectToAction("Dashboard", "Admin");
+                if (User.IsInRole("TurfOwner"))
+                    return RedirectToAction("Dashboard", "TurfOwner");
                 return RedirectToAction("Index", "Home");
             }
 
@@ -112,6 +117,8 @@ namespace turf_management_system.Controllers
 
                     if (user.Role.RoleName == "Admin")
                         return RedirectToAction("Dashboard", "Admin");
+                    if (user.Role.RoleName == "TurfOwner")
+                        return RedirectToAction("Dashboard", "TurfOwner");
 
                     return RedirectToAction("Index", "Home");
                 }

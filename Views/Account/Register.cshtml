@@ -67,12 +67,32 @@
                     <label asp-for="RoleId" class="form-label"></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-tag text-muted"></i></span>
-                        <select asp-for="RoleId" class="form-select border-start-0 bg-light" 
+                        <select asp-for="RoleId" class="form-select border-start-0 bg-light" id="roleSelect"
                                 asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
                             <option value="">-- Select Role --</option>
                         </select>
                     </div>
                     <span asp-validation-for="RoleId" class="text-danger small"></span>
+                </div>
+
+                <div id="turfOwnerFields" style="display: none;">
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-success">Business Details</h5>
+                    <div class="mb-3">
+                        <label asp-for="BusinessName" class="form-label"></label>
+                        <input asp-for="BusinessName" class="form-control bg-light" placeholder="Elite Sports Arena" />
+                        <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="BusinessAddress" class="form-label"></label>
+                        <input asp-for="BusinessAddress" class="form-control bg-light" placeholder="123 Green Way" />
+                        <span asp-validation-for="BusinessAddress" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ContactNumber" class="form-label"></label>
+                        <input asp-for="ContactNumber" class="form-control bg-light" placeholder="+1..." />
+                        <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                    </div>
                 </div>
 
                 <div class="d-grid gap-2 mt-4">
@@ -91,4 +111,21 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            var turfOwnerRoleName = "TurfOwner";
+            var roles = @Html.Raw(Json.Serialize(ViewBag.Roles));
+
+            $('#roleSelect').change(function() {
+                var selectedRoleId = $(this).val();
+                var selectedRole = roles.find(r => r.roleId == selectedRoleId);
+                
+                if (selectedRole && selectedRole.roleName === turfOwnerRoleName) {
+                    $('#turfOwnerFields').slideDown();
+                } else {
+                    $('#turfOwnerFields').slideUp();
+                }
+            });
+        });
+    </script>
 }

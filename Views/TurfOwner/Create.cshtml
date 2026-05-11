@@ -1,0 +1,85 @@
+@model turf_management_system.DTOs.Turf.CreateTurfDto
+@{
+    Layout = "_TurfOwnerLayout";
+    ViewData["Title"] = "Add New Turf";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm p-4">
+            <h2 class="fw-bold mb-4">Add New Turf</h2>
+            
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label asp-for="Name" class="form-label fw-bold"></label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Dream Arena" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label asp-for="City" class="form-label fw-bold"></label>
+                        <input asp-for="City" class="form-control" placeholder="e.g. Dhaka" />
+                        <span asp-validation-for="City" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label asp-for="SportType" class="form-label fw-bold">Sport Type</label>
+                        <select asp-for="SportType" class="form-select">
+                            <option value="">Select Sport</option>
+                            <option value="Football">Football</option>
+                            <option value="Cricket">Cricket</option>
+                            <option value="Basketball">Basketball</option>
+                            <option value="Badminton">Badminton</option>
+                        </select>
+                        <span asp-validation-for="SportType" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PricePerHour" class="form-label fw-bold">Price per Hour</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="PricePerHour" class="form-control" type="number" step="0.01" />
+                        </div>
+                        <span asp-validation-for="PricePerHour" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="TurfSize" class="form-label fw-bold">Turf Size</label>
+                        <input asp-for="TurfSize" class="form-control" placeholder="e.g. 5v5, 7v7" />
+                        <span asp-validation-for="TurfSize" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label asp-for="Location" class="form-label fw-bold"></label>
+                        <textarea asp-for="Location" class="form-control" rows="2" placeholder="Full address..."></textarea>
+                        <span asp-validation-for="Location" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label asp-for="Description" class="form-label fw-bold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Tell us about your turf..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label asp-for="Amenities" class="form-label fw-bold"></label>
+                        <input asp-for="Amenities" class="form-control" placeholder="e.g. Parking, Washroom, Night Lights" />
+                        <small class="text-muted">Comma separated values</small>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-success px-5">Submit Turf</button>
+                    <a asp-action="MyTurfs" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

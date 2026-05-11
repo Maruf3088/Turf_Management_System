@@ -1,14 +1,16 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation.AspNetCore;
 using turf_management_system.Data;
 using turf_management_system.Models.Domain;
 using turf_management_system.Repositories.Implementations;
 using turf_management_system.Repositories.Interfaces;
+using turf_management_system.Services.Interfaces;
+using turf_management_system.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -17,7 +19,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories & UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITurfRepository, TurfRepository>();
+builder.Services.AddScoped<ITurfImageRepository, TurfImageRepository>();
+builder.Services.AddScoped<ITurfSlotRepository, TurfSlotRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
+// Services
+builder.Services.AddScoped<ITurfService, TurfService>();
+
+// FluentValidation
+builder.Services.AddControllersWithViews()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
 // Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

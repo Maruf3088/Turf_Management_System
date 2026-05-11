@@ -1,3 +1,5 @@
+@using turf_management_system.DTOs.Turf
+@model IEnumerable<TurfListItemDto>
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -9,18 +11,74 @@
         <h1 class="display-3 fw-bold mb-4">Your Game, Our Turf.</h1>
         <p class="lead fw-normal mb-5">Experience the finest synthetic turf in the city. Book your slot now and play like a pro.</p>
         <div class="d-flex justify-content-center gap-3">
-            <a class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill fw-bold" href="#">
-                <i class="fas fa-calendar-check me-2"></i> Book Now
+            <a class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill fw-bold" asp-action="AllTurfs">
+                <i class="fas fa-search me-2"></i> Find Turfs
             </a>
-            <a class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold" href="#">
-                <i class="fas fa-info-circle me-2"></i> View Schedule
+            <a class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold" href="#featured">
+                <i class="fas fa-star me-2"></i> Featured Fields
             </a>
         </div>
     </div>
 </div>
 
+<!-- Featured Turfs Section -->
+<div class="container py-5" id="featured">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <h2 class="display-5 fw-bold mb-0" style="color: var(--primary-green);">Featured Turfs</h2>
+            <div class="bg-success mt-2" style="width: 60px; height: 4px;"></div>
+        </div>
+        <a asp-action="AllTurfs" class="btn btn-outline-success rounded-pill px-4">View All <i class="fas fa-arrow-right ms-2"></i></a>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var turf in Model)
+            {
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden hover-up">
+                        <div class="position-relative">
+                            @if (!string.IsNullOrEmpty(turf.MainImageUrl))
+                            {
+                                <img src="@turf.MainImageUrl" class="card-img-top" style="height: 220px; object-fit: cover;" alt="@turf.Name">
+                            }
+                            else
+                            {
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 220px;">
+                                    <i class="fas fa-image fa-3x text-muted opacity-25"></i>
+                                </div>
+                            }
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">@turf.PricePerHour.ToString("C")/hr</span>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h4 class="card-title fw-bold mb-0">@turf.Name</h4>
+                                <span class="text-warning"><i class="fas fa-star"></i> 4.8</span>
+                            </div>
+                            <p class="text-muted mb-3"><i class="fas fa-map-marker-alt me-2"></i> @turf.City</p>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <span class="badge bg-light text-dark px-3 py-2">@turf.SportType</span>
+                                <a href="#" class="btn btn-sm btn-success rounded-pill px-4">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No turfs available at the moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
 <!-- Features Section -->
-<div class="container mt-5 py-5">
+<div class="container py-5">
     <div class="text-center mb-5">
         <h2 class="display-5 fw-bold" style="color: var(--primary-green);">Explore Our Features</h2>
         <div class="bg-success mx-auto" style="width: 60px; height: 4px;"></div>

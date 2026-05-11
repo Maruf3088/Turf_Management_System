@@ -56,6 +56,23 @@ namespace turf_management_system.Controllers
                 await _unitOfWork.Users.AddAsync(user);
                 await _unitOfWork.CompleteAsync();
 
+                // If TurfOwner, create profile
+                var role = await _unitOfWork.Roles.GetByIdAsync(model.RoleId);
+                if (role?.RoleName == "TurfOwner")
+                {
+                    var turfOwner = new TurfOwner
+                    {
+                        UserId = user.UserId,
+                        BusinessName = model.BusinessName ?? "My Turf Business",
+                        BusinessAddress = model.BusinessAddress,
+                        ContactNumber = model.ContactNumber ?? model.PhoneNumber,
+                        IsVerified = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.TurfOwners.AddAsync(turfOwner);
+                    await _unitOfWork.CompleteAsync();
+                }
+
                 TempData["Success"] = "Registration successful! Please login.";
                 return RedirectToAction("Login");
             }

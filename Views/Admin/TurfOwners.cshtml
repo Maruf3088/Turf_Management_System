@@ -1,0 +1,71 @@
+@using turf_management_system.Models.Domain
+@using turf_management_system.Models.Pagination
+@model PagedResult<TurfOwner>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Turf Owners";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Manage Turf Owners</h2>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>Business Name</th>
+                    <th>Owner Name</th>
+                    <th>Contact</th>
+                    <th>Verified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.BusinessName</td>
+                        <td>@item.User.FullName</td>
+                        <td>@item.ContactNumber</td>
+                        <td>
+                            @if (item.IsVerified)
+                            {
+                                <span class="badge bg-primary">Verified</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Unverified</span>
+                            }
+                        </td>
+                        <td>
+                            <form asp-action="DeleteTurfOwner" method="post" onsubmit="return confirm('Are you sure you want to remove this owner? This will also deactivate their user account.')">
+                                <input type="hidden" name="id" value="@item.UserId" />
+                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mt-4">
+            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                <a class="page-link" asp-action="TurfOwners" asp-route-pageNumber="@(Model.PageNumber - 1)">Previous</a>
+            </li>
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="TurfOwners" asp-route-pageNumber="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                <a class="page-link" asp-action="TurfOwners" asp-route-pageNumber="@(Model.PageNumber + 1)">Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>

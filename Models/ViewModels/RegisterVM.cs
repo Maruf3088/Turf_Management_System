@@ -30,5 +30,15 @@ namespace turf_management_system.Models.ViewModels
         [Required(ErrorMessage = "Role is required")]
         [Display(Name = "I want to register as")]
         public int RoleId { get; set; }
+
+        // Turf Owner specific fields
+        [Display(Name = "Business Name")]
+        public string? BusinessName { get; set; }
+
+        [Display(Name = "Business Address")]
+        public string? BusinessAddress { get; set; }
+
+        [Display(Name = "Business Contact Number")]
+        public string? ContactNumber { get; set; }
     }
 }

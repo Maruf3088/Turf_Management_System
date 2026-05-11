@@ -1,0 +1,66 @@
+@using turf_management_system.DTOs.Turf
+@model IEnumerable<TurfListItemDto>
+@{
+    Layout = "_TurfOwnerLayout";
+    ViewData["Title"] = "My Turfs";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">My Turfs</h2>
+    <a asp-action="Create" class="btn btn-success"><i class="fas fa-plus me-2"></i> Add New Turf</a>
+</div>
+
+<div class="row g-4">
+    @if (!Model.Any())
+    {
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h4>No turfs found!</h4>
+                <p>Click the button above to add your first turf.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm overflow-hidden">
+                    @if (!string.IsNullOrEmpty(item.MainImageUrl))
+                    {
+                        <img src="@item.MainImageUrl" class="card-img-top" style="height: 200px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    }
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title fw-bold mb-0">@item.Name</h5>
+                            @if (item.IsApproved)
+                            {
+                                <span class="badge bg-success">Approved</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Pending Approval</span>
+                            }
+                        </div>
+                        <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-1"></i> @item.City</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-success">@item.PricePerHour.ToString("C")/hr</span>
+                            <span class="badge bg-light text-dark">@item.SportType</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary flex-fill">Edit</button>
+                        <button class="btn btn-sm btn-outline-info flex-fill">Slots</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

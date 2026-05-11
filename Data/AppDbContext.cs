@@ -11,6 +11,10 @@ namespace turf_management_system.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Turf> Turfs { get; set; }
+        public DbSet<TurfImage> TurfImages { get; set; }
+        public DbSet<TurfSlot> TurfSlots { get; set; }
+        public DbSet<TurfOwner> TurfOwners { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +40,56 @@ namespace turf_management_system.Data
                     .WithMany(p => p.Users)
                     .HasForeignKey(d => d.RoleId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure Turf entity
+            modelBuilder.Entity<Turf>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Location).IsRequired().HasMaxLength(300);
+                entity.Property(e => e.City).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.PricePerHour).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.SportType).IsRequired().HasMaxLength(100);
+
+                entity.HasOne(d => d.Owner)
+                    .WithMany()
+                    .HasForeignKey(d => d.OwnerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Soft delete filter
+                entity.HasQueryFilter(t => !t.IsDeleted);
+            });
+
+            // Configure TurfImage entity
+            modelBuilder.Entity<TurfImage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(d => d.Turf)
+                    .WithMany(p => p.Images)
+                    .HasForeignKey(d => d.TurfId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure TurfSlot entity
+            modelBuilder.Entity<TurfSlot>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(d => d.Turf)
+                    .WithMany(p => p.Slots)
+                    .HasForeignKey(d => d.TurfId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure TurfOwner entity
+            modelBuilder.Entity<TurfOwner>(entity =>
+            {
+                entity.HasKey(e => e.UserId);
+                entity.Property(e => e.BusinessName).IsRequired().HasMaxLength(200);
+                entity.HasOne(d => d.User)
+                    .WithOne()
+                    .HasForeignKey<TurfOwner>(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

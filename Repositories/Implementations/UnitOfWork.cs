@@ -9,12 +9,20 @@ namespace turf_management_system.Repositories.Implementations
         private readonly AppDbContext _context;
         public IUserRepository Users { get; private set; }
         public IGenericRepository<Role> Roles { get; private set; }
+        public ITurfRepository Turfs { get; private set; }
+        public ITurfImageRepository TurfImages { get; private set; }
+        public ITurfSlotRepository TurfSlots { get; private set; }
+        public IGenericRepository<TurfOwner> TurfOwners { get; private set; }
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             Users = new UserRepository(_context);
             Roles = new GenericRepository<Role>(_context);
+            Turfs = new TurfRepository(_context);
+            TurfImages = new TurfImageRepository(_context);
+            TurfSlots = new TurfSlotRepository(_context);
+            TurfOwners = new GenericRepository<TurfOwner>(_context);
         }
 
         public async Task<int> CompleteAsync()

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using turf_management_system.Models.ViewModels;
 using turf_management_system.Repositories.Interfaces;
+using turf_management_system.Services.Interfaces;
+using turf_management_system.DTOs.Turf;
 
 namespace turf_management_system.Controllers
 {
@@ -10,10 +12,12 @@ namespace turf_management_system.Controllers
     public class TurfOwnerController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITurfService _turfService;
 
-        public TurfOwnerController(IUnitOfWork unitOfWork)
+        public TurfOwnerController(IUnitOfWork unitOfWork, ITurfService turfService)
         {
             _unitOfWork = unitOfWork;
+            _turfService = turfService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -33,6 +37,37 @@ namespace turf_management_system.Controllers
             };
 
             return View(viewModel);
+        }
+
+        public async Task<IActionResult> MyTurfs()
+        {
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _turfService.GetMyTurfsAsync(ownerId);
+            return View(result.Data);
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View(new CreateTurfDto());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateTurfDto model)
+        {
+            if (ModelState.IsValid)
+            {
+                var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var result = await _turfService.CreateTurfAsync(model, ownerId);
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+                    return RedirectToAction(nameof(MyTurfs));
+                }
+                ModelState.AddModelError("", result.Message);
+            }
+            return View(model);
         }
     }
 }

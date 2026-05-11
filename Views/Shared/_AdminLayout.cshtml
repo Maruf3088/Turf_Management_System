@@ -125,6 +125,12 @@
                 <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" || ViewContext.RouteData.Values["action"]?.ToString().Contains("Role") == true ? "active" : "")">
                     <a asp-controller="Admin" asp-action="Roles"><i class="fas fa-user-tag"></i> Roles</a>
                 </li>
+                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Turfs" ? "active" : "")">
+                    <a asp-controller="Admin" asp-action="Turfs"><i class="fas fa-map-marker-alt"></i> Manage Turfs</a>
+                </li>
+                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "TurfOwners" ? "active" : "")">
+                    <a asp-controller="Admin" asp-action="TurfOwners"><i class="fas fa-user-tie"></i> Turf Owners</a>
+                </li>
                 <li>
                     <a href="#"><i class="fas fa-calendar-alt"></i> Bookings</a>
                 </li>

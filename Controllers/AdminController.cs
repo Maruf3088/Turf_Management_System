@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using turf_management_system.Models.Domain;
 using turf_management_system.Models.ViewModels;
 using turf_management_system.Repositories.Interfaces;
+using turf_management_system.Services.Interfaces;
 
 namespace turf_management_system.Controllers
 {
@@ -10,10 +11,12 @@ namespace turf_management_system.Controllers
     public class AdminController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITurfService _turfService;
 
-        public AdminController(IUnitOfWork unitOfWork)
+        public AdminController(IUnitOfWork unitOfWork, ITurfService turfService)
         {
             _unitOfWork = unitOfWork;
+            _turfService = turfService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -179,6 +182,70 @@ namespace turf_management_system.Controllers
                 TempData["Success"] = "Role deleted successfully.";
             }
             return RedirectToAction(nameof(Roles));
+        }
+
+        #endregion
+
+        #region Turf Management
+
+        public async Task<IActionResult> Turfs(int pageNumber = 1, int pageSize = 10, string? search = null, string? city = null, string? sportType = null, bool? isApproved = null)
+        {
+            var result = await _turfService.GetAllTurfsPagedAsync(pageNumber, pageSize, search, city, sportType, isApproved);
+            return View(result.Data);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApproveTurf(Guid id)
+        {
+            await _turfService.ApproveTurfAsync(id);
+            TempData["Success"] = "Turf approved successfully.";
+            return RedirectToAction(nameof(Turfs));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RejectTurf(Guid id, string reason)
+        {
+            await _turfService.RejectTurfAsync(id, reason);
+            TempData["Success"] = "Turf rejected.";
+            return RedirectToAction(nameof(Turfs));
+        }
+
+        #endregion
+
+        #region TurfOwner Management
+
+        public async Task<IActionResult> TurfOwners(int pageNumber = 1, int pageSize = 10, string? search = null)
+        {
+            var pagedOwners = await _unitOfWork.TurfOwners.GetPagedAsync(
+                pageNumber,
+                pageSize,
+                o => string.IsNullOrEmpty(search) || o.BusinessName.Contains(search) || o.User.FullName.Contains(search),
+                query => query.OrderByDescending(o => o.CreatedAt),
+                "User"
+            );
+
+            return View(pagedOwners);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteTurfOwner(int id)
+        {
+            var owner = await _unitOfWork.TurfOwners.GetByIdAsync(id);
+            if (owner != null)
+            {
+                // Soft delete user and remove owner profile?
+                var user = await _unitOfWork.Users.GetByIdAsync(id);
+                if (user != null)
+                {
+                    user.IsActive = false;
+                    _unitOfWork.Users.Update(user);
+                }
+                
+                _unitOfWork.TurfOwners.Delete(owner);
+                await _unitOfWork.CompleteAsync();
+                TempData["Success"] = "Turf Owner removed successfully.";
+            }
+            return RedirectToAction(nameof(TurfOwners));
         }
 
         #endregion

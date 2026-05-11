@@ -17,5 +17,7 @@ namespace turf_management_system.Services.Interfaces
         Task<ApiResponse<bool>> DeleteTurfImageAsync(Guid imageId, int ownerId);
         Task<ApiResponse<TurfSlotDto>> AddSlotAsync(Guid turfId, CreateTurfSlotDto dto, int ownerId);
         Task<ApiResponse<bool>> DeleteSlotAsync(Guid slotId, int ownerId);
+        Task<ApiResponse<IEnumerable<string>>> GetCitiesAsync();
+        Task<ApiResponse<IEnumerable<string>>> GetSportTypesAsync();
     }
 }

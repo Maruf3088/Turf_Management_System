@@ -1,126 +1,145 @@
 @model turf_management_system.Models.ViewModels.RegisterVM
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Join TurfMaster";
 }
 
-<div class="row justify-content-center align-items-center min-vh-100 py-5">
-    <div class="col-md-6">
-        <div class="card shadow-lg p-4">
-            <div class="text-center mb-4">
-                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                    <i class="fas fa-user-plus fa-2x"></i>
+<div class="row justify-content-center align-items-center min-vh-100 py-5 animate-up">
+    <div class="col-md-7">
+        <div class="card p-5 shadow-2xl border-0">
+            <div class="text-center mb-5">
+                <div class="icon-circle bg-primary text-white mx-auto mb-4" style="width: 80px; height: 80px; font-size: 32px;">
+                    <i class="fas fa-user-plus"></i>
                 </div>
-                <h2 class="fw-bold">Create Account</h2>
-                <p class="text-muted">Join TurfMaster to start booking</p>
+                <h2 class="display-font">Join TurfMaster</h2>
+                <p class="text-muted">Create your account to start playing or managing</p>
             </div>
 
             <form asp-action="Register" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-4 p-3 bg-danger-subtle rounded-3 border-0"></div>
 
-                <div class="mb-3">
-                    <label asp-for="FullName" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
-                        <input asp-for="FullName" class="form-control border-start-0 bg-light" placeholder="John Doe" />
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="FullName" class="form-label fw-bold small text-uppercase ls-1">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-user text-muted"></i></span>
+                            <input asp-for="FullName" class="form-control border-0 bg-light p-3" placeholder="John Doe" />
+                        </div>
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
                     </div>
-                    <span asp-validation-for="FullName" class="text-danger small"></span>
-                </div>
 
-                <div class="mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-envelope text-muted"></i></span>
-                        <input asp-for="Email" class="form-control border-start-0 bg-light" placeholder="example@email.com" />
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="Email" class="form-label fw-bold small text-uppercase ls-1">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-muted"></i></span>
+                            <input asp-for="Email" class="form-control border-0 bg-light p-3" placeholder="name@example.com" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
-                    <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Password" class="form-label"></label>
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="Password" class="form-label fw-bold small text-uppercase ls-1">Password</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-key text-muted"></i></span>
-                            <input asp-for="Password" class="form-control border-start-0 bg-light" />
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-key text-muted"></i></span>
+                            <input asp-for="Password" type="password" class="form-control border-0 bg-light p-3" placeholder="••••••••" />
                         </div>
                         <span asp-validation-for="Password" class="text-danger small"></span>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label fw-bold small text-uppercase ls-1">Confirm Password</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-check text-muted"></i></span>
-                            <input asp-for="ConfirmPassword" class="form-control border-start-0 bg-light" />
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-check text-muted"></i></span>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control border-0 bg-light p-3" placeholder="••••••••" />
                         </div>
                         <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="PhoneNumber" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-phone text-muted"></i></span>
-                        <input asp-for="PhoneNumber" class="form-control border-start-0 bg-light" placeholder="+1..." />
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="PhoneNumber" class="form-label fw-bold small text-uppercase ls-1">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-phone text-muted"></i></span>
+                            <input asp-for="PhoneNumber" class="form-control border-0 bg-light p-3" placeholder="+880..." />
+                        </div>
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                     </div>
-                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="RoleId" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-tag text-muted"></i></span>
-                        <select asp-for="RoleId" class="form-select border-start-0 bg-light" id="roleSelect"
-                                asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
-                            <option value="">-- Select Role --</option>
-                        </select>
-                    </div>
-                    <span asp-validation-for="RoleId" class="text-danger small"></span>
-                </div>
-
-                <div id="turfOwnerFields" style="display: none;">
-                    <hr class="my-4">
-                    <h5 class="mb-3 text-success">Business Details</h5>
-                    <div class="mb-3">
-                        <label asp-for="BusinessName" class="form-label"></label>
-                        <input asp-for="BusinessName" class="form-control bg-light" placeholder="Elite Sports Arena" />
-                        <span asp-validation-for="BusinessName" class="text-danger small"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="BusinessAddress" class="form-label"></label>
-                        <input asp-for="BusinessAddress" class="form-control bg-light" placeholder="123 Green Way" />
-                        <span asp-validation-for="BusinessAddress" class="text-danger small"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="ContactNumber" class="form-label"></label>
-                        <input asp-for="ContactNumber" class="form-control bg-light" placeholder="+1..." />
-                        <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="RoleId" class="form-label fw-bold small text-uppercase ls-1">I am a...</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-user-tag text-muted"></i></span>
+                            <select asp-for="RoleId" class="form-select border-0 bg-light p-3" id="roleSelect"
+                                    asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
+                                <option value="">-- Select Purpose --</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="RoleId" class="text-danger small"></span>
                     </div>
                 </div>
 
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-success btn-lg py-3">
-                        Register Account <i class="fas fa-arrow-right ms-2"></i>
+                <div id="turfOwnerFields" style="display: none;" class="mt-2">
+                    <div class="p-4 bg-light rounded-4 mb-4 border border-dashed">
+                        <h5 class="display-font mb-4 text-primary">Business Profile</h5>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="BusinessName" class="form-label fw-bold small text-uppercase ls-1">Business Name</label>
+                                <input asp-for="BusinessName" class="form-control border-0 p-3" placeholder="Elite Sports Arena" />
+                                <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="BusinessAddress" class="form-label fw-bold small text-uppercase ls-1">Business Address</label>
+                                <input asp-for="BusinessAddress" class="form-control border-0 p-3" placeholder="123 Green Way, Dhaka" />
+                                <span asp-validation-for="BusinessAddress" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold">
+                        Create My Account <i class="fas fa-rocket ms-2"></i>
                     </button>
                 </div>
 
-                <div class="text-center mt-4">
-                    <p class="mb-0">Already have an account? <a asp-action="Login" class="text-success fw-bold text-decoration-none">Login Here</a></p>
+                <div class="text-center mt-5">
+                    <p class="text-muted mb-0">Already have an account? <a asp-action="Login" class="text-primary fw-bold text-decoration-none border-bottom border-2 border-primary border-opacity-25">Sign In Instead</a></p>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+@section Styles {
+    <style>
+        .ls-1 { letter-spacing: 0.1em; }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(26,60,52,0.15); }
+        .icon-circle {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+        }
+        .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+        
+        select.form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 16px 12px;
+        }
+    </style>
+}
+
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function() {
-            var turfOwnerRoleName = "TurfOwner";
             var roles = @Html.Raw(Json.Serialize(ViewBag.Roles));
 
             $('#roleSelect').change(function() {
                 var selectedRoleId = $(this).val();
                 var selectedRole = roles.find(r => r.roleId == selectedRoleId);
                 
-                if (selectedRole && selectedRole.roleName === turfOwnerRoleName) {
+                if (selectedRole && selectedRole.roleName === "TurfOwner") {
                     $('#turfOwnerFields').slideDown();
                 } else {
                     $('#turfOwnerFields').slideUp();

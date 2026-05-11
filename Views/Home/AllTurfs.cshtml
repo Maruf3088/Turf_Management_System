@@ -2,122 +2,249 @@
 @using turf_management_system.DTOs.Turf
 @model PagedResultDto<TurfListItemDto>
 @{
-    ViewData["Title"] = "All Turfs";
+    ViewData["Title"] = "Find Your Perfect Turf";
 }
 
-<div class="container py-5">
-    <div class="row mb-5 align-items-center">
-        <div class="col-md-6">
-            <h1 class="display-5 fw-bold mb-0" style="color: var(--primary-green);">All Available Turfs</h1>
-            <div class="bg-success mt-2" style="width: 60px; height: 4px;"></div>
-        </div>
-        <div class="col-md-6 text-md-end mt-3 mt-md-0">
-            <p class="text-muted mb-0">Showing @Model.TotalCount results</p>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card border-0 shadow-sm p-4 mb-5 bg-white rounded-4">
-        <form asp-action="AllTurfs" method="get" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-uppercase">Search</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control bg-light border-0" placeholder="Turf name..." value="@ViewContext.HttpContext.Request.Query["search"]">
+<!-- Search Hero -->
+<section class="search-hero">
+    <div class="container h-100 d-flex flex-column justify-content-center align-items-center text-center">
+        <h1 class="display-3 fw-bold text-white mb-3 animate-up">Find Your Perfect Turf</h1>
+        <p class="fs-5 text-white-50 mb-5 animate-up" style="animation-delay: 0.1s;">Book premium sports turfs near you for football, cricket, and more.</p>
+        
+        <div class="search-bar-wrapper shadow-lg animate-up" style="animation-delay: 0.2s;">
+            <form asp-action="AllTurfs" method="get" class="row g-0">
+                <div class="col-md-4 border-end">
+                    <div class="p-3 d-flex align-items-center">
+                        <i class="fas fa-search text-muted me-3"></i>
+                        <input type="text" name="search" class="form-control border-0 shadow-none" placeholder="Search by name..." value="@ViewContext.HttpContext.Request.Query["search"]">
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold small text-uppercase">City</label>
-                <select name="city" class="form-select bg-light border-0">
-                    <option value="">All Cities</option>
-                    <option value="Dhaka">Dhaka</option>
-                    <option value="Chittagong">Chittagong</option>
-                    <option value="Sylhet">Sylhet</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold small text-uppercase">Sport</label>
-                <select name="sportType" class="form-select bg-light border-0">
-                    <option value="">All Sports</option>
-                    <option value="Football">Football</option>
-                    <option value="Cricket">Cricket</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold">Apply Filters</button>
-            </div>
-        </form>
+                <div class="col-md-3 border-end">
+                    <div class="p-3 d-flex align-items-center">
+                        <i class="fas fa-map-marker-alt text-muted me-3"></i>
+                        <select name="city" class="form-select border-0 shadow-none">
+                            <option value="">All Cities</option>
+                            <option value="Dhaka" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Dhaka")">Dhaka</option>
+                            <option value="Chittagong" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Chittagong")">Chittagong</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 d-flex align-items-center">
+                        <i class="fas fa-volleyball-ball text-muted me-3"></i>
+                        <select name="sportType" class="form-select border-0 shadow-none">
+                            <option value="">All Sports</option>
+                            <option value="Football" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Football")">Football</option>
+                            <option value="Cricket" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Cricket")">Cricket</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 p-2">
+                    <button type="submit" class="btn btn-primary w-100 h-100 rounded-pill">Search</button>
+                </div>
+            </form>
+        </div>
     </div>
+</section>
 
-    <div class="row g-4">
-        @if (Model.Items != null && Model.Items.Any())
-        {
-            @foreach (var turf in Model.Items)
-            {
-                <div class="col-md-4 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm overflow-hidden hover-up rounded-4">
-                        <div class="position-relative">
-                            @if (!string.IsNullOrEmpty(turf.MainImageUrl))
-                            {
-                                <img src="@turf.MainImageUrl" class="card-img-top" style="height: 180px; object-fit: cover;" alt="@turf.Name">
-                            }
-                            else
-                            {
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                    <i class="fas fa-image fa-2x text-muted opacity-25"></i>
-                                </div>
-                            }
-                            <div class="position-absolute bottom-0 start-0 m-3">
-                                <span class="badge bg-white text-dark rounded-pill px-3 py-2 shadow-sm fw-bold">@turf.PricePerHour.ToString("C")/hr</span>
-                            </div>
-                        </div>
-                        <div class="card-body p-3">
-                            <h5 class="card-title fw-bold mb-1">@turf.Name</h5>
-                            <p class="text-muted small mb-2"><i class="fas fa-map-marker-alt me-1 text-success"></i> @turf.City</p>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <span class="badge bg-light text-success border border-success border-opacity-25 px-2 py-1">@turf.SportType</span>
-                                <a href="#" class="btn btn-outline-success btn-sm rounded-pill px-3">Details</a>
-                            </div>
+<div class="container py-5 mt-4">
+    <div class="row g-5">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="filter-sidebar">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="display-font mb-0">Filters</h4>
+                    <a asp-action="AllTurfs" class="text-muted small text-decoration-none">Clear All</a>
+                </div>
+
+                <div class="filter-section mb-4">
+                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Price Range</h6>
+                    <div class="px-2">
+                        <input type="range" class="form-range" min="0" max="5000" step="100" id="priceRange">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>৳0</span>
+                            <span id="priceValue">৳5,000</span>
                         </div>
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="col-12 text-center py-5">
-                <div class="py-5">
-                    <i class="fas fa-search fa-4x text-muted mb-4 opacity-25"></i>
-                    <h3 class="fw-bold">No turfs found</h3>
-                    <p class="text-muted">Try adjusting your filters or search terms.</p>
-                    <a asp-action="AllTurfs" class="btn btn-success rounded-pill px-4 mt-3">Clear Filters</a>
+
+                <div class="filter-section mb-4">
+                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Sport Type</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="Football" id="sport-fb">
+                        <label class="form-check-label" for="sport-fb">Football</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="Cricket" id="sport-cr">
+                        <label class="form-check-label" for="sport-cr">Cricket</label>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Amenities</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="Parking" id="am-parking">
+                        <label class="form-check-label" for="am-parking">Parking</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="Washroom" id="am-wash">
+                        <label class="form-check-label" for="am-wash">Washroom</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="Lighting" id="am-light">
+                        <label class="form-check-label" for="am-light">Night Lights</label>
+                    </div>
                 </div>
             </div>
-        }
-    </div>
+        </div>
 
-    <!-- Pagination -->
-    @if (Model.TotalPages > 1)
-    {
-        <nav class="mt-5">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
-                    <a class="page-link border-0 shadow-sm rounded-circle mx-1" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber - 1)">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-                @for (int i = 1; i <= Model.TotalPages; i++)
+        <!-- Results Grid -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <p class="text-muted mb-0">Showing <strong>@Model.TotalCount</strong> turfs</p>
+                <div class="d-flex gap-3">
+                    <select class="form-select form-select-sm border-0 bg-white shadow-sm" style="width: 150px;">
+                        <option>Recommended</option>
+                        <option>Price: Low to High</option>
+                        <option>Price: High to Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                @if (Model.Items != null && Model.Items.Any())
                 {
-                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                        <a class="page-link border-0 shadow-sm rounded-circle mx-1 @(i == Model.PageNumber ? "bg-success" : "")" asp-action="AllTurfs" asp-route-pageNumber="@i">@i</a>
-                    </li>
+                    @foreach (var turf in Model.Items)
+                    {
+                        <div class="col-md-6 col-xl-4 animate-up">
+                            <div class="card h-100 overflow-hidden border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="@(turf.MainImageUrl ?? "/images/turf-placeholder.jpg")" class="card-img-top" style="height: 200px; object-fit: cover;" alt="@turf.Name">
+                                    <div class="position-absolute top-0 start-0 m-3">
+                                        <span class="badge bg-white text-dark rounded-pill px-3 py-2 shadow-sm fw-bold">@turf.SportType</span>
+                                    </div>
+                                    <button class="btn btn-white btn-wishlist position-absolute top-0 end-0 m-3">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold mb-1">@turf.Name</h5>
+                                    <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-1 text-primary"></i> @turf.City</p>
+                                    <div class="d-flex align-items-center mb-4 text-muted small">
+                                        <span class="me-3"><i class="fas fa-expand-arrows-alt me-1"></i> @turf.TurfSize</span>
+                                        <span><i class="fas fa-star text-accent me-1"></i> 4.5</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                        <div>
+                                            <span class="d-block text-muted small uppercase">Hourly</span>
+                                            <span class="fs-5 fw-bold text-primary">৳@turf.PricePerHour</span>
+                                        </div>
+                                        <a asp-action="Details" asp-route-id="@turf.Id" class="btn btn-outline-primary px-3 rounded-pill">Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 }
-                <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
-                    <a class="page-link border-0 shadow-sm rounded-circle mx-1" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber + 1)">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    }
+                else
+                {
+                    <div class="col-12 text-center py-5">
+                        <div class="py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-4 opacity-25"></i>
+                            <h3 class="display-font">No turfs match your search</h3>
+                            <p class="text-muted">Try adjusting your filters or browsing all areas.</p>
+                            <a asp-action="AllTurfs" class="btn btn-primary rounded-pill px-4 mt-3">Clear Filters</a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="mt-5">
+                    <ul class="pagination justify-content-center gap-2">
+                        <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber - 1)">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@i">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                            <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber + 1)">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
 </div>
+
+@section Styles {
+    <style>
+        .search-hero {
+            height: 450px;
+            background: linear-gradient(rgba(26,60,52,0.85), rgba(26,60,52,0.85)), url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .search-bar-wrapper {
+            background: white;
+            border-radius: 100px;
+            padding: 8px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .btn-wishlist {
+            background: white;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            color: var(--color-text-muted);
+        }
+        .btn-wishlist:hover { color: var(--color-danger); }
+
+        .filter-sidebar {
+            position: sticky;
+            top: 100px;
+        }
+
+        .ls-1 { letter-spacing: 0.1em; }
+        
+        .page-link {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text);
+            font-weight: 600;
+        }
+        .page-item.active .page-link {
+            background-color: var(--color-primary);
+            color: white;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('priceRange').addEventListener('input', function() {
+            document.getElementById('priceValue').innerText = '৳' + parseInt(this.value).toLocaleString();
+        });
+    </script>
+}

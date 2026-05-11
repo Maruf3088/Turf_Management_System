@@ -1,0 +1,408 @@
+@model turf_management_system.DTOs.Turf.TurfResponseDto
+@{
+    ViewData["Title"] = Model.Name + " - Details";
+    var mainImage = Model.MainImageUrl ?? "/images/turf-placeholder.jpg";
+}
+
+<!-- Hero Section -->
+<section class="turf-hero">
+    <div id="turfCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            @for (int i = 0; i < Model.Images.Count; i++)
+            {
+                <button type="button" data-bs-target="#turfCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+            }
+        </div>
+        <div class="carousel-inner h-100">
+            @if (Model.Images.Any())
+            {
+                @foreach (var img in Model.Images)
+                {
+                    <div class="carousel-item h-100 @(img.IsMain ? "active" : "")">
+                        <img src="@img.ImageUrl" class="d-block w-100 h-100 object-fit-cover" alt="@Model.Name">
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="carousel-item active h-100">
+                    <img src="/images/turf-placeholder.jpg" class="d-block w-100 h-100 object-fit-cover" alt="Placeholder">
+                </div>
+            }
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#turfCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#turfCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
+    <div class="hero-overlay">
+        <div class="container h-100 d-flex flex-column justify-content-end pb-5">
+            <div class="animate-up">
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge bg-accent text-dark px-3 py-2 fw-bold text-uppercase">@Model.SportType</span>
+                    <span class="badge bg-white text-dark px-3 py-2 fw-bold text-uppercase">@Model.TurfSize</span>
+                </div>
+                <h1 class="display-1 text-white fw-bold mb-2">@Model.Name</h1>
+                <p class="text-white-50 fs-5 mb-0"><i class="fas fa-map-marker-alt me-2"></i>@Model.Location, @Model.City</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Info Bar -->
+<div class="info-bar sticky-top shadow-sm animate-up">
+    <div class="container d-flex justify-content-between align-items-center h-100">
+        <div class="d-flex gap-4 info-items">
+            <div class="info-item">
+                <span class="label">Price</span>
+                <span class="value">৳@Model.PricePerHour<small>/hr</small></span>
+            </div>
+            <div class="info-item d-none d-md-block">
+                <span class="label">Sport</span>
+                <span class="value">@Model.SportType</span>
+            </div>
+            <div class="info-item d-none d-md-block">
+                <span class="label">Rating</span>
+                <span class="value text-accent"><i class="fas fa-star me-1"></i>4.8</span>
+            </div>
+        </div>
+        <a href="#booking-section" class="btn btn-accent px-4 py-2 fw-bold">Book Now</a>
+    </div>
+</div>
+
+<div class="container mt-5 pt-3">
+    <div class="row g-5">
+        <!-- Main Content -->
+        <div class="col-lg-8 animate-up">
+            <div class="mb-5">
+                <h3 class="display-font mb-4">About the Turf</h3>
+                <p class="text-muted fs-5 leading-relaxed">@Model.Description</p>
+            </div>
+
+            <div class="mb-5">
+                <h3 class="display-font mb-4">Amenities</h3>
+                <div class="d-flex flex-wrap gap-3">
+                    @if (!string.IsNullOrEmpty(Model.Amenities))
+                    {
+                        @foreach (var amenity in Model.Amenities.Split(','))
+                        {
+                            <div class="amenity-chip">
+                                @{
+                                    var icon = amenity.Trim().ToLower() switch {
+                                        "parking" => "fa-parking",
+                                        "washroom" => "fa-restroom",
+                                        "lighting" => "fa-lightbulb",
+                                        "cafeteria" => "fa-coffee",
+                                        _ => "fa-check-circle"
+                                    };
+                                }
+                                <i class="fas @icon me-2 text-primary"></i>
+                                <span>@amenity.Trim()</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div id="booking-section" class="mb-5 pt-4">
+                <h3 class="display-font mb-4">Available Slots</h3>
+                <div class="card p-4 border-0 bg-white">
+                    <div class="d-flex gap-2 overflow-x-auto pb-3 mb-4" id="day-tabs">
+                        @for (int i = 0; i < 7; i++)
+                        {
+                            var date = DateTime.Today.AddDays(i);
+                            <button class="btn btn-day @(i == 0 ? "active" : "")" 
+                                    onclick="loadAvailableSlots('@date.ToString("yyyy-MM-dd")', this)">
+                                <span class="day">@date.ToString("ddd")</span>
+                                <span class="date">@date.Day</span>
+                            </button>
+                        }
+                    </div>
+
+                    <div id="slots-container" class="row g-3">
+                        <!-- Slots will be loaded here via AJAX -->
+                        <div class="text-center py-4">
+                            <span class="spinner-border text-primary"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <h3 class="display-font mb-4">Location</h3>
+                <div class="rounded-4 overflow-hidden shadow-sm" style="height: 400px; background: #eee;">
+                    <!-- Placeholder for Map -->
+                    <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                        <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                        <p>Interactive Map Integration Coming Soon</p>
+                        <p class="small">@Model.Location, @Model.City</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar / Booking Card -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <div class="card p-4 border-0 shadow-lg">
+                    <h4 class="display-font mb-4">Reserve Your Slot</h4>
+                    
+                    <form id="booking-form">
+                        <input type="hidden" name="TurfId" value="@Model.Id" />
+                        <input type="hidden" name="SlotId" id="selected-slot-id" required />
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase ls-1">Selected Date</label>
+                            <input type="text" id="display-date" class="form-control bg-light" readonly value="@DateTime.Today.ToString("MMM dd, yyyy")" />
+                            <input type="hidden" name="BookingDate" id="booking-date" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div id="selection-summary" style="display: none;">
+                            <div class="p-3 bg-light rounded-3 mb-4 border-start border-4 border-accent">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Time Slot</span>
+                                    <span class="fw-bold" id="summary-time">--</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted small">Price per Hour</span>
+                                    <span class="fw-bold text-primary">৳@Model.PricePerHour</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase ls-1">Special Request</label>
+                                <textarea name="SpecialRequest" class="form-control" rows="2" placeholder="Any requests?"></textarea>
+                            </div>
+
+                            <div class="border-top pt-3 mb-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fs-5 fw-bold">Total Amount</span>
+                                    <span class="fs-4 fw-bold text-primary" id="summary-total">৳0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <button type="submit" id="btn-proceed" class="btn btn-primary w-100 py-3 fw-bold" disabled>
+                                Proceed to Book
+                            </button>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-primary w-100 py-3 fw-bold">
+                                Login to Book
+                            </a>
+                        }
+                    </form>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">@Model.OwnerName[0]</div>
+                            <div>
+                                <p class="mb-0 fw-bold">@Model.OwnerName</p>
+                                <p class="mb-0 text-muted small">Verified Turf Owner</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .turf-hero { height: 520px; position: relative; overflow: hidden; }
+        .hero-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+            pointer-events: none;
+        }
+
+        .info-bar { 
+            background: white; 
+            height: 80px; 
+            z-index: 1020; 
+            top: 70px; /* Offset for main navbar */
+        }
+        .info-item .label { display: block; font-size: 11px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; }
+        .info-item .value { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+
+        .amenity-chip {
+            background: white;
+            border: 1px solid var(--color-border);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-day {
+            min-width: 70px;
+            height: 80px;
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-day.active { background: var(--color-primary); border-color: var(--color-primary); color: white; }
+        .btn-day .day { font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .btn-day .date { font-size: 20px; font-weight: 800; }
+
+        .slot-pill {
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slot-pill:hover:not(.disabled) { border-color: var(--color-primary); background: var(--color-bg); }
+        .slot-pill.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+        .slot-pill.disabled { opacity: 0.4; cursor: not-allowed; background: #f5f5f5; }
+        .slot-pill .time { font-weight: bold; font-size: 14px; }
+        .slot-pill .status { font-size: 10px; text-transform: uppercase; margin-top: 4px; }
+
+        .sticky-sidebar { position: sticky; top: 170px; }
+
+        .avatar-sm {
+            width: 44px; height: 44px;
+            background: var(--color-primary-light);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .ls-1 { letter-spacing: 0.05em; }
+        .leading-relaxed { line-height: 1.8; }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        const turfPrice = @Model.PricePerHour;
+        
+        async function loadAvailableSlots(date, btn) {
+            // Update active state
+            if (btn) {
+                document.querySelectorAll('.btn-day').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            const container = document.getElementById('slots-container');
+            container.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+            
+            document.getElementById('booking-date').value = date;
+            document.getElementById('display-date').value = new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            try {
+                const response = await fetch(\`/api/bookings/available-slots?turfId=@Model.Id&date=\${date}\`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    container.innerHTML = '';
+                    if (result.data.length === 0) {
+                        container.innerHTML = '<div class="col-12 text-center py-4 text-muted">No slots available for this day.</div>';
+                    } else {
+                        result.data.forEach(slot => {
+                            const isBookable = slot.isAvailable && !slot.isAlreadyBooked;
+                            const col = document.createElement('div');
+                            col.className = 'col-md-3 col-6';
+                            col.innerHTML = \`
+                                <div class="slot-pill \${!isBookable ? 'disabled' : ''}" onclick="\${isBookable ? \`selectSlot('\${slot.slotId}', '\${formatTime(slot.startTime)} - \${formatTime(slot.endTime)}')\` : ''}">
+                                    <div class="time">\${formatTime(slot.startTime)}</div>
+                                    <div class="status">\${slot.isAlreadyBooked ? 'Booked' : (slot.isAvailable ? 'Available' : 'Closed')}</div>
+                                </div>
+                            \`;
+                            container.appendChild(col);
+                        });
+                    }
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="col-12 text-center py-4 text-danger">Error loading slots.</div>';
+            }
+        }
+
+        function formatTime(timeStr) {
+            const [h, m] = timeStr.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour % 12 || 12;
+            return \`\${h12}:\${m} \${ampm}\`;
+        }
+
+        function selectSlot(id, timeRange) {
+            document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            document.getElementById('selected-slot-id').value = id;
+            document.getElementById('summary-time').innerText = timeRange;
+            document.getElementById('summary-total').innerText = '৳' + turfPrice;
+            
+            document.getElementById('selection-summary').style.display = 'block';
+            document.getElementById('btn-proceed').disabled = false;
+            
+            // Smooth scroll to booking card on mobile
+            if (window.innerWidth < 992) {
+                document.querySelector('.sticky-sidebar').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        document.getElementById('booking-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-proceed');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+
+            const data = {
+                TurfId: this.querySelector('[name="TurfId"]').value,
+                SlotId: document.getElementById('selected-slot-id').value,
+                BookingDate: document.getElementById('booking-date').value,
+                SpecialRequest: this.querySelector('[name="SpecialRequest"]').value
+            };
+
+            try {
+                const response = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = \`/Bookings/Confirmation/\${result.data.id}\`;
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Error creating booking');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Proceed to Book';
+            }
+        });
+
+        // Initial Load
+        loadAvailableSlots('@DateTime.Today.ToString("yyyy-MM-dd")');
+    </script>
+}

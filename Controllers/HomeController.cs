@@ -26,6 +26,20 @@ namespace turf_management_system.Controllers
             return View(result.Data);
         }
 
+        public async Task<IActionResult> Details(Guid id)
+        {
+            var result = await _turfService.GetTurfByIdAsync(id);
+            if (!result.Success) return NotFound();
+            return View(result.Data);
+        }
+
+        // AJAX Metadata
+        [HttpGet("api/home/cities")]
+        public async Task<IActionResult> GetCities() => Ok(await _turfService.GetCitiesAsync());
+
+        [HttpGet("api/home/sport-types")]
+        public async Task<IActionResult> GetSportTypes() => Ok(await _turfService.GetSportTypesAsync());
+
         public IActionResult Privacy()
         {
             return View();

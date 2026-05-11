@@ -13,6 +13,7 @@ namespace turf_management_system.Repositories.Implementations
         public ITurfImageRepository TurfImages { get; private set; }
         public ITurfSlotRepository TurfSlots { get; private set; }
         public IGenericRepository<TurfOwner> TurfOwners { get; private set; }
+        public IBookingRepository Bookings { get; private set; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -23,6 +24,7 @@ namespace turf_management_system.Repositories.Implementations
             TurfImages = new TurfImageRepository(_context);
             TurfSlots = new TurfSlotRepository(_context);
             TurfOwners = new GenericRepository<TurfOwner>(_context);
+            Bookings = new BookingRepository(_context);
         }
 
         public async Task<int> CompleteAsync()

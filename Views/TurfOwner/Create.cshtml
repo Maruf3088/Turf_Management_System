@@ -4,82 +4,420 @@
     ViewData["Title"] = "Add New Turf";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm p-4">
-            <h2 class="fw-bold mb-4">Add New Turf</h2>
-            
-            <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label asp-for="Name" class="form-label fw-bold"></label>
-                        <input asp-for="Name" class="form-control" placeholder="e.g. Dream Arena" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label asp-for="City" class="form-label fw-bold"></label>
-                        <input asp-for="City" class="form-control" placeholder="e.g. Dhaka" />
-                        <span asp-validation-for="City" class="text-danger"></span>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label asp-for="SportType" class="form-label fw-bold">Sport Type</label>
-                        <select asp-for="SportType" class="form-select">
-                            <option value="">Select Sport</option>
-                            <option value="Football">Football</option>
-                            <option value="Cricket">Cricket</option>
-                            <option value="Basketball">Basketball</option>
-                            <option value="Badminton">Badminton</option>
-                        </select>
-                        <span asp-validation-for="SportType" class="text-danger"></span>
-                    </div>
+<div class="row justify-content-center animate-up">
+    <div class="col-md-10">
+        <!-- Step Indicator -->
+        <div class="d-flex justify-content-between mb-5 px-5">
+            <div class="step-item active" id="step1-indicator">
+                <div class="step-number">1</div>
+                <div class="step-label">Turf Info</div>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-item" id="step2-indicator">
+                <div class="step-number">2</div>
+                <div class="step-label">Upload Images</div>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-item" id="step3-indicator">
+                <div class="step-number">3</div>
+                <div class="step-label">Add Slots</div>
+            </div>
+        </div>
 
-                    <div class="col-md-6">
-                        <label asp-for="PricePerHour" class="form-label fw-bold">Price per Hour</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input asp-for="PricePerHour" class="form-control" type="number" step="0.01" />
+        <!-- Step 1: Turf Info -->
+        <div id="step1-container">
+            <div class="card p-5">
+                <h2 class="display-font mb-4">Tell us about your turf</h2>
+                <form id="turf-info-form">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label asp-for="Name" class="form-label fw-semibold text-uppercase small ls-1">Turf Name</label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g. Wembley Arena" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
                         </div>
-                        <span asp-validation-for="PricePerHour" class="text-danger"></span>
+                        
+                        <div class="col-md-6">
+                            <label asp-for="City" class="form-label fw-semibold text-uppercase small ls-1">City</label>
+                            <input asp-for="City" class="form-control" placeholder="e.g. Dhaka" />
+                            <span asp-validation-for="City" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label asp-for="SportType" class="form-label fw-semibold text-uppercase small ls-1">Sport Type</label>
+                            <select asp-for="SportType" class="form-select">
+                                <option value="">Select Sport</option>
+                                <option value="Football">Football</option>
+                                <option value="Cricket">Cricket</option>
+                                <option value="Basketball">Basketball</option>
+                                <option value="Badminton">Badminton</option>
+                                <option value="Tennis">Tennis</option>
+                            </select>
+                            <span asp-validation-for="SportType" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PricePerHour" class="form-label fw-semibold text-uppercase small ls-1">Price per Hour (৳)</label>
+                            <input asp-for="PricePerHour" class="form-control" type="number" step="0.01" placeholder="e.g. 1500" />
+                            <span asp-validation-for="PricePerHour" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="TurfSize" class="form-label fw-semibold text-uppercase small ls-1">Turf Size</label>
+                            <input asp-for="TurfSize" class="form-control" placeholder="e.g. 5v5, 7v7" />
+                            <span asp-validation-for="TurfSize" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Location" class="form-label fw-semibold text-uppercase small ls-1">Address</label>
+                            <textarea asp-for="Location" class="form-control" rows="2" placeholder="Full street address..."></textarea>
+                            <span asp-validation-for="Location" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Description" class="form-label fw-semibold text-uppercase small ls-1">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Highlight features like turf quality, lighting, etc..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Amenities" class="form-label fw-semibold text-uppercase small ls-1">Amenities</label>
+                            <input asp-for="Amenities" class="form-control" placeholder="Parking, Washroom, Night Lights, Cafeteria" />
+                            <p class="text-muted small mt-1">Separate with commas</p>
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label asp-for="TurfSize" class="form-label fw-bold">Turf Size</label>
-                        <input asp-for="TurfSize" class="form-control" placeholder="e.g. 5v5, 7v7" />
-                        <span asp-validation-for="TurfSize" class="text-danger"></span>
+                    <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <a asp-action="MyTurfs" class="text-decoration-none text-muted fw-medium">Cancel</a>
+                        <button type="button" id="btn-save-turf" class="btn btn-primary px-5 py-3">Next: Upload Images <i class="fas fa-arrow-right ms-2"></i></button>
                     </div>
+                </form>
+            </div>
+        </div>
 
-                    <div class="col-md-12">
-                        <label asp-for="Location" class="form-label fw-bold"></label>
-                        <textarea asp-for="Location" class="form-control" rows="2" placeholder="Full address..."></textarea>
-                        <span asp-validation-for="Location" class="text-danger"></span>
-                    </div>
+        <!-- Step 2: Upload Images (Hidden by default) -->
+        <div id="step2-container" style="display: none;">
+            <div class="card p-5">
+                <h2 class="display-font mb-2">Showcase your turf</h2>
+                <p class="text-muted mb-4">Add at least 3 high-quality images to attract more players.</p>
 
-                    <div class="col-md-12">
-                        <label asp-for="Description" class="form-label fw-bold"></label>
-                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Tell us about your turf..."></textarea>
-                        <span asp-validation-for="Description" class="text-danger"></span>
-                    </div>
-
-                    <div class="col-md-12">
-                        <label asp-for="Amenities" class="form-label fw-bold"></label>
-                        <input asp-for="Amenities" class="form-control" placeholder="e.g. Parking, Washroom, Night Lights" />
-                        <small class="text-muted">Comma separated values</small>
+                <div id="upload-zone" class="upload-dropzone">
+                    <input type="file" id="image-input" multiple accept="image/*" class="d-none" />
+                    <div class="text-center py-5">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h4>Drag & drop images here</h4>
+                        <p class="text-muted">or <span class="text-primary fw-bold pointer" onclick="document.getElementById('image-input').click()">browse from computer</span></p>
+                        <p class="small text-muted mt-2">Supports JPG, PNG, WebP (Max 5MB each)</p>
                     </div>
                 </div>
 
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-success px-5">Submit Turf</button>
-                    <a asp-action="MyTurfs" class="btn btn-outline-secondary">Cancel</a>
+                <!-- Image Grid -->
+                <div id="image-preview-grid" class="row g-3 mt-4">
+                    <!-- Images will be injected here -->
                 </div>
-            </form>
+
+                <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-medium" onclick="showStep(1)">Back to Info</button>
+                    <button type="button" id="btn-next-slots" class="btn btn-primary px-5 py-3" disabled>Next: Add Slots <i class="fas fa-arrow-right ms-2"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Confirmation / Final Step (Hidden by default) -->
+        <div id="step3-container" style="display: none;">
+            <div class="card p-5 text-center">
+                <div class="success-icon mb-4">
+                    <i class="fas fa-check-circle fa-5x text-success"></i>
+                </div>
+                <h2 class="display-font mb-3">Turf Created Successfully!</h2>
+                <p class="text-muted mb-5 px-5">Your turf has been submitted for admin approval. In the meantime, you can manage time slots for your turf.</p>
+                
+                <div class="d-flex flex-column gap-3 align-items-center">
+                    <a id="btn-manage-slots" href="#" class="btn btn-primary px-5 py-3 w-50">Manage Time Slots</a>
+                    <a asp-action="MyTurfs" class="btn btn-outline-primary px-5 py-3 w-50">Back to My Turfs</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+@section Styles {
+    <style>
+        .ls-1 { letter-spacing: 0.1em; }
+        .pointer { cursor: pointer; }
+
+        /* Step Indicators */
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+        .step-item.active { opacity: 1; transform: scale(1.1); }
+        .step-item.completed { opacity: 0.8; }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--color-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 10px rgba(26,60,52,0.2);
+        }
+        .step-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .step-divider {
+            flex-grow: 1;
+            height: 1px;
+            background: var(--color-border);
+            margin-top: 20px;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Upload Zone */
+        .upload-dropzone {
+            border: 2px dashed var(--color-border);
+            border-radius: 16px;
+            background: #fdfdfd;
+            transition: all 0.2s;
+        }
+        .upload-dropzone:hover, .upload-dropzone.dragover {
+            border-color: var(--color-primary);
+            background: rgba(26,60,52,0.02);
+        }
+
+        /* Image Preview Card */
+        .preview-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+        }
+        .preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .preview-card:hover .preview-overlay { opacity: 1; }
+        
+        .main-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--color-accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Success Animation */
+        .success-icon i {
+            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @@keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        let currentTurfId = null;
+        let uploadedImagesCount = 0;
+
+        function showStep(step) {
+            document.getElementById('step1-container').style.display = step === 1 ? 'block' : 'none';
+            document.getElementById('step2-container').style.display = step === 2 ? 'block' : 'none';
+            document.getElementById('step3-container').style.display = step === 3 ? 'block' : 'none';
+
+            // Update indicators
+            document.getElementById('step1-indicator').className = 'step-item' + (step === 1 ? ' active' : (step > 1 ? ' completed' : ''));
+            document.getElementById('step2-indicator').className = 'step-item' + (step === 2 ? ' active' : (step > 2 ? ' completed' : ''));
+            document.getElementById('step3-indicator').className = 'step-item' + (step === 3 ? ' active' : '');
+        }
+
+        // Step 1: Save Turf Info
+        document.getElementById('btn-save-turf').addEventListener('click', async function() {
+            const form = document.getElementById('turf-info-form');
+            if (!$(form).valid()) return;
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/api/turfs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentTurfId = result.data.id;
+                    showStep(2);
+                } else {
+                    alert(result.message || 'Error creating turf');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Next: Upload Images <i class="fas fa-arrow-right ms-2"></i>';
+            }
+        });
+
+        // Step 2: Image Upload Logic
+        const imageInput = document.getElementById('image-input');
+        const uploadZone = document.getElementById('upload-zone');
+        const previewGrid = document.getElementById('image-preview-grid');
+
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        imageInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        async function handleFiles(files) {
+            for (const file of files) {
+                await uploadImage(file);
+            }
+        }
+
+        async function uploadImage(file) {
+            if (!currentTurfId) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('isMain', uploadedImagesCount === 0);
+
+            // Create temporary preview
+            const previewId = 'prev-' + Date.now();
+            const col = document.createElement('div');
+            col.className = 'col-md-4 col-sm-6';
+            col.id = previewId;
+            col.innerHTML = `
+                <div class="preview-card skeleton">
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <span class="spinner-border text-primary"></span>
+                    </div>
+                </div>
+            `;
+            previewGrid.appendChild(col);
+
+            try {
+                const response = await fetch(\`/api/turfs/\${currentTurfId}/images?isMain=\${uploadedImagesCount === 0}\`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    uploadedImagesCount++;
+                    document.getElementById('btn-next-slots').disabled = false;
+                    
+                    // Refresh images list (could also manually update UI)
+                    refreshImages();
+                } else {
+                    col.remove();
+                    alert(result.message);
+                }
+            } catch (error) {
+                col.remove();
+                alert('Error uploading image');
+            }
+        }
+
+        async function refreshImages() {
+            if (!currentTurfId) return;
+            const response = await fetch(\`/api/turfs/\${currentTurfId}\`);
+            const result = await response.json();
+            
+            if (result.success) {
+                previewGrid.innerHTML = '';
+                result.data.images.forEach(img => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 col-sm-6';
+                    col.innerHTML = `
+                        <div class="preview-card">
+                            <img src="\${img.imageUrl}" alt="Turf image" />
+                            \${img.isMain ? '<div class="main-badge">MAIN IMAGE</div>' : ''}
+                            <div class="preview-overlay">
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm btn-danger rounded-circle" onclick="deleteImage('\${img.id}')"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="text-center">
+                                    \${!img.isMain ? \`<button class="btn btn-sm btn-light py-1 px-3" onclick="setMainImage('\${img.id}')">Set as Main</button>\` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    previewGrid.appendChild(col);
+                });
+            }
+        }
+
+        async function deleteImage(imageId) {
+            if (!confirm('Delete this image?')) return;
+            const response = await fetch(\`/api/turfs/images/\${imageId}\`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) {
+                uploadedImagesCount--;
+                if (uploadedImagesCount === 0) document.getElementById('btn-next-slots').disabled = true;
+                refreshImages();
+            }
+        }
+
+        // Placeholder for setMainImage - would need backend implementation if not there
+        async function setMainImage(imageId) {
+            // This would call a PATCH endpoint to update IsMain
+            alert('Setting main image...');
+            refreshImages();
+        }
+
+        document.getElementById('btn-next-slots').addEventListener('click', () => {
+            document.getElementById('btn-manage-slots').href = \`/TurfOwner/Slots/\${currentTurfId}\`;
+            showStep(3);
+        });
+    </script>
 }

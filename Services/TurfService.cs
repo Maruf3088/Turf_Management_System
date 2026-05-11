@@ -304,5 +304,17 @@ namespace turf_management_system.Services
                 Slots = turf.Slots.Select(s => new TurfSlotDto { Id = s.Id, StartTime = s.StartTime, EndTime = s.EndTime, IsAvailable = s.IsAvailable, DayOfWeek = s.DayOfWeek }).ToList()
             };
         }
+
+        public async Task<ApiResponse<IEnumerable<string>>> GetCitiesAsync()
+        {
+            var cities = await _unitOfWork.Turfs.GetDistinctCitiesAsync();
+            return ApiResponse<IEnumerable<string>>.SuccessResponse(cities);
+        }
+
+        public async Task<ApiResponse<IEnumerable<string>>> GetSportTypesAsync()
+        {
+            var types = await _unitOfWork.Turfs.GetDistinctSportTypesAsync();
+            return ApiResponse<IEnumerable<string>>.SuccessResponse(types);
+        }
     }
 }

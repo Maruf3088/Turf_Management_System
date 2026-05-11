@@ -8,7 +8,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,98 +18,205 @@
     
     <style>
         :root {
-            --primary-green: #1a472a;
-            --secondary-green: #2d5a3f;
-            --accent-green: #40a060;
-            --light-bg: #f8f9fa;
+            --color-primary: #1A3C34;
+            --color-primary-light: #2D6A4F;
+            --color-primary-hover: #145C45;
+            --color-accent: #C9A84C;
+            --color-accent-hover: #B8952F;
+            --color-bg: #F9F6F1;
+            --color-bg-card: #FFFFFF;
+            --color-text: #1C1C1C;
+            --color-text-muted: #6B7280;
+            --color-border: #E5E0D8;
+            --color-success: #16A34A;
+            --color-warning: #D97706;
+            --color-danger: #DC2626;
+            --color-info: #2563EB;
+            
+            --font-display: 'DM Serif Display', serif;
+            --font-body: 'DM Sans', sans-serif;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--light-bg);
-            color: #333;
+            font-family: var(--font-body);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6, .display-font {
+            font-family: var(--font-display);
         }
 
         .navbar {
-            background-color: var(--primary-green) !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: var(--color-bg-card) !important;
+            height: 70px;
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        .navbar-brand, .nav-link {
-            color: white !important;
+        .navbar-brand {
+            font-family: var(--font-display);
+            font-size: 24px;
+            color: var(--color-primary) !important;
+        }
+
+        .nav-link {
+            color: var(--color-text) !important;
             font-weight: 500;
+            font-size: 14px;
+            padding: 0.5rem 1rem !important;
+            transition: all 0.2s;
         }
 
         .nav-link:hover {
-            color: var(--accent-green) !important;
+            color: var(--color-primary) !important;
+        }
+
+        .nav-link.active {
+            color: var(--color-primary) !important;
+            position: relative;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 1rem;
+            right: 1rem;
+            height: 2px;
+            background-color: var(--color-accent);
         }
 
         .btn-primary {
-            background-color: var(--primary-green);
-            border-color: var(--primary-green);
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
         .btn-primary:hover {
-            background-color: var(--secondary-green);
-            border-color: var(--secondary-green);
+            background-color: var(--color-primary-hover);
+            border-color: var(--color-primary-hover);
+            transform: translateY(-1px);
         }
 
-        .footer {
-            background-color: #222;
-            color: #ccc;
-            padding: 2rem 0;
-            margin-top: 4rem;
+        .btn-accent {
+            background-color: var(--color-accent);
+            border-color: var(--color-accent);
+            color: white;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 500;
+        }
+
+        .btn-accent:hover {
+            background-color: var(--color-accent-hover);
+            border-color: var(--color-accent-hover);
+            color: white;
         }
 
         .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background-color: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.25s ease;
         }
 
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1060;
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(26,60,52,0.12);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 4rem 0 2rem;
+            margin-top: 5rem;
+        }
+
+        /* Animations */
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-up {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        /* Skeleton Loading */
+        @@keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0ede8 25%, #e8e4df 50%, #f0ede8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s ease infinite;
+            border-radius: 8px;
         }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark mb-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
             <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    <i class="fas fa-volleyball-ball me-2"></i>TurfMaster
+                <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        <i class="fas fa-volleyball-ball" style="font-size: 14px;"></i>
+                    </div>
+                    <span>TurfMaster</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllTurfs" ? "active" : "")" asp-controller="Home" asp-action="AllTurfs">Browse Turfs</a>
+                        </li>
+                        
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="AllTurfs">All Turfs</a>
-                            </li>
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-warning" asp-controller="Admin" asp-action="Dashboard">Admin Panel</a>
+                                    <a class="nav-link fw-bold text-warning" asp-controller="Admin" asp-action="Dashboard"><i class="fas fa-cog me-1"></i>Admin</a>
                                 </li>
                             }
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-user-circle me-1"></i> @User.Identity.Name
+                            @if (User.IsInRole("TurfOwner"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link fw-bold text-primary" asp-controller="TurfOwner" asp-action="Dashboard"><i class="fas fa-store me-1"></i>Portal</a>
+                                </li>
+                            }
+                            
+                            <li class="nav-item dropdown ms-lg-3">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1 ps-1 pe-3 rounded-pill bg-light border" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 12px;">
+                                        @User.Identity.Name[0].ToString().ToUpper()
+                                    </div>
+                                    <span class="d-none d-sm-inline">@User.Identity.Name</span>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2">
+                                    <li class="px-3 py-2 border-bottom mb-2">
+                                        <span class="d-block small text-muted text-uppercase fw-bold ls-1">Account</span>
+                                        <span class="fw-bold">@User.Identity.Name</span>
+                                    </li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="MyBookings"><i class="fas fa-calendar-alt me-2 text-muted"></i>My Bookings</a></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
-                                            <button type="submit" class="dropdown-item">Logout</button>
+                                            <button type="submit" class="dropdown-item py-2 text-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
                                         </form>
                                     </li>
                                 </ul>
@@ -117,11 +224,11 @@
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                            <li class="nav-item ms-lg-3">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Sign In</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link btn btn-outline-light ms-lg-2 px-3" asp-controller="Account" asp-action="Register">Register</a>
+                            <li class="nav-item ms-lg-2">
+                                <a class="btn btn-primary px-4 rounded-pill" asp-controller="Account" asp-action="Register">Join Now</a>
                             </li>
                         }
                     </ul>

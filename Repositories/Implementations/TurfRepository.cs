@@ -59,5 +59,21 @@ namespace turf_management_system.Repositories.Implementations
                                .Include(t => t.Owner)
                                .FirstOrDefaultAsync(t => t.Id == turfId);
         }
+
+        public async Task<IEnumerable<string>> GetDistinctCitiesAsync()
+        {
+            return await _dbSet.Where(t => t.IsApproved && !t.IsDeleted)
+                               .Select(t => t.City)
+                               .Distinct()
+                               .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetDistinctSportTypesAsync()
+        {
+            return await _dbSet.Where(t => t.IsApproved && !t.IsDeleted)
+                               .Select(t => t.SportType)
+                               .Distinct()
+                               .ToListAsync();
+        }
     }
 }

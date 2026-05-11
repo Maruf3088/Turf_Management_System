@@ -15,10 +15,34 @@ namespace turf_management_system.Data
         public DbSet<TurfImage> TurfImages { get; set; }
         public DbSet<TurfSlot> TurfSlots { get; set; }
         public DbSet<TurfOwner> TurfOwners { get; set; }
+        public DbSet<Booking> Bookings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configure Booking entity
+            modelBuilder.Entity<Booking>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.TotalHours).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(d => d.Turf)
+                    .WithMany()
+                    .HasForeignKey(d => d.TurfId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Slot)
+                    .WithMany()
+                    .HasForeignKey(d => d.SlotId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // Configure Role entity
             modelBuilder.Entity<Role>(entity =>

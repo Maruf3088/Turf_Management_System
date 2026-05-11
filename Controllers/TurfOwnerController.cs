@@ -52,6 +52,7 @@ namespace turf_management_system.Controllers
             return View(new CreateTurfDto());
         }
 
+        // Updated for AJAX flow - redirects to MyTurfs for non-AJAX or fallback
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTurfDto model)
@@ -68,6 +69,24 @@ namespace turf_management_system.Controllers
                 ModelState.AddModelError("", result.Message);
             }
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Slots(Guid id)
+        {
+            var result = await _turfService.GetTurfByIdAsync(id);
+            if (!result.Success) return NotFound();
+            
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (result.Data!.OwnerId != ownerId) return Forbid();
+
+            return View(result.Data);
+        }
+
+        [HttpGet]
+        public IActionResult Bookings()
+        {
+            return View();
         }
     }
 }

@@ -22,10 +22,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITurfRepository, TurfRepository>();
 builder.Services.AddScoped<ITurfImageRepository, TurfImageRepository>();
 builder.Services.AddScoped<ITurfSlotRepository, TurfSlotRepository>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 // Services
 builder.Services.AddScoped<ITurfService, TurfService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 
 // FluentValidation
 builder.Services.AddControllersWithViews()

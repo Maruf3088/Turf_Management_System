@@ -10,6 +10,7 @@ namespace turf_management_system.Repositories.Interfaces
         ITurfImageRepository TurfImages { get; }
         ITurfSlotRepository TurfSlots { get; }
         IGenericRepository<TurfOwner> TurfOwners { get; }
+        IBookingRepository Bookings { get; }
         Task<int> CompleteAsync();
     }
 }

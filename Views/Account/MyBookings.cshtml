@@ -1,0 +1,237 @@
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="container py-5 animate-up">
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <h1 class="display-font">My Bookings</h1>
+            <p class="text-muted">Manage your upcoming and past game sessions.</p>
+        </div>
+    </div>
+
+    <!-- Tab Filters -->
+    <div class="d-flex gap-2 mb-4 overflow-x-auto pb-2" id="booking-tabs">
+        <button class="btn btn-tab active" onclick="loadBookings(null, this)">All</button>
+        <button class="btn btn-tab" onclick="loadBookings(0, this)">Pending</button>
+        <button class="btn btn-tab" onclick="loadBookings(1, this)">Confirmed</button>
+        <button class="btn btn-tab" onclick="loadBookings(4, this)">Completed</button>
+        <button class="btn btn-tab" onclick="loadBookings(3, this)">Cancelled</button>
+    </div>
+
+    <div id="bookings-list" class="row g-4">
+        <!-- Bookings will be loaded here -->
+        <div class="col-12 text-center py-5">
+            <span class="spinner-border text-primary"></span>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="mt-5" id="pagination-nav" style="display: none;">
+        <ul class="pagination justify-content-center gap-2" id="pagination-list">
+        </ul>
+    </nav>
+</div>
+
+@section Styles {
+    <style>
+        .btn-tab {
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 50px;
+            padding: 8px 24px;
+            font-weight: 500;
+            color: var(--color-text-muted);
+            white-space: nowrap;
+        }
+        .btn-tab.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            display: flex;
+            transition: all 0.25s ease;
+        }
+        .booking-card:hover {
+            box-shadow: 0 8px 24px rgba(26,60,52,0.1);
+            transform: translateY(-2px);
+        }
+
+        .date-block {
+            width: 120px;
+            background: var(--color-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--color-border);
+            padding: 20px;
+        }
+        .date-block .day { font-size: 32px; font-weight: 800; color: var(--color-primary); line-height: 1; }
+        .date-block .month { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--color-text-muted); margin-top: 4px; }
+
+        .booking-content { flex: 1; padding: 24px; }
+        .booking-status { flex-shrink: 0; padding: 24px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; border-left: 1px solid var(--color-border); }
+
+        .badge-status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-0 { background: #FEF3C7; color: #92400E; } /* Pending */
+        .status-1 { background: #DCFCE7; color: #166534; } /* Confirmed */
+        .status-2 { background: #FEE2E2; color: #991B1B; } /* Rejected */
+        .status-3 { background: #F3F4F6; color: #374151; } /* Cancelled */
+        .status-4 { background: #DBEAFE; color: #1E40AF; } /* Completed */
+
+        @@media (max-width: 768px) {
+            .booking-card { flex-direction: column; }
+            .date-block { width: 100%; height: 80px; flex-direction: row; border-right: none; border-bottom: 1px solid var(--color-border); gap: 10px; }
+            .booking-status { border-left: none; border-top: 1px solid var(--color-border); align-items: center; }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let currentStatus = null;
+        let currentPage = 1;
+
+        async function loadBookings(status = null, btn = null) {
+            if (btn) {
+                document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            
+            currentStatus = status;
+            const list = document.getElementById('bookings-list');
+            list.innerHTML = '<div class="col-12 text-center py-5"><span class="spinner-border text-primary"></span></div>';
+            
+            let url = \`/api/bookings/my?pageNumber=\${currentPage}&pageSize=8\`;
+            if (status !== null) url += \`&status=\${status}\`;
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderBookings(result.data.items);
+                    renderPagination(result.data);
+                }
+            } catch (error) {
+                list.innerHTML = '<div class="col-12 text-center py-5 text-danger">Error loading bookings.</div>';
+            }
+        }
+
+        function renderBookings(items) {
+            const list = document.getElementById('bookings-list');
+            if (!items || items.length === 0) {
+                list.innerHTML = \`
+                    <div class="col-12 text-center py-5">
+                        <i class="far fa-calendar-times fa-4x text-muted mb-4 opacity-25"></i>
+                        <h3 class="display-font">No bookings found</h3>
+                        <p class="text-muted">You haven't made any bookings in this category yet.</p>
+                        <a href="/Home/AllTurfs" class="btn btn-primary rounded-pill px-4 mt-3">Browse Turfs</a>
+                    </div>
+                \`;
+                return;
+            }
+
+            list.innerHTML = items.map(b => {
+                const date = new Date(b.bookingDate);
+                const day = date.getDate();
+                const month = date.toLocaleString('default', { month: 'short' });
+                
+                return \`
+                    <div class="col-12 animate-up">
+                        <div class="booking-card">
+                            <div class="date-block">
+                                <span class="day">\${day}</span>
+                                <span class="month">\${month}</span>
+                            </div>
+                            <div class="booking-content">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h4 class="display-font mb-0">\${b.turfName}</h4>
+                                    <span class="text-muted small">#\${b.id.substring(0, 8).toUpperCase()}</span>
+                                </div>
+                                <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-1"></i> \${b.turfCity}</p>
+                                <div class="d-flex gap-4">
+                                    <div class="small">
+                                        <i class="far fa-clock me-1 text-primary"></i> 
+                                        \${formatTime(b.startTime)} - \${formatTime(b.endTime)}
+                                    </div>
+                                    <div class="small fw-bold text-primary">
+                                        ৳\${b.totalAmount}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="booking-status">
+                                <span class="badge-status status-\${b.status} mb-3">\${b.statusText}</span>
+                                \${b.status < 2 ? \`<button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="cancelBooking('\${b.id}')">Cancel</button>\` : ''}
+                            </div>
+                        </div>
+                    </div>
+                \`;
+            }).join('');
+        }
+
+        function renderPagination(data) {
+            const nav = document.getElementById('pagination-nav');
+            const list = document.getElementById('pagination-list');
+            
+            if (data.totalPages <= 1) {
+                nav.style.display = 'none';
+                return;
+            }
+
+            nav.style.display = 'block';
+            let html = '';
+            
+            for (let i = 1; i <= data.totalPages; i++) {
+                html += \`
+                    <li class="page-item \${i === data.pageNumber ? 'active' : ''}">
+                        <button class="btn btn-sm shadow-sm \${i === data.pageNumber ? 'btn-primary' : 'btn-white'}" onclick="goToPage(\${i})">\${i}</button>
+                    </li>
+                \`;
+            }
+            list.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadBookings(currentStatus);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function formatTime(timeStr) {
+            const [h, m] = timeStr.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour % 12 || 12;
+            return \`\${h12}:\${m} \${ampm}\`;
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            
+            try {
+                const response = await fetch(\`/api/bookings/\${id}/cancel\`, { method: 'PATCH' });
+                const result = await response.json();
+                if (result.success) loadBookings(currentStatus);
+                else alert(result.message);
+            } catch (error) {
+                alert('Error cancelling booking');
+            }
+        }
+
+        // Initial Load
+        loadBookings();
+    </script>
+}

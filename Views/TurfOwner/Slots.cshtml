@@ -1,0 +1,302 @@
+@model turf_management_system.DTOs.Turf.TurfResponseDto
+@{
+    Layout = "_TurfOwnerLayout";
+    ViewData["Title"] = "Manage Slots - " + Model.Name;
+}
+
+<div class="row animate-up">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a asp-action="MyTurfs">My Turfs</a></li>
+                        <li class="breadcrumb-item active">Slots</li>
+                    </ol>
+                </nav>
+                <h2 class="display-font">@Model.Name - <span class="text-muted">Manage Slots</span></h2>
+            </div>
+            <a asp-action="MyTurfs" class="btn btn-outline-primary btn-sm"><i class="fas fa-arrow-left me-2"></i>Back to My Turfs</a>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card p-4 h-100">
+            <h4 class="display-font mb-4">Add New Slot</h4>
+            <form id="add-slot-form">
+                <input type="hidden" name="TurfId" value="@Model.Id" />
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small ls-1 text-uppercase">Day of Week</label>
+                    <select name="DayOfWeek" class="form-select" id="day-selector">
+                        <option value="">Every Day (Mon-Sun)</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                        <option value="0">Sunday</option>
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small ls-1 text-uppercase">Start Time</label>
+                        <input type="time" name="StartTime" class="form-control" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small ls-1 text-uppercase">End Time</label>
+                        <input type="time" name="EndTime" class="form-control" required />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-3 mt-auto">
+                    <i class="fas fa-plus me-2"></i>Add Time Slot
+                </button>
+            </form>
+
+            <div class="mt-5 p-4 bg-light rounded-4 border">
+                <h6 class="fw-bold mb-2 small text-uppercase">Pro Tip</h6>
+                <p class="small text-muted mb-0">Adding a slot with "Every Day" will create it for all 7 days of the week automatically.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100 overflow-hidden">
+            <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+                <h4 class="display-font mb-0">Existing Slots</h4>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary active" onclick="setView('table')">Table</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="setView('calendar')">Calendar</button>
+                </div>
+            </div>
+            
+            <div class="card-body p-0" id="slots-table-view">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Day</th>
+                                <th>Time Range</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slots-tbody">
+                            <!-- Slots will be injected here -->
+                            <tr><td colspan="4" class="text-center py-5"><span class="spinner-border text-primary"></span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-body p-4" id="slots-calendar-view" style="display: none;">
+                <div class="calendar-grid">
+                    <div class="calendar-header">Mon</div>
+                    <div class="calendar-header">Tue</div>
+                    <div class="calendar-header">Wed</div>
+                    <div class="calendar-header">Thu</div>
+                    <div class="calendar-header">Fri</div>
+                    <div class="calendar-header">Sat</div>
+                    <div class="calendar-header">Sun</div>
+                    
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        var dayNum = (i + 1) % 7;
+                        <div class="calendar-day" id="day-col-@dayNum">
+                            <!-- Slots for this day -->
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .ls-1 { letter-spacing: 0.1em; }
+        
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-available { background: #DCFCE7; color: #166534; }
+        .status-unavailable { background: #FEE2E2; color: #991B1B; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            min-height: 400px;
+        }
+        .calendar-header {
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: var(--color-text-muted);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .calendar-day {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .calendar-slot {
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 11px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .calendar-slot:hover {
+            transform: scale(1.02);
+            border-color: var(--color-primary);
+        }
+        .calendar-slot.available { border-left: 3px solid var(--color-success); }
+        .calendar-slot.unavailable { border-left: 3px solid var(--color-danger); }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        const turfId = '@Model.Id';
+        let currentSlots = [];
+
+        async function loadSlots() {
+            const tbody = document.getElementById('slots-tbody');
+            const response = await fetch(\`/api/turfs/\${turfId}\`);
+            const result = await response.json();
+            
+            if (result.success) {
+                currentSlots = result.data.slots;
+                renderTable();
+                renderCalendar();
+            }
+        }
+
+        function getDayName(dayNum) {
+            const days = {
+                1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 
+                5: 'Friday', 6: 'Saturday', 0: 'Sunday', null: 'Every Day'
+            };
+            return days[dayNum] || 'Every Day';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('slots-tbody');
+            if (currentSlots.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5">No slots added yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = currentSlots.map(slot => \`
+                <tr>
+                    <td class="ps-4 fw-medium">\${getDayName(slot.dayOfWeek)}</td>
+                    <td>\${formatTime(slot.startTime)} - \${formatTime(slot.endTime)}</td>
+                    <td>
+                        <span class="status-pill \${slot.isAvailable ? 'status-available' : 'status-unavailable'}">
+                            \${slot.isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSlot('\${slot.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            \`).join('');
+        }
+
+        function renderCalendar() {
+            // Clear all day columns
+            for (let i = 0; i < 7; i++) {
+                document.getElementById(\`day-col-\${i}\`).innerHTML = '';
+            }
+
+            currentSlots.forEach(slot => {
+                const daysToRender = slot.dayOfWeek === null ? [0,1,2,3,4,5,6] : [slot.dayOfWeek];
+                
+                daysToRender.forEach(day => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = \`calendar-slot \${slot.isAvailable ? 'available' : 'unavailable'}\`;
+                    slotDiv.innerHTML = \`\${formatTime(slot.startTime)}\`;
+                    slotDiv.title = \`\${formatTime(slot.startTime)} - \${formatTime(slot.endTime)}\`;
+                    document.getElementById(\`day-col-\${day}\`).appendChild(slotDiv);
+                });
+            });
+        }
+
+        function formatTime(timeStr) {
+            const [h, m] = timeStr.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour % 12 || 12;
+            return \`\${h12}:\${m} \${ampm}\`;
+        }
+
+        function setView(view) {
+            document.getElementById('slots-table-view').style.display = view === 'table' ? 'block' : 'none';
+            document.getElementById('slots-calendar-view').style.display = view === 'calendar' ? 'block' : 'none';
+            
+            // Update buttons
+            const btns = document.querySelectorAll('.btn-group .btn');
+            btns[0].classList.toggle('active', view === 'table');
+            btns[1].classList.toggle('active', view === 'calendar');
+        }
+
+        // Add Slot
+        document.getElementById('add-slot-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert empty DayOfWeek to null
+            if (data.DayOfWeek === "") data.DayOfWeek = null;
+            else data.DayOfWeek = parseInt(data.DayOfWeek);
+
+            try {
+                const response = await fetch(\`/api/turfs/\${turfId}/slots\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    loadSlots();
+                    this.reset();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Error adding slot');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        async function deleteSlot(slotId) {
+            if (!confirm('Delete this slot?')) return;
+            const response = await fetch(\`/api/turfs/slots/\${slotId}\`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) loadSlots();
+        }
+
+        // Initial Load
+        loadSlots();
+    </script>
+}

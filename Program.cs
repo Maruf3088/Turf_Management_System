@@ -124,6 +124,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+app.MapControllers(); // Ensures attribute-routed API controllers are registered
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

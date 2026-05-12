@@ -339,272 +339,389 @@
 
 @section Scripts {
     <script>
+        'use strict';
+
+        // ── State ─────────────────────────────────────────────────────────────────
         let currentTurfId = null;
-        let currentStep = 1;
-        let images = [];
+        let galleryImages = [];
 
-        $(document).ready(function() {
-            // Step 1 Submission
-            $('#form-step1').on('submit', function(e) {
-                e.preventDefault();
-                if (!this.checkValidity()) {
-                    $(this).addClass('was-validated');
-                    return;
-                }
+        // ── Utilities ─────────────────────────────────────────────────────────────
+        const parseRes = (r) => ({
+            success: r?.success ?? r?.Success ?? false,
+            message: r?.message || r?.Message || 'Unexpected error.',
+            data: r?.data ?? r?.Data ?? null
+        });
 
-                const formData = {};
-                $(this).serializeArray().forEach(item => formData[item.name] = item.value);
-                
-                // Show loading on btn
-                const btn = $('#btn-step1-next');
-                const originalText = btn.html();
-                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Saving...').prop('disabled', true);
+        function getServerError(responseJson, httpStatus) {
+            if (!responseJson) return `HTTP ${httpStatus} error. Please try again.`;
+            // ASP.NET Core validation errors: { errors: { "Field": ["msg"] } }
+            if (responseJson.errors) {
+                const firstKey = Object.keys(responseJson.errors)[0];
+                const msgs = responseJson.errors[firstKey];
+                return Array.isArray(msgs) ? msgs[0] : String(msgs);
+            }
+            return responseJson.message || responseJson.Message || responseJson.title || `HTTP ${httpStatus} error.`;
+        }
 
-                $.ajax({
-                    url: '/api/turfs',
+        function setLoading(btn, loading, originalHtml) {
+            if (loading) {
+                btn.dataset.original = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving…';
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = originalHtml || btn.dataset.original || btn.innerHTML;
+                btn.disabled = false;
+            }
+        }
+
+        // ── Wizard Navigation ─────────────────────────────────────────────────────
+        function showStep(step) {
+            document.querySelectorAll('.wizard-content').forEach(el => el.classList.add('d-none'));
+            document.getElementById(`step${step}-container`).classList.remove('d-none');
+            document.querySelectorAll('.wizard-step').forEach((el, i) => {
+                el.classList.remove('active', 'completed');
+                if (i + 1 < step) el.classList.add('completed');
+                if (i + 1 === step) el.classList.add('active');
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevStep(step) { showStep(step); }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // STEP 1 — Basic Info
+        // THE ROOT CAUSE FIX: serializeArray() returns ALL values as strings.
+        // pricePerHour: "1500" (string) → System.Text.Json CANNOT deserialize to
+        // decimal → 400 Bad Request → form never advances to step 2.
+        // Fix: build payload manually with correct JS types.
+        // ══════════════════════════════════════════════════════════════════════════
+        document.getElementById('form-step1').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-step1-next');
+            setLoading(btn, true);
+
+            // Build payload with CORRECT TYPES (not strings from serializeArray)
+            const payload = {
+                name:          this.querySelector('[name="name"]').value.trim(),
+                sportType:     this.querySelector('[name="sportType"]').value,
+                city:          this.querySelector('[name="city"]').value.trim(),
+                pricePerHour:  parseFloat(this.querySelector('[name="pricePerHour"]').value) || 0,
+                turfSize:      this.querySelector('[name="turfSize"]').value.trim() || null,
+                indoorOutdoor: (this.querySelector('[name="indoorOutdoor"]:checked') || {}).value || null,
+                location:      this.querySelector('[name="location"]').value.trim(),
+                description:   this.querySelector('[name="description"]').value.trim() || null,
+                amenities:     this.querySelector('[name="amenities"]').value.trim() || null
+            };
+
+            // Client-side guard
+            if (!payload.name)         { toastr.warning('Turf name is required.');        setLoading(btn, false); return; }
+            if (!payload.sportType)    { toastr.warning('Sport type is required.');       setLoading(btn, false); return; }
+            if (!payload.city)         { toastr.warning('City is required.');             setLoading(btn, false); return; }
+            if (payload.pricePerHour <= 0) { toastr.warning('Enter a valid price.');     setLoading(btn, false); return; }
+            if (!payload.location)     { toastr.warning('Full address is required.');    setLoading(btn, false); return; }
+
+            try {
+                const response = await fetch('/api/turfs', {
                     method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function(response) {
-                        if (response.success) {
-                            currentTurfId = response.data.id || response.data.Id;
-                            showStep(2);
-                        } else {
-                            toastr.error(response.message || 'Error saving turf info.');
-                        }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
-                    error: function(xhr) {
-                        toastr.error('Failed to connect to server.');
-                    },
-                    complete: function() {
-                        btn.html(originalText).prop('disabled', false);
+                    body: JSON.stringify(payload)
+                });
+
+                let result;
+                try { result = await response.json(); } catch { result = null; }
+
+                if (response.ok) {
+                    const res = parseRes(result);
+                    if (res.success && res.data) {
+                        currentTurfId = res.data.id || res.data.Id;
+                        toastr.success('Basic info saved! Now upload some photos.');
+                        showStep(2);
+                    } else {
+                        toastr.error(res.message);
                     }
-                });
-            });
-
-            // Step 2 Gallery Handling
-            $('#file-input').on('change', function(e) {
-                handleFiles(e.target.files);
-            });
-
-            $('#drop-zone').on('dragover', function(e) {
-                e.preventDefault();
-                $(this).addClass('bg-light');
-            }).on('dragleave', function() {
-                $(this).removeClass('bg-light');
-            }).on('drop', function(e) {
-                e.preventDefault();
-                $(this).removeClass('bg-light');
-                handleFiles(e.originalEvent.dataTransfer.files);
-            });
-
-            $('#btn-step2-next').on('click', function() {
-                if (images.length === 0) {
-                    toastr.warning('Please upload at least one image.');
-                    return;
+                } else {
+                    toastr.error(getServerError(result, response.status));
+                    console.error('[Step1] Server error:', response.status, result);
                 }
-                showStep(3);
-            });
+            } catch (err) {
+                console.error('[Step1] Fetch error:', err);
+                toastr.error('Connection error. Please check your network and try again.');
+            } finally {
+                setLoading(btn, false);
+            }
+        });
 
-            // Step 3 Availability
-            $('#days-selector .btn').on('click', function() {
-                $(this).toggleClass('active');
+        // ══════════════════════════════════════════════════════════════════════════
+        // STEP 2 — Gallery / Image Upload
+        // ══════════════════════════════════════════════════════════════════════════
+        const dropZone   = document.getElementById('drop-zone');
+        const fileInput  = document.getElementById('file-input');
+
+        dropZone.addEventListener('click',     () => fileInput.click());
+        dropZone.addEventListener('dragover',  e  => { e.preventDefault(); dropZone.classList.add('bg-light'); });
+        dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('bg-light'));
+        dropZone.addEventListener('drop',      e  => {
+            e.preventDefault();
+            dropZone.classList.remove('bg-light');
+            uploadFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', function () { uploadFiles(this.files); });
+
+        document.getElementById('btn-step2-next').addEventListener('click', () => showStep(3));
+
+        async function uploadFiles(files) {
+            if (!currentTurfId) {
+                toastr.error('Please complete Step 1 first!');
+                return;
+            }
+            for (const file of Array.from(files)) {
+                if (file.size > 5 * 1024 * 1024) {
+                    toastr.warning(`${file.name} exceeds 5 MB — skipped.`);
+                    continue;
+                }
+                const isMain    = galleryImages.length === 0;
+                const uploadBtn = document.getElementById('btn-step2-next');
+                const origHtml  = uploadBtn.innerHTML;
+                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading…';
+                uploadBtn.disabled  = true;
+
+                const fd = new FormData();
+                fd.append('image', file);         // must match [FromForm] IFormFile image
+
+                try {
+                    const response = await fetch(
+                        `/api/turfs/${currentTurfId}/images?isMain=${isMain}`,
+                        {
+                            method:  'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body:    fd
+                            // DO NOT set Content-Type — browser sets multipart boundary automatically
+                        }
+                    );
+
+                    let result;
+                    try { result = await response.json(); } catch { result = null; }
+
+                    if (response.ok && parseRes(result).success) {
+                        toastr.success(`${file.name} uploaded!`);
+                        await refreshGallery();
+                    } else {
+                        toastr.error(getServerError(result, response.status));
+                        console.error('[Upload] Error:', response.status, result);
+                    }
+                } catch (err) {
+                    console.error('[Upload] Fetch error:', err);
+                    toastr.error(`Failed to upload ${file.name}. Check network.`);
+                } finally {
+                    uploadBtn.innerHTML = origHtml;
+                    uploadBtn.disabled  = false;
+                }
+            }
+        }
+
+        async function refreshGallery() {
+            if (!currentTurfId) return;
+            try {
+                const response = await fetch(`/api/turfs/${currentTurfId}`);
+                const result   = await response.json();
+                const res      = parseRes(result);
+                if (res.success && res.data) {
+                    galleryImages = res.data.images || [];
+                    renderGallery(galleryImages);
+                }
+            } catch (err) {
+                console.error('[Gallery] Refresh error:', err);
+            }
+        }
+
+        function renderGallery(images) {
+            const container = document.getElementById('gallery-preview');
+            container.innerHTML = '';
+            images.forEach(img => {
+                const url    = img.imageUrl || img.ImageUrl || '';
+                const id     = img.id       || img.Id;
+                const isMain = img.isMain   || img.IsMain;
+                const col    = document.createElement('div');
+                col.className = 'col-md-3 col-sm-6';
+                col.innerHTML = `
+                    <div class="gallery-item ${isMain ? 'border border-primary border-4 shadow' : ''}">
+                        <img src="${url}" style="width:100%;height:150px;object-fit:cover;" class="rounded" alt="Turf image" />
+                        <button type="button" class="gallery-remove btn btn-sm btn-danger" onclick="deleteImage('${id}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        ${isMain ? '<div class="bg-primary text-white text-center small py-1 rounded-bottom fw-bold">Primary Photo</div>' : ''}
+                    </div>`;
+                container.appendChild(col);
+            });
+        }
+
+        async function deleteImage(imageId) {
+            try {
+                const response = await fetch(`/api/turfs/images/${imageId}`, {
+                    method:  'DELETE',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const result = await response.json();
+                if (parseRes(result).success) {
+                    galleryImages = galleryImages.filter(i => (i.id || i.Id) !== imageId);
+                    await refreshGallery();
+                    toastr.success('Image removed.');
+                } else {
+                    toastr.error('Failed to delete image.');
+                }
+            } catch (err) {
+                toastr.error('Connection error while deleting.');
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // STEP 3 — Booking Config
+        // ══════════════════════════════════════════════════════════════════════════
+        document.querySelectorAll('#days-selector .btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                this.classList.toggle('active');
                 updateDaysMask();
-            });
-
-            $('#form-step3').on('submit', function(e) {
-                e.preventDefault();
-                const formData = {
-                    openingTime: $(this).find('[name="openingTime"]').val(),
-                    closingTime: $(this).find('[name="closingTime"]').val(),
-                    slotDurationMinutes: parseInt($(this).find('[name="slotDurationMinutes"]').val()),
-                    maxAdvanceBookingDays: parseInt($(this).find('[name="maxAdvanceBookingDays"]').val()),
-                    requireFullPayment: $(this).find('[name="requireFullPayment"]').is(':checked'),
-                    acceptBkash: $(this).find('[name="acceptBkash"]').is(':checked'),
-                    acceptNagad: $(this).find('[name="acceptNagad"]').is(':checked'),
-                    acceptRocket: $(this).find('[name="acceptRocket"]').is(':checked'),
-                    availableDaysMask: parseInt($(this).find('[name="availableDaysMask"]').val())
-                };
-
-                const btn = $('#btn-step3-next');
-                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Saving...').prop('disabled', true);
-
-                $.ajax({
-                    url: `/api/turfs/${currentTurfId}/booking-config`,
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function(response) {
-                        if (response.success) {
-                            showStep(4);
-                            loadSummary();
-                        } else {
-                            toastr.error(response.message);
-                        }
-                    },
-                    error: function() { toastr.error('Server error.'); },
-                    complete: function() { btn.html('Next: Final Review <i class="fas fa-arrow-right ms-2"></i>').prop('disabled', false); }
-                });
-            });
-
-            // Step 4 Actions
-            $('#btn-publish').on('click', function() {
-                const btn = $(this);
-                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Publishing...').prop('disabled', true);
-                
-                $.ajax({
-                    url: `/api/turfs/${currentTurfId}/publish`,
-                    method: 'POST',
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: 'Success!',
-                                text: response.message,
-                                icon: 'success',
-                                confirmButtonText: 'Go to Dashboard'
-                            }).then(() => {
-                                window.location.href = '/TurfOwner/Dashboard';
-                            });
-                        } else {
-                            toastr.error(response.message);
-                        }
-                    },
-                    complete: function() { btn.html('Publish Turf <i class="fas fa-rocket ms-2"></i>').prop('disabled', false); }
-                });
-            });
-
-            $('#btn-save-draft').on('click', function() {
-                toastr.success('Draft saved successfully.');
-                window.location.href = '/TurfOwner/MyTurfs';
             });
         });
 
-        function showStep(step) {
-            currentStep = step;
-            $('.wizard-content').addClass('d-none');
-            $(`#step${step}-container`).removeClass('d-none');
-            
-            $('.wizard-step').removeClass('active completed');
-            for(let i=1; i<=4; i++) {
-                if(i < step) $(`#step${i}-indicator`).addClass('completed');
-                if(i === step) $(`#step${i}-indicator`).addClass('active');
-            }
-        }
-
-        function prevStep(step) {
-            showStep(step);
-        }
-
-        function handleFiles(files) {
-            if (!currentTurfId) return;
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.size > 5 * 1024 * 1024) {
-                    toastr.error(`${file.name} is too large (>5MB)`);
-                    continue;
-                }
-
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('isMain', images.length === 0);
-
-                $.ajax({
-                    url: `/api/turfs/${currentTurfId}/images?isMain=${images.length === 0}`,
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        if (response.success) {
-                            loadImages();
-                        }
-                    }
-                });
-            }
-        }
-
-        function loadImages() {
-            $.ajax({
-                url: `/api/turfs/${currentTurfId}`,
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        const turf = response.data;
-                        images = turf.images || turf.Images || [];
-                        renderGallery();
-                    }
-                }
-            });
-        }
-
-        function renderGallery() {
-            const container = $('#gallery-preview');
-            container.empty();
-            images.forEach(img => {
-                const url = img.imageUrl || img.ImageUrl;
-                const id = img.id || img.Id;
-                const isMain = img.isMain || img.IsMain;
-
-                container.append(`
-                    <div class="col-md-3 col-sm-6">
-                        <div class="gallery-item ${isMain ? 'border border-primary border-4' : ''}">
-                            <img src="${url}" />
-                            <button type="button" class="gallery-remove shadow-sm" onclick="deleteImage('${id}')">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                            ${isMain ? '<div class="bg-primary text-white text-center small py-1">Main Image</div>' : ''}
-                        </div>
-                    </div>
-                `);
-            });
-        }
-
-        function deleteImage(id) {
-            $.ajax({
-                url: `/api/turfs/images/${id}`,
-                method: 'DELETE',
-                success: function(response) {
-                    if (response.success) loadImages();
-                }
-            });
-        }
-
         function updateDaysMask() {
             let mask = 0;
-            $('#days-selector .btn.active').each(function() {
-                mask += parseInt($(this).data('day'));
+            document.querySelectorAll('#days-selector .btn.active').forEach(b => {
+                mask += parseInt(b.dataset.day, 10) || 0;
             });
-            $('[name="availableDaysMask"]').val(mask);
+            document.querySelector('[name="availableDaysMask"]').value = mask;
         }
 
-        function loadSummary() {
-            $.ajax({
-                url: `/api/turfs/${currentTurfId}`,
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        const turf = response.data;
-                        const info = $('#summary-info');
-                        info.html(`
-                            <div class="row g-3">
-                                <div class="col-6"><p class="small text-muted mb-0">Name</p><p class="fw-bold">${turf.name}</p></div>
-                                <div class="col-6"><p class="small text-muted mb-0">Sport</p><p class="fw-bold">${turf.sportType}</p></div>
-                                <div class="col-6"><p class="small text-muted mb-0">City</p><p class="fw-bold">${turf.city}</p></div>
-                                <div class="col-6"><p class="small text-muted mb-0">Price</p><p class="fw-bold">৳ ${turf.pricePerHour}/hr</p></div>
-                                <div class="col-12"><p class="small text-muted mb-0">Location</p><p class="small">${turf.location}</p></div>
-                                <div class="col-12"><p class="small text-muted mb-0">Description</p><p class="small text-truncate-2">${turf.description || 'No description provided.'}</p></div>
-                            </div>
-                        `);
+        document.getElementById('form-step3').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-step3-next');
+            setLoading(btn, true);
 
-                        const gall = $('#summary-gallery');
-                        gall.empty();
-                        (turf.images || turf.Images || []).forEach(img => {
-                            gall.append(`<div class="col-4"><img src="${img.imageUrl || img.ImageUrl}" class="img-fluid rounded-3 border" /></div>`);
-                        });
+            const payload = {
+                openingTime:          this.querySelector('[name="openingTime"]').value,
+                closingTime:          this.querySelector('[name="closingTime"]').value,
+                slotDurationMinutes:  parseInt(this.querySelector('[name="slotDurationMinutes"]').value, 10),
+                maxAdvanceBookingDays:parseInt(this.querySelector('[name="maxAdvanceBookingDays"]').value, 10),
+                requireFullPayment:   this.querySelector('[name="requireFullPayment"]').checked,
+                acceptBkash:          this.querySelector('[name="acceptBkash"]').checked,
+                acceptNagad:          this.querySelector('[name="acceptNagad"]').checked,
+                acceptRocket:         this.querySelector('[name="acceptRocket"]').checked,
+                availableDaysMask:    parseInt(this.querySelector('[name="availableDaysMask"]').value, 10) || 127
+            };
+
+            try {
+                const response = await fetch(`/api/turfs/${currentTurfId}/booking-config`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body:    JSON.stringify(payload)
+                });
+
+                let result;
+                try { result = await response.json(); } catch { result = null; }
+
+                if (response.ok && parseRes(result).success) {
+                    toastr.success('Booking rules saved! Time slots auto-generated.');
+                    showStep(4);
+                    loadSummary();
+                } else {
+                    toastr.error(getServerError(result, response.status));
+                    console.error('[Step3] Error:', response.status, result);
+                }
+            } catch (err) {
+                console.error('[Step3] Fetch error:', err);
+                toastr.error('Connection error while saving booking rules.');
+            } finally {
+                setLoading(btn, false);
+            }
+        });
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // STEP 4 — Review & Publish
+        // ══════════════════════════════════════════════════════════════════════════
+        async function loadSummary() {
+            if (!currentTurfId) return;
+            try {
+                const response = await fetch(`/api/turfs/${currentTurfId}`);
+                const result   = await response.json();
+                const res      = parseRes(result);
+                if (res.success && res.data) {
+                    const t = res.data;
+                    document.getElementById('summary-info').innerHTML = `
+                        <div class="row g-3">
+                            <div class="col-6"><p class="small text-muted mb-0">Turf Name</p><p class="fw-bold text-primary">${t.name}</p></div>
+                            <div class="col-6"><p class="small text-muted mb-0">Sport</p><p class="fw-bold">${t.sportType}</p></div>
+                            <div class="col-6"><p class="small text-muted mb-0">City</p><p class="fw-bold">${t.city}</p></div>
+                            <div class="col-6"><p class="small text-muted mb-0">Base Rate</p><p class="fw-bold text-success">৳ ${t.pricePerHour}/hr</p></div>
+                            <div class="col-12"><p class="small text-muted mb-0">Location</p><p class="small">${t.location}</p></div>
+                        </div>`;
+
+                    const gall = document.getElementById('summary-gallery');
+                    gall.innerHTML = '';
+                    (t.images || []).forEach(img => {
+                        const url = img.imageUrl || img.ImageUrl;
+                        const div = document.createElement('div');
+                        div.className = 'col-4 col-md-3';
+                        div.innerHTML = `<img src="${url}" class="img-fluid rounded border shadow-sm" style="height:80px;object-fit:cover;" />`;
+                        gall.appendChild(div);
+                    });
+
+                    if (!t.images || t.images.length === 0) {
+                        gall.innerHTML = '<div class="col-12 text-muted small">No images uploaded.</div>';
                     }
                 }
-            });
+            } catch (err) {
+                console.error('[Summary] Load error:', err);
+            }
+        }
+
+        document.getElementById('btn-publish').addEventListener('click', async function () {
+            const btn = this;
+            setLoading(btn, true);
+            try {
+                const response = await fetch(`/api/turfs/${currentTurfId}/publish`, {
+                    method:  'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                let result;
+                try { result = await response.json(); } catch { result = null; }
+
+                if (response.ok && parseRes(result).success) {
+                    await Swal.fire({
+                        title: 'Submitted for Review!',
+                        text:  'Your turf has been submitted. It will be visible to customers once our admin team approves it.',
+                        icon:  'success',
+                        confirmButtonColor: '#1A3C34',
+                        confirmButtonText:  'Go to My Turfs'
+                    });
+                    window.location.href = '/TurfOwner/MyTurfs';
+                } else {
+                    toastr.error(getServerError(result, response.status));
+                    setLoading(btn, false);
+                }
+            } catch (err) {
+                console.error('[Publish] Error:', err);
+                toastr.error('Connection error while publishing.');
+                setLoading(btn, false);
+            }
+        });
+
+        document.getElementById('btn-save-draft').addEventListener('click', function () {
+            toastr.info('Progress saved. You can continue later from My Turfs.');
+            setTimeout(() => { window.location.href = '/TurfOwner/MyTurfs'; }, 1200);
+        });
+
+        // Add toastr & SweetAlert2 if not already in layout
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link  rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        if (typeof toastr !== 'undefined') {
+            toastr.options = { closeButton: true, progressBar: true, positionClass: 'toast-top-right', timeOut: 4000 };
         }
     </script>
 }

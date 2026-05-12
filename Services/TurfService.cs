@@ -168,11 +168,16 @@ namespace turf_management_system.Services
             var turf = await _unitOfWork.Turfs.GetByIdAsync(turfId);
             if (turf == null) return ApiResponse<bool>.FailureResponse("Turf not found.");
 
-            // Optionally log reason or notify owner
-            _unitOfWork.Turfs.Delete(turf); // Or set status to Rejected
+            // Instead of deleting, we mark as Rejected and store the reason in Amenities or a dedicated field if exists
+            // Since we don't have a RejectionReason field, we'll use a standard approach
+            turf.IsApproved = false;
+            turf.IsDraft = true; // Return to draft so owner can fix
+            turf.Amenities = (turf.Amenities ?? "") + " [REJECTED: " + reason + "]";
+            
+            _unitOfWork.Turfs.Update(turf);
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<bool>.SuccessResponse(true, "Turf rejected and removed.");
+            return ApiResponse<bool>.SuccessResponse(true, "Turf rejected. Owner can see the reason and edit.");
         }
 
         public async Task<ApiResponse<bool>> UploadTurfImageAsync(Guid turfId, IFormFile image, bool isMain, int ownerId)
@@ -343,10 +348,10 @@ namespace turf_management_system.Services
             if (turf == null) return ApiResponse<bool>.FailureResponse("Turf not found.");
             if (turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
 
-            var config = await _unitOfWork.BookingConfigs.GetByIdAsync(turfId);
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
             if (config == null)
             {
-                config = new TurfBookingConfig { TurfId = turfId };
+                config = new TurfBookingConfig { TurfId = turfId, CreatedAt = DateTime.UtcNow };
                 await _unitOfWork.BookingConfigs.AddAsync(config);
             }
 
@@ -362,7 +367,70 @@ namespace turf_management_system.Services
             config.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.CompleteAsync();
+
+            // Auto-generate time slots from config
+            await GenerateSlotsFromConfigAsync(turfId, config);
+
             return ApiResponse<bool>.SuccessResponse(true, "Booking configuration updated.");
+        }
+
+        /// <summary>
+        /// Regenerates TurfSlot records from the booking config's operating hours.
+        /// Deletes slots with no active bookings and recreates them based on the new config.
+        /// </summary>
+        private async Task GenerateSlotsFromConfigAsync(Guid turfId, TurfBookingConfig config)
+        {
+            // Collect booked slot IDs (Confirmed or PendingPayment) — must NOT be deleted
+            var bookedSlotIds = new HashSet<Guid>();
+            int page = 1;
+            while (true)
+            {
+                var bookingResult = await _unitOfWork.Bookings.GetPagedAsync(page, 200, null, turfId, null);
+                foreach (var b in bookingResult.Items)
+                {
+                    if (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.Confirmed)
+                        bookedSlotIds.Add(b.SlotId);
+                }
+                if (bookingResult.Items.Count() < 200) break;
+                page++;
+            }
+
+            // Delete existing unbooked slots for this turf via GetPagedAsync
+            bool moreSlots = true;
+            while (moreSlots)
+            {
+                var slotResult = await _unitOfWork.TurfSlots.GetPagedAsync(1, 100,
+                    s => s.TurfId == turfId && !bookedSlotIds.Contains(s.Id));
+                
+                if (!slotResult.Items.Any()) break;
+                
+                foreach (var slot in slotResult.Items)
+                    _unitOfWork.TurfSlots.Delete(slot);
+                
+                await _unitOfWork.CompleteAsync();
+                moreSlots = slotResult.Items.Count() >= 100;
+            }
+
+            // Generate new slots from OpeningTime → ClosingTime using SlotDurationMinutes
+            var current = config.OpeningTime;
+            var duration = TimeSpan.FromMinutes(config.SlotDurationMinutes > 0 ? config.SlotDurationMinutes : 60);
+
+            while (current + duration <= config.ClosingTime)
+            {
+                var endTime = current + duration;
+                await _unitOfWork.TurfSlots.AddAsync(new TurfSlot
+                {
+                    Id = Guid.NewGuid(),
+                    TurfId = turfId,
+                    StartTime = current,
+                    EndTime = endTime,
+                    DayOfWeek = null, // null = applies to ALL days
+                    IsAvailable = true
+                });
+                current = endTime;
+            }
+
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task<ApiResponse<bool>> PublishTurfAsync(Guid turfId, int ownerId)
@@ -371,24 +439,12 @@ namespace turf_management_system.Services
             if (turf == null) return ApiResponse<bool>.FailureResponse("Turf not found.");
             if (turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
 
-            // Check KYC
-            var owner = await _unitOfWork.TurfOwners.GetByIdAsync(ownerId);
-            if (owner == null || owner.VerificationStatus != turf_management_system.Models.Enums.VerificationStatus.Approved)
-            {
-                // We allow publishing but set IsApproved = false
-                turf.IsDraft = false;
-                turf.IsApproved = false;
-                await _unitOfWork.CompleteAsync();
-                return ApiResponse<bool>.SuccessResponse(true, "Turf submitted for approval. Since your KYC is not yet approved, the turf will be visible after admin review.");
-            }
-
+            // When publishing, it ALWAYS goes to admin review first
             turf.IsDraft = false;
-            turf.IsApproved = true; // Auto-approve if owner is KYC approved? Or maybe always admin review?
-            // Business rule: if owner is approved, maybe auto-approve turf? 
-            // The prompt says: "Non-KYC owners get: Verification Pending"
+            turf.IsApproved = false; 
             
             await _unitOfWork.CompleteAsync();
-            return ApiResponse<bool>.SuccessResponse(true, "Turf published successfully!");
+            return ApiResponse<bool>.SuccessResponse(true, "Turf submitted for approval. It will be visible after admin review.");
         }
     }
 }

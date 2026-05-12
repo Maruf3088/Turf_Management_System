@@ -310,95 +310,142 @@
             }
 
             const container = document.getElementById('slots-container');
-            container.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                    <p class="text-muted animate-pulse">Synchronizing with live calendar...</p>
+                </div>
+            `;
             
             document.getElementById('booking-date').value = date;
             document.getElementById('display-date').value = new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
+            // Reset selection state
+            document.getElementById('selected-slot-id').value = '';
+            document.getElementById('selection-summary').style.display = 'none';
+            document.getElementById('btn-proceed').disabled = true;
+
             try {
-                const response = await fetch(\`/api/bookings/available-slots?turfId=@Model.Id&date=\${date}\`);
+                // Ensure correct relative URL and parameters
+                const response = await fetch(`/api/bookings/slots/@Model.Id?date=${date}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const result = await response.json();
                 
                 if (result.success) {
                     container.innerHTML = '';
-                    if (result.data.length === 0) {
-                        container.innerHTML = '<div class="col-12 text-center py-4 text-muted">No slots available for this day.</div>';
+                    const slots = result.data || [];
+                    
+                    if (slots.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-12 text-center py-5 bg-light rounded-4">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3 opacity-25"></i>
+                                <h5 class="text-muted">No Slots Available</h5>
+                                <p class="small mb-0">The turf might be closed or fully booked on this date.</p>
+                            </div>
+                        `;
                     } else {
-                        result.data.forEach(slot => {
-                            const isBookable = slot.isAvailable && !slot.isAlreadyBooked;
+                        slots.forEach(slot => {
+                            // Status mapping: 0=Available, 1=Booked, 2=Locked, 3=Unavailable
+                            const status = slot.status;
+                            let statusText = 'Available';
+                            let cssClass = '';
+                            let clickHandler = `selectSlot(this, '${slot.slotId}', '${slot.startTimeDisplay} - ${slot.endTimeDisplay}', ${slot.price})`;
+
+                            if (status === 1) {
+                                statusText = 'Booked';
+                                cssClass = 'disabled booked';
+                                clickHandler = '';
+                            } else if (status === 2) {
+                                statusText = 'Reserved';
+                                cssClass = 'disabled locked';
+                                clickHandler = '';
+                            } else if (status === 3) {
+                                statusText = 'Closed';
+                                cssClass = 'disabled';
+                                clickHandler = '';
+                            }
+
                             const col = document.createElement('div');
                             col.className = 'col-md-3 col-6';
-                            col.innerHTML = \`
-                                <div class="slot-pill \${!isBookable ? 'disabled' : ''}" onclick="\${isBookable ? \`selectSlot('\${slot.slotId}', '\${formatTime(slot.startTime)} - \${formatTime(slot.endTime)}')\` : ''}">
-                                    <div class="time">\${formatTime(slot.startTime)}</div>
-                                    <div class="status">\${slot.isAlreadyBooked ? 'Booked' : (slot.isAvailable ? 'Available' : 'Closed')}</div>
+                            col.innerHTML = `
+                                <div class="slot-pill ${cssClass}" onclick="${clickHandler}">
+                                    <div class="time">${slot.startTimeDisplay}</div>
+                                    <div class="status small fw-bold">${statusText}</div>
                                 </div>
-                            \`;
+                            `;
                             container.appendChild(col);
                         });
                     }
+                } else {
+                    throw new Error(result.message || 'Failed to load slots');
                 }
             } catch (error) {
-                container.innerHTML = '<div class="col-12 text-center py-4 text-danger">Error loading slots.</div>';
+                console.error('Slot loading error:', error);
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="alert alert-danger d-inline-block">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Failed to sync slots. 
+                            <button class="btn btn-link btn-sm p-0 ms-2" onclick="loadAvailableSlots('${date}')">Try Again</button>
+                        </div>
+                    </div>
+                `;
+                toastr.error('Synchronization failed. Please check your connection.');
             }
         }
 
-        function formatTime(timeStr) {
-            const [h, m] = timeStr.split(':');
-            const hour = parseInt(h);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const h12 = hour % 12 || 12;
-            return \`\${h12}:\${m} \${ampm}\`;
-        }
-
-        function selectSlot(id, timeRange) {
+        function selectSlot(el, id, timeRange, price) {
             document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            el.classList.add('active');
             
             document.getElementById('selected-slot-id').value = id;
             document.getElementById('summary-time').innerText = timeRange;
-            document.getElementById('summary-total').innerText = '৳' + turfPrice;
+            document.getElementById('summary-total').innerText = '৳' + price.toLocaleString();
             
             document.getElementById('selection-summary').style.display = 'block';
             document.getElementById('btn-proceed').disabled = false;
-            
-            // Smooth scroll to booking card on mobile
-            if (window.innerWidth < 992) {
-                document.querySelector('.sticky-sidebar').scrollIntoView({ behavior: 'smooth' });
-            }
         }
 
         document.getElementById('booking-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-proceed');
+            const originalHtml = btn.innerHTML;
+            
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Locking Slot...';
 
-            const data = {
-                TurfId: this.querySelector('[name="TurfId"]').value,
+            const payload = {
+                TurfId: "@Model.Id",
                 SlotId: document.getElementById('selected-slot-id').value,
                 BookingDate: document.getElementById('booking-date').value,
                 SpecialRequest: this.querySelector('[name="SpecialRequest"]').value
             };
 
             try {
-                const response = await fetch('/api/bookings', {
+                const response = await fetch('/api/bookings/lock', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
                 if (result.success) {
-                    window.location.href = \`/Bookings/Confirmation/\${result.data.id}\`;
+                    toastr.success('Success! Slot reserved for 5 minutes.');
+                    // Redirect to payment/confirmation as per routing
+                    setTimeout(() => {
+                        window.location.href = `/Booking/Confirmation/${result.bookingId || result.BookingId}`;
+                    }, 800);
                 } else {
-                    alert(result.message);
+                    toastr.error(result.message || 'Reservation failed. Slot might have been taken.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    // Auto-refresh slots
+                    loadAvailableSlots(payload.BookingDate);
                 }
             } catch (error) {
-                alert('Error creating booking');
-            } finally {
+                toastr.error('A system error occurred. Please refresh and try again.');
                 btn.disabled = false;
-                btn.innerText = 'Proceed to Book';
+                btn.innerHTML = originalHtml;
             }
         });
 

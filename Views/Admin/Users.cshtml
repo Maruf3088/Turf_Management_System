@@ -66,14 +66,26 @@
                             </span>
                         </td>
                         <td class="text-end">
-                            <form asp-action="ToggleStatus" method="post" style="display:inline;">
-                                <input type="hidden" name="userId" value="@user.UserId" />
-                                <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")" 
-                                        title="@(user.IsActive ? "Deactivate" : "Activate")">
-                                    <i class="fas @(user.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
-                                </button>
-                            </form>
-                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></button>
+                            <div class="d-flex justify-content-end gap-1">
+                                <form asp-action="ToggleStatus" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-warning" : "btn-outline-success")" 
+                                            title="@(user.IsActive ? "Deactivate" : "Activate")">
+                                        <i class="fas @(user.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
+                                    </button>
+                                </form>
+
+                                <button class="btn btn-sm btn-outline-primary" title="View Details"><i class="fas fa-eye"></i></button>
+
+                                <form asp-action="DeleteUser" method="post" onsubmit="return confirm('CRITICAL: Are you sure you want to PERMANENTLY DELETE this user? This will also remove their profile and associations. This action is irreversible.')" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Permanently">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }

@@ -93,8 +93,12 @@ namespace turf_management_system.Controllers
 
         [HttpPost("{id}/images")]
         [Authorize(Roles = "TurfOwner")]
-        public async Task<IActionResult> UploadImage(Guid id, IFormFile image, [FromQuery] bool isMain = false)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadImage(Guid id, [FromForm] IFormFile image, [FromQuery] bool isMain = false)
         {
+            if (image == null || image.Length == 0)
+                return BadRequest(new { success = false, message = "No image file provided." });
+
             var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _turfService.UploadTurfImageAsync(id, image, isMain, ownerId);
             return result.Success ? Ok(result) : BadRequest(result);

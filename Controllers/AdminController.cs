@@ -61,6 +61,7 @@ namespace turf_management_system.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int userId)
         {
             var user = await _unitOfWork.Users.FindAsync(u => u.UserId == userId, includeProperties: "Role");
@@ -68,7 +69,6 @@ namespace turf_management_system.Controllers
             {
                 var currentUserRole = User.FindFirstValue(ClaimTypes.Role) ?? "";
                 
-                // Strong Logic: Can only manage those below you in hierarchy
                 if (turf_management_system.Models.Logic.RoleHierarchy.CanManage(currentUserRole, user.Role?.RoleName ?? ""))
                 {
                     user.IsActive = !user.IsActive;
@@ -84,6 +84,35 @@ namespace turf_management_system.Controllers
                 }
             }
 
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(int userId)
+        {
+            var user = await _unitOfWork.Users.FindAsync(u => u.UserId == userId, includeProperties: "Role");
+            if (user == null) return NotFound();
+
+            var currentUserRole = User.FindFirstValue(ClaimTypes.Role) ?? "";
+            if (!turf_management_system.Models.Logic.RoleHierarchy.CanManage(currentUserRole, user.Role?.RoleName ?? ""))
+            {
+                TempData["Error"] = "You do not have permission to delete this user.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            // Check for active bookings before deletion
+            var activeBookings = await _unitOfWork.Bookings.GetCountAsync(b => b.UserId == userId && (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.PendingPayment));
+            if (activeBookings > 0)
+            {
+                TempData["Error"] = "Cannot delete user with active/pending bookings. Cancel them first.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            _unitOfWork.Users.Delete(user);
+            await _unitOfWork.CompleteAsync();
+            
+            TempData["Success"] = "User deleted successfully.";
             return RedirectToAction(nameof(Users));
         }
 
@@ -310,18 +339,44 @@ namespace turf_management_system.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveTurf(Guid id)
         {
-            await _turfService.ApproveTurfAsync(id);
-            TempData["Success"] = "Turf approved successfully.";
+            var result = await _turfService.ApproveTurfAsync(id);
+            if (result.Success)
+                TempData["Success"] = "Turf approved successfully.";
+            else
+                TempData["Error"] = result.Message;
+
             return RedirectToAction(nameof(Turfs));
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectTurf(Guid id, string? reason = null)
         {
-            await _turfService.RejectTurfAsync(id, reason);
-            TempData["Success"] = "Turf rejected.";
+            var result = await _turfService.RejectTurfAsync(id, reason ?? "Rejected by admin");
+            if (result.Success)
+                TempData["Success"] = "Turf rejected.";
+            else
+                TempData["Error"] = result.Message;
+
+            return RedirectToAction(nameof(Turfs));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTurf(Guid id)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
+            var result = await _turfService.DeleteTurfAsync(id, userId, role);
+            
+            if (result.Success)
+                TempData["Success"] = "Turf deleted successfully.";
+            else
+                TempData["Error"] = result.Message;
+
             return RedirectToAction(nameof(Turfs));
         }
 

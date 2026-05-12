@@ -1,0 +1,52 @@
+@model IEnumerable<turf_management_system.Models.ViewModels.SlotAvailabilityVM>
+@using turf_management_system.Models.ViewModels
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+        <h5>No slots available on this day.</h5>
+    </div>
+}
+else
+{
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+        @foreach (var slot in Model)
+        {
+            var statusInt = (int)slot.Status;
+            var statusClass = statusInt switch
+            {
+                0 => "available",
+                1 => "locked",
+                2 => "booked",
+                _ => "unavailable"
+            };
+
+            var statusIcon = statusInt switch
+            {
+                0 => "✅ Available",
+                1 => "⏳ Locked",
+                2 => "❌ Booked",
+                _ => "🚫 Unavailable"
+            };
+
+            var statusColor = statusInt switch
+            {
+                0 => "text-success",
+                1 => "text-warning",
+                2 => "text-danger",
+                _ => "text-muted"
+            };
+
+            var clickable = slot.Status == SlotStatus.Available ? $"onclick=\"selectSlot('{slot.SlotId}','{slot.StartTimeDisplay}','{slot.EndTimeDisplay}',{slot.Price})\"" : "";
+
+            <div class="col">
+                <div class="slot-card @statusClass card border-0 shadow-sm rounded-3 p-3 text-center" data-slot-id="@slot.SlotId" @Html.Raw(clickable)>
+                    <div class="fw-bold">@slot.StartTimeDisplay – @slot.EndTimeDisplay</div>
+                    <div class="text-success fw-bold mt-1">৳@slot.Price.ToString("F0")</div>
+                    <div class="slot-status @statusColor small fw-bold mt-1">@statusIcon</div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,141 +1,276 @@
 @model turf_management_system.DTOs.Turf.CreateTurfDto
 @{
     Layout = "_TurfOwnerLayout";
-    ViewData["Title"] = "Add New Turf";
+    ViewData["Title"] = "Turf Creation Wizard";
 }
 
-<div class="row justify-content-center animate-up">
-    <div class="col-md-10">
-        <!-- Step Indicator -->
-        <div class="d-flex justify-content-between mb-5 px-5">
-            <div class="step-item active" id="step1-indicator">
-                <div class="step-number">1</div>
-                <div class="step-label">Turf Info</div>
-            </div>
-            <div class="step-divider"></div>
-            <div class="step-item" id="step2-indicator">
-                <div class="step-number">2</div>
-                <div class="step-label">Upload Images</div>
-            </div>
-            <div class="step-divider"></div>
-            <div class="step-item" id="step3-indicator">
-                <div class="step-number">3</div>
-                <div class="step-label">Add Slots</div>
-            </div>
-        </div>
-
-        <!-- Step 1: Turf Info -->
-        <div id="step1-container">
-            <div class="card p-5">
-                <h2 class="display-font mb-4">Tell us about your turf</h2>
-                <form id="turf-info-form">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    
-                    <div class="row g-4">
-                        <div class="col-md-12">
-                            <label asp-for="Name" class="form-label fw-semibold text-uppercase small ls-1">Turf Name</label>
-                            <input asp-for="Name" class="form-control" placeholder="e.g. Wembley Arena" />
-                            <span asp-validation-for="Name" class="text-danger"></span>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <!-- Wizard Header -->
+            <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="wizard-steps d-flex">
+                        <div class="wizard-step active" id="step1-indicator">
+                            <span class="step-num">1</span>
+                            <span class="step-title">Turf Info</span>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <label asp-for="City" class="form-label fw-semibold text-uppercase small ls-1">City</label>
-                            <input asp-for="City" class="form-control" placeholder="e.g. Dhaka" />
-                            <span asp-validation-for="City" class="text-danger"></span>
+                        <div class="wizard-step" id="step2-indicator">
+                            <span class="step-num">2</span>
+                            <span class="step-title">Gallery</span>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <label asp-for="SportType" class="form-label fw-semibold text-uppercase small ls-1">Sport Type</label>
-                            <select asp-for="SportType" class="form-select">
-                                <option value="">Select Sport</option>
-                                <option value="Football">Football</option>
-                                <option value="Cricket">Cricket</option>
-                                <option value="Basketball">Basketball</option>
-                                <option value="Badminton">Badminton</option>
-                                <option value="Tennis">Tennis</option>
-                            </select>
-                            <span asp-validation-for="SportType" class="text-danger"></span>
+                        <div class="wizard-step" id="step3-indicator">
+                            <span class="step-num">3</span>
+                            <span class="step-title">Availability</span>
                         </div>
-
-                        <div class="col-md-6">
-                            <label asp-for="PricePerHour" class="form-label fw-semibold text-uppercase small ls-1">Price per Hour (৳)</label>
-                            <input asp-for="PricePerHour" class="form-control" type="number" step="0.01" placeholder="e.g. 1500" />
-                            <span asp-validation-for="PricePerHour" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label asp-for="TurfSize" class="form-label fw-semibold text-uppercase small ls-1">Turf Size</label>
-                            <input asp-for="TurfSize" class="form-control" placeholder="e.g. 5v5, 7v7" />
-                            <span asp-validation-for="TurfSize" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label asp-for="Location" class="form-label fw-semibold text-uppercase small ls-1">Address</label>
-                            <textarea asp-for="Location" class="form-control" rows="2" placeholder="Full street address..."></textarea>
-                            <span asp-validation-for="Location" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label asp-for="Description" class="form-label fw-semibold text-uppercase small ls-1">Description</label>
-                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Highlight features like turf quality, lighting, etc..."></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label asp-for="Amenities" class="form-label fw-semibold text-uppercase small ls-1">Amenities</label>
-                            <input asp-for="Amenities" class="form-control" placeholder="Parking, Washroom, Night Lights, Cafeteria" />
-                            <p class="text-muted small mt-1">Separate with commas</p>
+                        <div class="wizard-step" id="step4-indicator">
+                            <span class="step-num">4</span>
+                            <span class="step-title">Review</span>
                         </div>
                     </div>
-
-                    <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
-                        <a asp-action="MyTurfs" class="text-decoration-none text-muted fw-medium">Cancel</a>
-                        <button type="button" id="btn-save-turf" class="btn btn-primary px-5 py-3">Next: Upload Images <i class="fas fa-arrow-right ms-2"></i></button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Step 2: Upload Images (Hidden by default) -->
-        <div id="step2-container" style="display: none;">
-            <div class="card p-5">
-                <h2 class="display-font mb-2">Showcase your turf</h2>
-                <p class="text-muted mb-4">Add at least 3 high-quality images to attract more players.</p>
-
-                <div id="upload-zone" class="upload-dropzone">
-                    <input type="file" id="image-input" multiple accept="image/*" class="d-none" />
-                    <div class="text-center py-5">
-                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                        <h4>Drag & drop images here</h4>
-                        <p class="text-muted">or <span class="text-primary fw-bold pointer" onclick="document.getElementById('image-input').click()">browse from computer</span></p>
-                        <p class="small text-muted mt-2">Supports JPG, PNG, WebP (Max 5MB each)</p>
-                    </div>
-                </div>
-
-                <!-- Image Grid -->
-                <div id="image-preview-grid" class="row g-3 mt-4">
-                    <!-- Images will be injected here -->
-                </div>
-
-                <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-medium" onclick="showStep(1)">Back to Info</button>
-                    <button type="button" id="btn-next-slots" class="btn btn-primary px-5 py-3" disabled>Next: Add Slots <i class="fas fa-arrow-right ms-2"></i></button>
                 </div>
             </div>
-        </div>
 
-        <!-- Step 3: Confirmation / Final Step (Hidden by default) -->
-        <div id="step3-container" style="display: none;">
-            <div class="card p-5 text-center">
-                <div class="success-icon mb-4">
-                    <i class="fas fa-check-circle fa-5x text-success"></i>
+            <!-- Step 1: Turf Info -->
+            <div class="wizard-content" id="step1-container">
+                <div class="card border-0 shadow-sm animate__animated animate__fadeIn">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h4 class="mb-0 fw-bold"><i class="fas fa-info-circle text-primary me-2"></i> Step 1: Basic Information</h4>
+                        <p class="text-muted small mb-0">Fill in the core details of your turf.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="form-step1" class="needs-validation" novalidate>
+                            <div class="row g-4">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold">Turf Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="name" class="form-control form-control-lg" required placeholder="e.g. Dream Arena" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Sport Type <span class="text-danger">*</span></label>
+                                    <select name="sportType" class="form-select form-select-lg" required>
+                                        <option value="">Select...</option>
+                                        <option value="Football">Football</option>
+                                        <option value="Cricket">Cricket</option>
+                                        <option value="Basketball">Basketball</option>
+                                        <option value="Badminton">Badminton</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">City <span class="text-danger">*</span></label>
+                                    <input type="text" name="city" class="form-control" required placeholder="e.g. Dhaka" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Price per Hour (৳) <span class="text-danger">*</span></label>
+                                    <input type="number" name="pricePerHour" class="form-control" required placeholder="1500" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Turf Size <span class="text-danger">*</span></label>
+                                    <input type="text" name="turfSize" class="form-control" required placeholder="e.g. 120ft x 80ft or 5v5" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Indoor / Outdoor <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check border p-2 px-3 rounded-3 flex-fill text-center">
+                                            <input class="form-check-input d-none" type="radio" name="indoorOutdoor" id="radioIndoor" value="Indoor" required>
+                                            <label class="form-check-label w-100 pointer" for="radioIndoor">Indoor</label>
+                                        </div>
+                                        <div class="form-check border p-2 px-3 rounded-3 flex-fill text-center">
+                                            <input class="form-check-input d-none" type="radio" name="indoorOutdoor" id="radioOutdoor" value="Outdoor" required>
+                                            <label class="form-check-label w-100 pointer" for="radioOutdoor">Outdoor</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Full Address <span class="text-danger">*</span></label>
+                                    <textarea name="location" class="form-control" rows="2" required placeholder="Detailed location to help users find you..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Description</label>
+                                    <textarea name="description" class="form-control" rows="4" placeholder="Mention rules, amenities, lighting etc..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Amenities</label>
+                                    <input type="text" name="amenities" class="form-control" placeholder="Parking, Washroom, Night Lights, Cafeteria (comma separated)" />
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-5">
+                                <button type="submit" class="btn btn-primary px-5 py-3 rounded-pill fw-bold" id="btn-step1-next">
+                                    Next: Upload Gallery <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <h2 class="display-font mb-3">Turf Created Successfully!</h2>
-                <p class="text-muted mb-5 px-5">Your turf has been submitted for admin approval. In the meantime, you can manage time slots for your turf.</p>
-                
-                <div class="d-flex flex-column gap-3 align-items-center">
-                    <a id="btn-manage-slots" href="#" class="btn btn-primary px-5 py-3 w-50">Manage Time Slots</a>
-                    <a asp-action="MyTurfs" class="btn btn-outline-primary px-5 py-3 w-50">Back to My Turfs</a>
+            </div>
+
+            <!-- Step 2: Gallery -->
+            <div class="wizard-content d-none" id="step2-container">
+                <div class="card border-0 shadow-sm animate__animated animate__fadeIn">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h4 class="mb-0 fw-bold"><i class="fas fa-images text-primary me-2"></i> Step 2: Turf Gallery</h4>
+                        <p class="text-muted small mb-0">High-quality photos attract 3x more bookings.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="upload-zone p-5 text-center border-dashed rounded-4 mb-4" id="drop-zone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5 class="fw-bold">Drag and drop images here</h5>
+                            <p class="text-muted">or click to browse from your computer</p>
+                            <input type="file" id="file-input" multiple accept="image/*" class="d-none" />
+                            <button type="button" class="btn btn-outline-primary px-4 mt-2" onclick="$('#file-input').click()">Browse Files</button>
+                            <p class="small text-muted mt-3">JPG, PNG, WebP (Max 5MB per file)</p>
+                        </div>
+
+                        <div id="gallery-preview" class="row g-3">
+                            <!-- Previews injected here -->
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-5">
+                            <button type="button" class="btn btn-outline-secondary px-5 py-3 rounded-pill fw-bold" onclick="prevStep(1)">
+                                <i class="fas fa-arrow-left me-2"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-primary px-5 py-3 rounded-pill fw-bold" id="btn-step2-next">
+                                Next: Set Availability <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Availability -->
+            <div class="wizard-content d-none" id="step3-container">
+                <div class="card border-0 shadow-sm animate__animated animate__fadeIn">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h4 class="mb-0 fw-bold"><i class="fas fa-calendar-alt text-primary me-2"></i> Step 3: Availability & Payments</h4>
+                        <p class="text-muted small mb-0">Configure when you are open and how you accept payments.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="form-step3">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-4">
+                                        <h6 class="fw-bold mb-3">Operating Hours</h6>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label small">Opening Time</label>
+                                                <input type="time" name="openingTime" class="form-control" value="06:00" />
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small">Closing Time</label>
+                                                <input type="time" name="closingTime" class="form-control" value="22:00" />
+                                            </div>
+                                        </div>
+                                        <label class="form-label small">Slot Duration</label>
+                                        <select name="slotDurationMinutes" class="form-select">
+                                            <option value="30">30 Minutes</option>
+                                            <option value="60" selected>1 Hour</option>
+                                            <option value="90">1.5 Hours</option>
+                                            <option value="120">2 Hours</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded-4">
+                                        <h6 class="fw-bold mb-3">Booking Rules</h6>
+                                        <label class="form-label small">Advance Booking Limit (Days)</label>
+                                        <input type="number" name="maxAdvanceBookingDays" class="form-control mb-3" value="7" />
+                                        
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" name="requireFullPayment" id="checkFullPay">
+                                            <label class="form-check-label fw-bold" for="checkFullPay">Require Full Payment for booking</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 border rounded-4">
+                                        <h6 class="fw-bold mb-3">Accepted Payment Methods</h6>
+                                        <div class="d-flex flex-wrap gap-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="acceptBkash" id="payBkash" checked>
+                                                <label class="form-check-label" for="payBkash">bKash</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="acceptNagad" id="payNagad" checked>
+                                                <label class="form-check-label" for="payNagad">Nagad</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="acceptRocket" id="payRocket" checked>
+                                                <label class="form-check-label" for="payRocket">Rocket</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 border rounded-4">
+                                        <h6 class="fw-bold mb-3">Available Days</h6>
+                                        <div class="d-flex flex-wrap gap-3" id="days-selector">
+                                            <button type="button" class="btn btn-outline-primary active" data-day="1">Sun</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="2">Mon</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="4">Tue</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="8">Wed</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="16">Thu</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="32">Fri</button>
+                                            <button type="button" class="btn btn-outline-primary active" data-day="64">Sat</button>
+                                        </div>
+                                        <input type="hidden" name="availableDaysMask" value="127" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn btn-outline-secondary px-5 py-3 rounded-pill fw-bold" onclick="prevStep(2)">
+                                    <i class="fas fa-arrow-left me-2"></i> Back
+                                </button>
+                                <button type="submit" class="btn btn-primary px-5 py-3 rounded-pill fw-bold" id="btn-step3-next">
+                                    Next: Final Review <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Finish -->
+            <div class="wizard-content d-none" id="step4-container">
+                <div class="card border-0 shadow-sm animate__animated animate__fadeIn">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h4 class="mb-0 fw-bold"><i class="fas fa-check-circle text-success me-2"></i> Step 4: Final Review</h4>
+                        <p class="text-muted small mb-0">Review your turf details before publishing.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-7">
+                                <h5 class="fw-bold border-bottom pb-2 mb-3">Turf Details</h5>
+                                <div id="summary-info">
+                                    <!-- Summary injected here -->
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <h5 class="fw-bold border-bottom pb-2 mb-3">Media</h5>
+                                <div id="summary-gallery" class="row g-2">
+                                    <!-- Gallery injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-5 rounded-4 border-0 shadow-sm d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Ready to Publish?</h6>
+                                <p class="mb-0 small">Once published, our team will review your turf. Approved turfs are immediately visible to customers.</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-5">
+                            <button type="button" class="btn btn-outline-secondary px-5 py-3 rounded-pill fw-bold" onclick="prevStep(3)">
+                                <i class="fas fa-arrow-left me-2"></i> Back
+                            </button>
+                            <div class="d-flex gap-3">
+                                <button type="button" class="btn btn-light px-4 py-3 rounded-pill fw-bold" id="btn-save-draft">Save as Draft</button>
+                                <button type="button" class="btn btn-success px-5 py-3 rounded-pill fw-bold" id="btn-publish">
+                                    Publish Turf <i class="fas fa-rocket ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,281 +278,333 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
-        .ls-1 { letter-spacing: 0.1em; }
-        .pointer { cursor: pointer; }
-
-        /* Step Indicators */
-        .step-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0.4;
-            transition: all 0.3s;
-        }
-        .step-item.active { opacity: 1; transform: scale(1.1); }
-        .step-item.completed { opacity: 0.8; }
-        
-        .step-number {
-            width: 40px;
-            height: 40px;
-            background: var(--color-primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-bottom: 8px;
-            box-shadow: 0 4px 10px rgba(26,60,52,0.2);
-        }
-        .step-label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .step-divider {
-            flex-grow: 1;
-            height: 1px;
-            background: var(--color-border);
-            margin-top: 20px;
-            margin-left: 20px;
-            margin-right: 20px;
-        }
-
-        /* Upload Zone */
-        .upload-dropzone {
-            border: 2px dashed var(--color-border);
-            border-radius: 16px;
-            background: #fdfdfd;
-            transition: all 0.2s;
-        }
-        .upload-dropzone:hover, .upload-dropzone.dragover {
-            border-color: var(--color-primary);
-            background: rgba(26,60,52,0.02);
-        }
-
-        /* Image Preview Card */
-        .preview-card {
+        .wizard-steps { border-radius: 12px; }
+        .wizard-step {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 16/10;
+            transition: all 0.3s;
+            cursor: pointer;
+            border-right: 1px solid #eee;
         }
-        .preview-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .preview-overlay {
+        .wizard-step:last-child { border-right: none; }
+        .wizard-step.active { background: #fff; color: var(--bs-primary); }
+        .wizard-step.completed { background: #e9ecef; }
+        .wizard-step.active::after {
+            content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            opacity: 0;
-            transition: opacity 0.2s;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--bs-primary);
         }
-        .preview-card:hover .preview-overlay { opacity: 1; }
-        
-        .main-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: var(--color-accent);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 10px;
+        .step-num {
+            width: 28px;
+            height: 28px;
+            display: inline-block;
+            background: #dee2e6;
+            color: #495057;
+            border-radius: 50%;
+            line-height: 28px;
             font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
         }
+        .wizard-step.active .step-num { background: var(--bs-primary); color: #fff; }
+        .wizard-step.completed .step-num { background: #198754; color: #fff; }
+        .step-title { display: block; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .upload-zone { border: 2px dashed #dee2e6; transition: all 0.2s; cursor: pointer; }
+        .upload-zone:hover { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), 0.05); }
+        .pointer { cursor: pointer; }
+        .border-dashed { border-style: dashed !important; }
+        
+        .gallery-item { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .gallery-item img { width: 100%; height: 160px; object-fit: cover; }
+        .gallery-remove { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.9); border-radius: 50%; width: 28px; height: 28px; border: none; color: #dc3545; }
+        .gallery-remove:hover { background: #dc3545; color: #fff; }
 
-        /* Success Animation */
-        .success-icon i {
-            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @@keyframes bounceIn {
-            0% { transform: scale(0.3); opacity: 0; }
-            50% { transform: scale(1.05); }
-            70% { transform: scale(0.9); }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        .form-check-input:checked + .form-check-label { color: var(--bs-primary); font-weight: bold; }
+        .form-check.border:has(.form-check-input:checked) { border-color: var(--bs-primary) !important; background: rgba(var(--bs-primary-rgb), 0.05); }
+
+        #days-selector .btn { border-radius: 50px; min-width: 60px; }
+        #days-selector .btn.active { background-color: var(--bs-primary); color: white; }
     </style>
 }
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
         let currentTurfId = null;
-        let uploadedImagesCount = 0;
+        let currentStep = 1;
+        let images = [];
+
+        $(document).ready(function() {
+            // Step 1 Submission
+            $('#form-step1').on('submit', function(e) {
+                e.preventDefault();
+                if (!this.checkValidity()) {
+                    $(this).addClass('was-validated');
+                    return;
+                }
+
+                const formData = {};
+                $(this).serializeArray().forEach(item => formData[item.name] = item.value);
+                
+                // Show loading on btn
+                const btn = $('#btn-step1-next');
+                const originalText = btn.html();
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Saving...').prop('disabled', true);
+
+                $.ajax({
+                    url: '/api/turfs',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.success) {
+                            currentTurfId = response.data.id || response.data.Id;
+                            showStep(2);
+                        } else {
+                            toastr.error(response.message || 'Error saving turf info.');
+                        }
+                    },
+                    error: function(xhr) {
+                        toastr.error('Failed to connect to server.');
+                    },
+                    complete: function() {
+                        btn.html(originalText).prop('disabled', false);
+                    }
+                });
+            });
+
+            // Step 2 Gallery Handling
+            $('#file-input').on('change', function(e) {
+                handleFiles(e.target.files);
+            });
+
+            $('#drop-zone').on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('bg-light');
+            }).on('dragleave', function() {
+                $(this).removeClass('bg-light');
+            }).on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('bg-light');
+                handleFiles(e.originalEvent.dataTransfer.files);
+            });
+
+            $('#btn-step2-next').on('click', function() {
+                if (images.length === 0) {
+                    toastr.warning('Please upload at least one image.');
+                    return;
+                }
+                showStep(3);
+            });
+
+            // Step 3 Availability
+            $('#days-selector .btn').on('click', function() {
+                $(this).toggleClass('active');
+                updateDaysMask();
+            });
+
+            $('#form-step3').on('submit', function(e) {
+                e.preventDefault();
+                const formData = {
+                    openingTime: $(this).find('[name="openingTime"]').val(),
+                    closingTime: $(this).find('[name="closingTime"]').val(),
+                    slotDurationMinutes: parseInt($(this).find('[name="slotDurationMinutes"]').val()),
+                    maxAdvanceBookingDays: parseInt($(this).find('[name="maxAdvanceBookingDays"]').val()),
+                    requireFullPayment: $(this).find('[name="requireFullPayment"]').is(':checked'),
+                    acceptBkash: $(this).find('[name="acceptBkash"]').is(':checked'),
+                    acceptNagad: $(this).find('[name="acceptNagad"]').is(':checked'),
+                    acceptRocket: $(this).find('[name="acceptRocket"]').is(':checked'),
+                    availableDaysMask: parseInt($(this).find('[name="availableDaysMask"]').val())
+                };
+
+                const btn = $('#btn-step3-next');
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Saving...').prop('disabled', true);
+
+                $.ajax({
+                    url: `/api/turfs/${currentTurfId}/booking-config`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.success) {
+                            showStep(4);
+                            loadSummary();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function() { toastr.error('Server error.'); },
+                    complete: function() { btn.html('Next: Final Review <i class="fas fa-arrow-right ms-2"></i>').prop('disabled', false); }
+                });
+            });
+
+            // Step 4 Actions
+            $('#btn-publish').on('click', function() {
+                const btn = $(this);
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Publishing...').prop('disabled', true);
+                
+                $.ajax({
+                    url: `/api/turfs/${currentTurfId}/publish`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'Go to Dashboard'
+                            }).then(() => {
+                                window.location.href = '/TurfOwner/Dashboard';
+                            });
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    complete: function() { btn.html('Publish Turf <i class="fas fa-rocket ms-2"></i>').prop('disabled', false); }
+                });
+            });
+
+            $('#btn-save-draft').on('click', function() {
+                toastr.success('Draft saved successfully.');
+                window.location.href = '/TurfOwner/MyTurfs';
+            });
+        });
 
         function showStep(step) {
-            document.getElementById('step1-container').style.display = step === 1 ? 'block' : 'none';
-            document.getElementById('step2-container').style.display = step === 2 ? 'block' : 'none';
-            document.getElementById('step3-container').style.display = step === 3 ? 'block' : 'none';
-
-            // Update indicators
-            document.getElementById('step1-indicator').className = 'step-item' + (step === 1 ? ' active' : (step > 1 ? ' completed' : ''));
-            document.getElementById('step2-indicator').className = 'step-item' + (step === 2 ? ' active' : (step > 2 ? ' completed' : ''));
-            document.getElementById('step3-indicator').className = 'step-item' + (step === 3 ? ' active' : '');
-        }
-
-        // Step 1: Save Turf Info
-        document.getElementById('btn-save-turf').addEventListener('click', async function() {
-            const form = document.getElementById('turf-info-form');
-            if (!$(form).valid()) return;
-
-            const btn = this;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
-
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            try {
-                const response = await fetch('/api/turfs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    currentTurfId = result.data.id;
-                    showStep(2);
-                } else {
-                    alert(result.message || 'Error creating turf');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Network error. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Next: Upload Images <i class="fas fa-arrow-right ms-2"></i>';
-            }
-        });
-
-        // Step 2: Image Upload Logic
-        const imageInput = document.getElementById('image-input');
-        const uploadZone = document.getElementById('upload-zone');
-        const previewGrid = document.getElementById('image-preview-grid');
-
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        });
-
-        imageInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-        async function handleFiles(files) {
-            for (const file of files) {
-                await uploadImage(file);
-            }
-        }
-
-        async function uploadImage(file) {
-            if (!currentTurfId) return;
-
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('isMain', uploadedImagesCount === 0);
-
-            // Create temporary preview
-            const previewId = 'prev-' + Date.now();
-            const col = document.createElement('div');
-            col.className = 'col-md-4 col-sm-6';
-            col.id = previewId;
-            col.innerHTML = `
-                <div class="preview-card skeleton">
-                    <div class="d-flex justify-content-center align-items-center h-100">
-                        <span class="spinner-border text-primary"></span>
-                    </div>
-                </div>
-            `;
-            previewGrid.appendChild(col);
-
-            try {
-                const response = await fetch(\`/api/turfs/\${currentTurfId}/images?isMain=\${uploadedImagesCount === 0}\`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    uploadedImagesCount++;
-                    document.getElementById('btn-next-slots').disabled = false;
-                    
-                    // Refresh images list (could also manually update UI)
-                    refreshImages();
-                } else {
-                    col.remove();
-                    alert(result.message);
-                }
-            } catch (error) {
-                col.remove();
-                alert('Error uploading image');
-            }
-        }
-
-        async function refreshImages() {
-            if (!currentTurfId) return;
-            const response = await fetch(\`/api/turfs/\${currentTurfId}\`);
-            const result = await response.json();
+            currentStep = step;
+            $('.wizard-content').addClass('d-none');
+            $(`#step${step}-container`).removeClass('d-none');
             
-            if (result.success) {
-                previewGrid.innerHTML = '';
-                result.data.images.forEach(img => {
-                    const col = document.createElement('div');
-                    col.className = 'col-md-4 col-sm-6';
-                    col.innerHTML = `
-                        <div class="preview-card">
-                            <img src="\${img.imageUrl}" alt="Turf image" />
-                            \${img.isMain ? '<div class="main-badge">MAIN IMAGE</div>' : ''}
-                            <div class="preview-overlay">
-                                <div class="d-flex justify-content-end">
-                                    <button class="btn btn-sm btn-danger rounded-circle" onclick="deleteImage('\${img.id}')"><i class="fas fa-times"></i></button>
-                                </div>
-                                <div class="text-center">
-                                    \${!img.isMain ? \`<button class="btn btn-sm btn-light py-1 px-3" onclick="setMainImage('\${img.id}')">Set as Main</button>\` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    previewGrid.appendChild(col);
+            $('.wizard-step').removeClass('active completed');
+            for(let i=1; i<=4; i++) {
+                if(i < step) $(`#step${i}-indicator`).addClass('completed');
+                if(i === step) $(`#step${i}-indicator`).addClass('active');
+            }
+        }
+
+        function prevStep(step) {
+            showStep(step);
+        }
+
+        function handleFiles(files) {
+            if (!currentTurfId) return;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > 5 * 1024 * 1024) {
+                    toastr.error(`${file.name} is too large (>5MB)`);
+                    continue;
+                }
+
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('isMain', images.length === 0);
+
+                $.ajax({
+                    url: `/api/turfs/${currentTurfId}/images?isMain=${images.length === 0}`,
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            loadImages();
+                        }
+                    }
                 });
             }
         }
 
-        async function deleteImage(imageId) {
-            if (!confirm('Delete this image?')) return;
-            const response = await fetch(\`/api/turfs/images/\${imageId}\`, { method: 'DELETE' });
-            const result = await response.json();
-            if (result.success) {
-                uploadedImagesCount--;
-                if (uploadedImagesCount === 0) document.getElementById('btn-next-slots').disabled = true;
-                refreshImages();
-            }
+        function loadImages() {
+            $.ajax({
+                url: `/api/turfs/${currentTurfId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const turf = response.data;
+                        images = turf.images || turf.Images || [];
+                        renderGallery();
+                    }
+                }
+            });
         }
 
-        // Placeholder for setMainImage - would need backend implementation if not there
-        async function setMainImage(imageId) {
-            // This would call a PATCH endpoint to update IsMain
-            alert('Setting main image...');
-            refreshImages();
+        function renderGallery() {
+            const container = $('#gallery-preview');
+            container.empty();
+            images.forEach(img => {
+                const url = img.imageUrl || img.ImageUrl;
+                const id = img.id || img.Id;
+                const isMain = img.isMain || img.IsMain;
+
+                container.append(`
+                    <div class="col-md-3 col-sm-6">
+                        <div class="gallery-item ${isMain ? 'border border-primary border-4' : ''}">
+                            <img src="${url}" />
+                            <button type="button" class="gallery-remove shadow-sm" onclick="deleteImage('${id}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            ${isMain ? '<div class="bg-primary text-white text-center small py-1">Main Image</div>' : ''}
+                        </div>
+                    </div>
+                `);
+            });
         }
 
-        document.getElementById('btn-next-slots').addEventListener('click', () => {
-            document.getElementById('btn-manage-slots').href = \`/TurfOwner/Slots/\${currentTurfId}\`;
-            showStep(3);
-        });
+        function deleteImage(id) {
+            $.ajax({
+                url: `/api/turfs/images/${id}`,
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) loadImages();
+                }
+            });
+        }
+
+        function updateDaysMask() {
+            let mask = 0;
+            $('#days-selector .btn.active').each(function() {
+                mask += parseInt($(this).data('day'));
+            });
+            $('[name="availableDaysMask"]').val(mask);
+        }
+
+        function loadSummary() {
+            $.ajax({
+                url: `/api/turfs/${currentTurfId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const turf = response.data;
+                        const info = $('#summary-info');
+                        info.html(`
+                            <div class="row g-3">
+                                <div class="col-6"><p class="small text-muted mb-0">Name</p><p class="fw-bold">${turf.name}</p></div>
+                                <div class="col-6"><p class="small text-muted mb-0">Sport</p><p class="fw-bold">${turf.sportType}</p></div>
+                                <div class="col-6"><p class="small text-muted mb-0">City</p><p class="fw-bold">${turf.city}</p></div>
+                                <div class="col-6"><p class="small text-muted mb-0">Price</p><p class="fw-bold">৳ ${turf.pricePerHour}/hr</p></div>
+                                <div class="col-12"><p class="small text-muted mb-0">Location</p><p class="small">${turf.location}</p></div>
+                                <div class="col-12"><p class="small text-muted mb-0">Description</p><p class="small text-truncate-2">${turf.description || 'No description provided.'}</p></div>
+                            </div>
+                        `);
+
+                        const gall = $('#summary-gallery');
+                        gall.empty();
+                        (turf.images || turf.Images || []).forEach(img => {
+                            gall.append(`<div class="col-4"><img src="${img.imageUrl || img.ImageUrl}" class="img-fluid rounded-3 border" /></div>`);
+                        });
+                    }
+                }
+            });
+        }
     </script>
 }

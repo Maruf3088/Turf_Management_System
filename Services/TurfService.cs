@@ -33,14 +33,30 @@ namespace turf_management_system.Services
                 SportType = dto.SportType,
                 TurfSize = dto.TurfSize,
                 Amenities = dto.Amenities,
+                IndoorOutdoor = dto.IndoorOutdoor,
+                ContactNumber = dto.ContactNumber,
                 OwnerId = ownerId,
                 CreatedAt = DateTime.UtcNow,
-                IsApproved = false,
+                IsApproved = false, // Set to false, needs admin approval or KYC
                 IsActive = true,
-                IsDeleted = false
+                IsDeleted = false,
+                IsDraft = true // New turf starts as draft
             };
 
             await _unitOfWork.Turfs.AddAsync(turf);
+
+            // Create default booking config so it's immediately bookable
+            var defaultConfig = new TurfBookingConfig
+            {
+                TurfId = turf.Id,
+                AvailableDaysMask = 127, // All days
+                OpeningTime = new TimeSpan(6, 0, 0),
+                ClosingTime = new TimeSpan(22, 0, 0),
+                SlotDurationMinutes = 60,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.BookingConfigs.AddAsync(defaultConfig);
+
             await _unitOfWork.CompleteAsync();
 
             return ApiResponse<TurfResponseDto>.SuccessResponse(MapToResponseDto(turf), "Turf created successfully. Awaiting admin approval.");
@@ -172,7 +188,8 @@ namespace turf_management_system.Services
             if (image.Length > 5 * 1024 * 1024) return ApiResponse<bool>.FailureResponse("File size exceeds 5MB.");
 
             // Save file
-            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "turfs", turfId.ToString());
+            var wwwRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+            string uploadsFolder = Path.Combine(wwwRootPath, "uploads", "turfs", turfId.ToString());
             if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
             string fileName = Guid.NewGuid().ToString() + extension;
@@ -219,7 +236,8 @@ namespace turf_management_system.Services
             if (turf?.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
 
             // Delete file
-            string fullPath = Path.Combine(_environment.WebRootPath, image.ImageUrl.TrimStart('/'));
+            var wwwRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+            string fullPath = Path.Combine(wwwRootPath, image.ImageUrl.TrimStart('/'));
             if (File.Exists(fullPath)) File.Delete(fullPath);
 
             _unitOfWork.TurfImages.Delete(image);
@@ -235,13 +253,16 @@ namespace turf_management_system.Services
             if (turf.OwnerId != ownerId) return ApiResponse<TurfSlotDto>.FailureResponse("Unauthorized.");
 
             // Overlap validation
-            var existingSlots = turf.Slots.Where(s => s.DayOfWeek == dto.DayOfWeek);
-            foreach (var slot in existingSlots)
+            // If new slot is Every Day (null), check against ALL existing slots
+            // If new slot is for a specific day, check against slots for that day AND Every Day slots
+            var overlappingSlots = turf.Slots.Where(s => 
+                (dto.DayOfWeek == null || s.DayOfWeek == null || s.DayOfWeek == dto.DayOfWeek) &&
+                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime)
+            );
+
+            if (overlappingSlots.Any())
             {
-                if (dto.StartTime < slot.EndTime && dto.EndTime > slot.StartTime)
-                {
-                    return ApiResponse<TurfSlotDto>.FailureResponse("Slot overlaps with an existing slot.");
-                }
+                return ApiResponse<TurfSlotDto>.FailureResponse("Slot overlaps with an existing slot on this day.");
             }
 
             var turfSlot = new TurfSlot
@@ -315,6 +336,59 @@ namespace turf_management_system.Services
         {
             var types = await _unitOfWork.Turfs.GetDistinctSportTypesAsync();
             return ApiResponse<IEnumerable<string>>.SuccessResponse(types);
+        }
+        public async Task<ApiResponse<bool>> UpdateBookingConfigAsync(Guid turfId, UpdateBookingConfigDto dto, int ownerId)
+        {
+            var turf = await _unitOfWork.Turfs.GetByIdAsync(turfId);
+            if (turf == null) return ApiResponse<bool>.FailureResponse("Turf not found.");
+            if (turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
+
+            var config = await _unitOfWork.BookingConfigs.GetByIdAsync(turfId);
+            if (config == null)
+            {
+                config = new TurfBookingConfig { TurfId = turfId };
+                await _unitOfWork.BookingConfigs.AddAsync(config);
+            }
+
+            config.OpeningTime = dto.OpeningTime;
+            config.ClosingTime = dto.ClosingTime;
+            config.SlotDurationMinutes = dto.SlotDurationMinutes;
+            config.MaxAdvanceBookingDays = dto.MaxAdvanceBookingDays;
+            config.RequireFullPayment = dto.RequireFullPayment;
+            config.AcceptBkash = dto.AcceptBkash;
+            config.AcceptNagad = dto.AcceptNagad;
+            config.AcceptRocket = dto.AcceptRocket;
+            config.AvailableDaysMask = dto.AvailableDaysMask;
+            config.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.CompleteAsync();
+            return ApiResponse<bool>.SuccessResponse(true, "Booking configuration updated.");
+        }
+
+        public async Task<ApiResponse<bool>> PublishTurfAsync(Guid turfId, int ownerId)
+        {
+            var turf = await _unitOfWork.Turfs.GetByIdAsync(turfId);
+            if (turf == null) return ApiResponse<bool>.FailureResponse("Turf not found.");
+            if (turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
+
+            // Check KYC
+            var owner = await _unitOfWork.TurfOwners.GetByIdAsync(ownerId);
+            if (owner == null || owner.VerificationStatus != turf_management_system.Models.Enums.VerificationStatus.Approved)
+            {
+                // We allow publishing but set IsApproved = false
+                turf.IsDraft = false;
+                turf.IsApproved = false;
+                await _unitOfWork.CompleteAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Turf submitted for approval. Since your KYC is not yet approved, the turf will be visible after admin review.");
+            }
+
+            turf.IsDraft = false;
+            turf.IsApproved = true; // Auto-approve if owner is KYC approved? Or maybe always admin review?
+            // Business rule: if owner is approved, maybe auto-approve turf? 
+            // The prompt says: "Non-KYC owners get: Verification Pending"
+            
+            await _unitOfWork.CompleteAsync();
+            return ApiResponse<bool>.SuccessResponse(true, "Turf published successfully!");
         }
     }
 }

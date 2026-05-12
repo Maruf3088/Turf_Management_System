@@ -1,0 +1,127 @@
+@model turf_management_system.Models.Domain.Booking
+@using turf_management_system.Models.Domain
+@{
+    ViewData["Title"] = "Booking Confirmed!";
+}
+
+<div class="container py-5" style="max-width:700px;">
+    <div class="text-center mb-5">
+        @if (Model.Status == BookingStatus.Confirmed)
+        {
+            <div class="success-icon mx-auto mb-3">
+                <i class="fas fa-check-circle fa-5x text-success"></i>
+            </div>
+            <h2 class="fw-bold text-success">Booking Confirmed!</h2>
+            <p class="text-muted lead">Your turf has been successfully booked.</p>
+        }
+        else if (Model.Status == BookingStatus.PendingPayment)
+        {
+            <div class="mx-auto mb-3">
+                <i class="fas fa-clock fa-5x text-warning"></i>
+            </div>
+            <h2 class="fw-bold text-warning">Payment Under Review</h2>
+            <p class="text-muted lead">Your payment has been submitted and is awaiting owner verification.</p>
+        }
+        else
+        {
+            <div class="mx-auto mb-3">
+                <i class="fas fa-info-circle fa-5x text-info"></i>
+            </div>
+            <h2 class="fw-bold">Booking #@Model.Id.ToString()[..8].ToUpper()</h2>
+            <p class="text-muted lead">Status: @Model.Status</p>
+        }
+    </div>
+
+    <!-- Booking Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-dark text-white rounded-top-4 border-0 px-4 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Booking Details</h5>
+                <span class="badge bg-@(Model.Status == BookingStatus.Confirmed ? "success" : "warning") fs-6">
+                    @Model.Status
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="text-muted small">Booking ID</div>
+                    <div class="fw-bold text-primary">#@Model.Id.ToString()[..8].ToUpper()</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Turf</div>
+                    <div class="fw-bold">@Model.Turf?.Name</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Date</div>
+                    <div class="fw-bold">@Model.BookingDate.ToString("dd MMM yyyy")</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Time</div>
+                    <div class="fw-bold">@Model.StartTime.ToString(@"hh\:mm") – @Model.EndTime.ToString(@"hh\:mm")</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Location</div>
+                    <div class="fw-bold">@Model.Turf?.City</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Duration</div>
+                    <div class="fw-bold">@Model.TotalHours hrs</div>
+                </div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Total Amount</span>
+                <span class="fw-bold">৳@Model.TotalAmount.ToString("F2")</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Amount Paid</span>
+                <span class="fw-bold text-success">৳@Model.AmountPaid.ToString("F2")</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Payment Status</span>
+                <span class="badge bg-@(Model.PaymentStatus == PaymentStatus.FullyPaid ? "success" : "warning")">
+                    @Model.PaymentStatus
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    @if (Model.Payments.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header border-0 px-4 py-3">
+                <h6 class="mb-0 fw-bold">Payment History</h6>
+            </div>
+            <div class="list-group list-group-flush rounded-bottom-4">
+                @foreach (var payment in Model.Payments)
+                {
+                    <div class="list-group-item px-4 py-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-bold">@payment.PaymentMethod</div>
+                                <small class="text-muted">TX: @payment.TransactionId</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">৳@payment.Amount.ToString("F2")</div>
+                                <span class="badge bg-@(payment.Status == PaymentVerificationStatus.Verified ? "success" : payment.Status == PaymentVerificationStatus.Pending ? "warning" : "danger")">
+                                    @payment.Status
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="d-flex gap-3 justify-content-center">
+        <a asp-action="MyBookings" class="btn btn-outline-secondary rounded-3 px-4">
+            <i class="fas fa-list me-2"></i>My Bookings
+        </a>
+        <a asp-action="Browse" class="btn btn-success rounded-3 px-4">
+            <i class="fas fa-search me-2"></i>Book Another Turf
+        </a>
+    </div>
+</div>

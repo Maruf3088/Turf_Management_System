@@ -1,6 +1,7 @@
-using turf_management_system.DTOs.Booking;
-using turf_management_system.DTOs.Common;
+using Microsoft.EntityFrameworkCore;
+using turf_management_system.Data;
 using turf_management_system.Models.Domain;
+using turf_management_system.Models.ViewModels;
 using turf_management_system.Repositories.Interfaces;
 using turf_management_system.Services.Interfaces;
 
@@ -9,197 +10,518 @@ namespace turf_management_system.Services
     public class BookingService : IBookingService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly AppDbContext _context; // for transactions
 
-        public BookingService(IUnitOfWork unitOfWork)
+        public BookingService(IUnitOfWork unitOfWork, AppDbContext context)
         {
             _unitOfWork = unitOfWork;
+            _context = context;
         }
 
-        public async Task<ApiResponse<BookingResponseDto>> CreateBookingAsync(CreateBookingDto dto, int userId)
+        // ────────────────────────────────────────────────────────────────────────────
+        // STEP 1: Lock Slot + Create Booking
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<(bool Success, string Message, Guid? BookingId)> LockSlotAndCreateBookingAsync(
+            Guid turfId, Guid slotId, DateOnly bookingDate, int userId, string? specialRequest)
         {
-            var turf = await _unitOfWork.Turfs.GetByIdAsync(dto.TurfId);
-            if (turf == null) return ApiResponse<BookingResponseDto>.FailureResponse("Turf not found.");
+            // ── Validate Turf ────────────────────────────────────────────────────
+            var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(turfId);
+            if (turf == null || !turf.IsActive || turf.IsDeleted)
+                return (false, "Turf is not available.", null);
 
-            var slot = await _unitOfWork.TurfSlots.GetByIdAsync(dto.SlotId);
-            if (slot == null || slot.TurfId != dto.TurfId) return ApiResponse<BookingResponseDto>.FailureResponse("Invalid slot.");
+            if (!turf.IsApproved)
+                return (false, "This turf has not been verified by admin yet.", null);
 
-            if (dto.BookingDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                return ApiResponse<BookingResponseDto>.FailureResponse("Booking date cannot be in the past.");
+            // ── Validate Slot ────────────────────────────────────────────────────
+            var slot = await _unitOfWork.TurfSlots.GetByIdAsync(slotId);
+            if (slot == null || slot.TurfId != turfId || !slot.IsAvailable)
+                return (false, "Selected slot is not valid.", null);
 
-            bool alreadyBooked = await _unitOfWork.Bookings.IsSlotAlreadyBookedAsync(dto.SlotId, dto.BookingDate);
-            if (alreadyBooked) return ApiResponse<BookingResponseDto>.FailureResponse("Slot is already booked for this date.");
-
-            var totalHours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
-            var totalAmount = totalHours * turf.PricePerHour;
-
-            var booking = new Booking
+            // ── Validate Booking Config Rules ─────────────────────────────────────
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
+            if (config != null)
             {
-                Id = Guid.NewGuid(),
-                TurfId = dto.TurfId,
+                // Check if day is allowed
+                if (!config.IsDayAvailable(bookingDate.DayOfWeek))
+                    return (false, $"This turf is not open on {bookingDate.DayOfWeek}.", null);
+
+                // Check advance booking limit
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var daysAhead = bookingDate.DayNumber - today.DayNumber;
+                if (daysAhead < 0)
+                    return (false, "Cannot book a date in the past.", null);
+                if (daysAhead > config.MaxAdvanceBookingDays)
+                    return (false, $"This turf only allows booking up to {config.MaxAdvanceBookingDays} days in advance.", null);
+
+                // Check if slot is within operating hours
+                if (slot.StartTime < config.OpeningTime || slot.EndTime > config.ClosingTime)
+                    return (false, "This slot is outside the turf's operating hours.", null);
+            }
+            else
+            {
+                // No config = check basic past date rule
+                if (bookingDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                    return (false, "Cannot book a date in the past.", null);
+            }
+
+            // ── Atomic Slot Lock + Booking Creation (DB Transaction) ─────────────
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Check for any ACTIVE lock overlapping this slot time range
+                var existingLock = await _unitOfWork.SlotLocks.GetActiveLockAsync(
+                    turfId, bookingDate, slot.StartTime, slot.EndTime);
+
+                if (existingLock != null)
+                    return (false, "This slot is currently being reserved by another user. Please try again in a moment.", null);
+
+                // Check for an existing confirmed/pending booking on same slot and date
+                bool alreadyBooked = await _unitOfWork.Bookings.IsSlotAlreadyBookedAsync(slotId, bookingDate);
+                if (alreadyBooked)
+                    return (false, "This slot has already been booked for the selected date.", null);
+
+                // Calculate price
+                var totalHours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
+                var totalAmount = totalHours * turf.PricePerHour;
+
+                // Create the booking
+                var bookingId = Guid.NewGuid();
+
+                var slotLock = new SlotLock
+                {
+                    TurfId = turfId,
+                    BookingDate = bookingDate,
+                    StartTime = slot.StartTime,
+                    EndTime = slot.EndTime,
+                    LockedByUserId = userId,
+                    BookingId = bookingId,
+                    LockedUntil = DateTime.UtcNow.AddMinutes(5),
+                    IsReleased = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                var booking = new Booking
+                {
+                    Id = bookingId,
+                    TurfId = turfId,
+                    UserId = userId,
+                    SlotId = slotId,
+                    BookingDate = bookingDate,
+                    StartTime = slot.StartTime,
+                    EndTime = slot.EndTime,
+                    TotalHours = totalHours,
+                    TotalAmount = totalAmount,
+                    AmountPaid = 0,
+                    Status = BookingStatus.PendingPayment,
+                    PaymentStatus = PaymentStatus.Unpaid,
+                    SpecialRequest = specialRequest,
+                    SlotLockId = slotLock.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.SlotLocks.AddAsync(slotLock);
+                await _unitOfWork.Bookings.AddAsync(booking);
+                await _unitOfWork.CompleteAsync();
+
+                // Audit log
+                await WriteAuditLogAsync("Booking", bookingId.ToString(), "Created",
+                    null, $"Status: PendingPayment, Amount: {totalAmount}", userId);
+
+                // Notify user
+                await SendNotificationAsync(userId, "Slot Reserved!",
+                    $"Your slot at {turf.Name} on {bookingDate:dd MMM yyyy} ({slot.StartTime:hh\\:mm} - {slot.EndTime:hh\\:mm}) has been reserved for 5 minutes. Please complete payment.",
+                    NotificationType.SlotLocked,
+                    $"/Booking/Payment/{bookingId}");
+
+                await transaction.CommitAsync();
+                return (true, "Slot reserved! Please complete payment within 5 minutes.", bookingId);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return (false, "An error occurred while reserving the slot. Please try again.", null);
+            }
+        }
+
+        // ────────────────────────────────────────────────────────────────────────────
+        // STEP 2: Submit Payment
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<(bool Success, string Message)> SubmitPaymentAsync(
+            Guid bookingId, int userId, string transactionId, PaymentMethod paymentMethod, decimal amount, PaymentType paymentType)
+        {
+            var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
+            if (booking == null)
+                return (false, "Booking not found.");
+
+            if (booking.UserId != userId)
+                return (false, "Unauthorized.");
+
+            if (booking.Status != BookingStatus.PendingPayment)
+                return (false, "This booking is not awaiting payment.");
+
+            // Check if slot lock is still active
+            var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(bookingId);
+            if (slotLock == null || !slotLock.IsActive)
+            {
+                // Expire the booking if the lock timed out
+                booking.Status = BookingStatus.Expired;
+                booking.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Bookings.Update(booking);
+                await _unitOfWork.CompleteAsync();
+                return (false, "Your slot reservation has expired. Please start the booking process again.");
+            }
+
+            // Prevent duplicate transaction IDs
+            bool txExists = await _unitOfWork.Payments.TransactionIdExistsAsync(transactionId);
+            if (txExists)
+                return (false, "This transaction ID has already been used. Please check your payment details.");
+
+            // Validate amount
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == booking.TurfId);
+            decimal requiredAmount;
+            if (config != null && !config.RequireFullPayment)
+            {
+                requiredAmount = Math.Round(booking.TotalAmount * config.AdvancePaymentPercent / 100, 2);
+            }
+            else
+            {
+                requiredAmount = booking.TotalAmount;
+            }
+
+            if (amount < requiredAmount)
+                return (false, $"Insufficient payment amount. Required: ৳{requiredAmount:F2}");
+
+            var payment = new Payment
+            {
+                BookingId = bookingId,
                 UserId = userId,
-                SlotId = dto.SlotId,
-                BookingDate = dto.BookingDate,
-                StartTime = slot.StartTime,
-                EndTime = slot.EndTime,
-                TotalHours = totalHours,
-                TotalAmount = totalAmount,
-                Status = BookingStatus.Pending,
-                PaymentStatus = PaymentStatus.Unpaid,
-                SpecialRequest = dto.SpecialRequest,
-                CreatedAt = DateTime.UtcNow
+                Amount = amount,
+                PaymentMethod = paymentMethod,
+                TransactionId = transactionId.Trim(),
+                Status = PaymentVerificationStatus.Pending,
+                PaymentType = paymentType,
+                SubmittedAt = DateTime.UtcNow
             };
 
-            await _unitOfWork.Bookings.AddAsync(booking);
+            await _unitOfWork.Payments.AddAsync(payment);
+
+            // Keep status as PendingPayment — owner must verify
+            booking.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.Bookings.Update(booking);
+
+            // Notify turf owner
+            await SendNotificationAsync(booking.Turf.OwnerId,
+                "New Payment Submitted",
+                $"Customer {booking.User.FullName} submitted payment of ৳{amount:F2} for booking #{bookingId.ToString()[..8].ToUpper()}. Please verify.",
+                NotificationType.PaymentSubmitted,
+                $"/TurfOwnerBooking/VerifyPayment/{payment.Id}");
+
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<BookingResponseDto>.SuccessResponse(MapToResponseDto(booking), "Booking created successfully. Pending owner confirmation.");
+            await WriteAuditLogAsync("Payment", payment.Id.ToString(), "Submitted",
+                null, $"TxId: {transactionId}, Amount: {amount}, Method: {paymentMethod}", userId);
+
+            return (true, "Payment submitted successfully. Your booking will be confirmed after owner verification.");
         }
 
-        public async Task<ApiResponse<bool>> ConfirmBookingAsync(Guid bookingId, int ownerId)
+        // ────────────────────────────────────────────────────────────────────────────
+        // STEP 3: Verify Payment (Owner/Admin)
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<(bool Success, string Message)> VerifyPaymentAsync(Guid paymentId, int verifierUserId)
         {
-            var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
-            if (booking == null) return ApiResponse<bool>.FailureResponse("Booking not found.");
+            var payment = await _unitOfWork.Payments.FindAsync(
+                p => p.Id == paymentId, includeProperties: "Booking,Booking.Turf,User");
 
-            if (booking.Turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
+            if (payment == null)
+                return (false, "Payment not found.");
 
-            if (booking.Status != BookingStatus.Pending)
-                return ApiResponse<bool>.FailureResponse("Only pending bookings can be confirmed.");
+            if (payment.Status != PaymentVerificationStatus.Pending)
+                return (false, "This payment has already been processed.");
 
+            // Authorization: verifier must own the turf
+            if (payment.Booking.Turf.OwnerId != verifierUserId)
+                return (false, "You are not authorized to verify this payment.");
+
+            // Mark payment as verified
+            payment.Status = PaymentVerificationStatus.Verified;
+            payment.VerifiedAt = DateTime.UtcNow;
+            payment.VerifiedByAdminId = verifierUserId;
+            _unitOfWork.Payments.Update(payment);
+
+            // Update booking
+            var booking = payment.Booking;
+            booking.AmountPaid += payment.Amount;
             booking.Status = BookingStatus.Confirmed;
+            booking.ConfirmedAt = DateTime.UtcNow;
             booking.UpdatedAt = DateTime.UtcNow;
+
+            // Set payment status
+            booking.PaymentStatus = booking.AmountPaid >= booking.TotalAmount
+                ? PaymentStatus.FullyPaid
+                : PaymentStatus.PartiallyPaid;
+
+            // Release the slot lock
+            var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(booking.Id);
+            if (slotLock != null)
+            {
+                slotLock.IsReleased = true;
+            }
 
             _unitOfWork.Bookings.Update(booking);
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<bool>.SuccessResponse(true, "Booking confirmed successfully.");
+            // Notify customer
+            await SendNotificationAsync(booking.UserId,
+                "Booking Confirmed! ✅",
+                $"Your booking at {booking.Turf.Name} on {booking.BookingDate:dd MMM yyyy} has been confirmed. Booking ID: #{booking.Id.ToString()[..8].ToUpper()}",
+                NotificationType.BookingConfirmed,
+                $"/Booking/Confirmation/{booking.Id}");
+
+            await WriteAuditLogAsync("Booking", booking.Id.ToString(), "Confirmed",
+                "PendingPayment", "Confirmed", verifierUserId);
+
+            return (true, "Payment verified. Booking confirmed successfully.");
         }
 
-        public async Task<ApiResponse<bool>> RejectBookingAsync(Guid bookingId, int ownerId, string reason)
+        // ────────────────────────────────────────────────────────────────────────────
+        // Reject Payment
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<(bool Success, string Message)> RejectPaymentAsync(Guid paymentId, int verifierUserId, string reason)
         {
-            var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
-            if (booking == null) return ApiResponse<bool>.FailureResponse("Booking not found.");
+            var payment = await _unitOfWork.Payments.FindAsync(
+                p => p.Id == paymentId, includeProperties: "Booking,Booking.Turf,User");
 
-            if (booking.Turf.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
+            if (payment == null) return (false, "Payment not found.");
+            if (payment.Booking.Turf.OwnerId != verifierUserId) return (false, "Unauthorized.");
+            if (payment.Status != PaymentVerificationStatus.Pending) return (false, "Payment already processed.");
 
-            booking.Status = BookingStatus.Rejected;
-            booking.CancellationReason = reason;
-            booking.UpdatedAt = DateTime.UtcNow;
+            payment.Status = PaymentVerificationStatus.Failed;
+            payment.RejectionReason = reason;
+            payment.VerifiedByAdminId = verifierUserId;
+            payment.VerifiedAt = DateTime.UtcNow;
+            _unitOfWork.Payments.Update(payment);
 
-            _unitOfWork.Bookings.Update(booking);
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<bool>.SuccessResponse(true, "Booking rejected.");
+            // Notify customer
+            await SendNotificationAsync(payment.Booking.UserId,
+                "Payment Rejected",
+                $"Your payment for booking #{payment.Booking.Id.ToString()[..8].ToUpper()} was rejected. Reason: {reason}. Please resubmit with correct details.",
+                NotificationType.PaymentFailed,
+                $"/Booking/Payment/{payment.BookingId}");
+
+            return (true, "Payment rejected. Customer has been notified.");
         }
 
-        public async Task<ApiResponse<bool>> CancelBookingAsync(Guid bookingId, int requesterId, string requesterRole)
+        // ────────────────────────────────────────────────────────────────────────────
+        // Cancel Booking
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<(bool Success, string Message)> CancelBookingAsync(Guid bookingId, int requesterId, string requesterRole)
         {
             var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
-            if (booking == null) return ApiResponse<bool>.FailureResponse("Booking not found.");
+            if (booking == null) return (false, "Booking not found.");
 
-            if (requesterRole != "Admin" && booking.UserId != requesterId)
-                return ApiResponse<bool>.FailureResponse("Unauthorized.");
+            bool isAdmin = turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(requesterRole) <= 1;
+            bool isOwner = booking.Turf.OwnerId == requesterId;
+            bool isCustomer = booking.UserId == requesterId;
+
+            if (!isAdmin && !isOwner && !isCustomer)
+                return (false, "Unauthorized.");
 
             if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
-                return ApiResponse<bool>.FailureResponse("Cannot cancel this booking.");
+                return (false, "This booking cannot be cancelled.");
 
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == booking.TurfId);
+
+            // Check cancellation deadline for customers
+            if (isCustomer && !isAdmin)
+            {
+                if (config != null && !config.CancellationAllowed)
+                    return (false, "Cancellations are not allowed for this turf.");
+
+                var bookingDateTime = booking.BookingDate.ToDateTime(TimeOnly.FromTimeSpan(booking.StartTime));
+                var hoursUntilBooking = (bookingDateTime - DateTime.UtcNow).TotalHours;
+
+                if (config != null && hoursUntilBooking < config.CancellationDeadlineHours)
+                    return (false, $"Cancellations must be made at least {config.CancellationDeadlineHours} hours before the booking time.");
+            }
+
+            var oldStatus = booking.Status.ToString();
             booking.Status = BookingStatus.Cancelled;
+            booking.CancelledAt = DateTime.UtcNow;
             booking.UpdatedAt = DateTime.UtcNow;
-
             _unitOfWork.Bookings.Update(booking);
+
+            // Release slot lock if active
+            var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(bookingId);
+            if (slotLock != null && !slotLock.IsReleased)
+            {
+                slotLock.IsReleased = true;
+            }
+
+            // Process refund if payment was made
+            if (booking.AmountPaid > 0 && config != null)
+            {
+                var bookingDateTime = booking.BookingDate.ToDateTime(TimeOnly.FromTimeSpan(booking.StartTime));
+                var hoursUntilBooking = (bookingDateTime - DateTime.UtcNow).TotalHours;
+
+                decimal refundPercent = (hoursUntilBooking >= config.CancellationDeadlineHours)
+                    ? config.RefundPercent
+                    : 0;
+
+                if (refundPercent > 0)
+                {
+                    var refundAmount = Math.Round(booking.AmountPaid * refundPercent / 100, 2);
+                    booking.Status = BookingStatus.Refunded;
+                    booking.PaymentStatus = PaymentStatus.Refunded;
+
+                    await SendNotificationAsync(booking.UserId,
+                        "Refund Initiated",
+                        $"Your booking has been cancelled. A refund of ৳{refundAmount:F2} ({refundPercent}%) will be processed within 3-5 business days.",
+                        NotificationType.RefundProcessed,
+                        null);
+                }
+            }
+
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<bool>.SuccessResponse(true, "Booking cancelled successfully.");
+            await WriteAuditLogAsync("Booking", bookingId.ToString(), "Cancelled",
+                oldStatus, "Cancelled", requesterId);
+
+            return (true, "Booking cancelled successfully.");
         }
 
-        public async Task<ApiResponse<PagedResultDto<BookingResponseDto>>> GetMyBookingsAsync(int userId, int pageNumber, int pageSize, BookingStatus? status)
-        {
-            var (items, totalCount) = await _unitOfWork.Bookings.GetPagedAsync(pageNumber, pageSize, userId, null, status);
-
-            var result = new PagedResultDto<BookingResponseDto>
-            {
-                Items = items.Select(MapToResponseDto),
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-
-            return ApiResponse<PagedResultDto<BookingResponseDto>>.SuccessResponse(result);
-        }
-
-        public async Task<ApiResponse<PagedResultDto<BookingResponseDto>>> GetTurfBookingsAsync(Guid turfId, int ownerId, int pageNumber, int pageSize, BookingStatus? status)
-        {
-            var turf = await _unitOfWork.Turfs.GetByIdAsync(turfId);
-            if (turf == null || turf.OwnerId != ownerId) return ApiResponse<PagedResultDto<BookingResponseDto>>.FailureResponse("Unauthorized.");
-
-            var (items, totalCount) = await _unitOfWork.Bookings.GetPagedAsync(pageNumber, pageSize, null, turfId, status);
-
-            var result = new PagedResultDto<BookingResponseDto>
-            {
-                Items = items.Select(MapToResponseDto),
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-
-            return ApiResponse<PagedResultDto<BookingResponseDto>>.SuccessResponse(result);
-        }
-
-        public async Task<ApiResponse<BookingResponseDto>> GetBookingByIdAsync(Guid bookingId, int requesterId, string requesterRole)
-        {
-            var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
-            if (booking == null) return ApiResponse<BookingResponseDto>.FailureResponse("Booking not found.");
-
-            if (requesterRole != "Admin" && booking.UserId != requesterId && booking.Turf.OwnerId != requesterId)
-                return ApiResponse<BookingResponseDto>.FailureResponse("Unauthorized.");
-
-            return ApiResponse<BookingResponseDto>.SuccessResponse(MapToResponseDto(booking));
-        }
-
-        public async Task<ApiResponse<IEnumerable<SlotAvailabilityDto>>> GetAvailableSlotsAsync(Guid turfId, DateOnly date)
+        // ────────────────────────────────────────────────────────────────────────────
+        // Get Available Slots
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<IEnumerable<SlotAvailabilityVM>> GetAvailableSlotsAsync(Guid turfId, DateOnly date)
         {
             var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(turfId);
-            if (turf == null) return ApiResponse<IEnumerable<SlotAvailabilityDto>>.FailureResponse("Turf not found.");
+            if (turf == null) return Enumerable.Empty<SlotAvailabilityVM>();
+
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
+
+            // Filter by day-of-week if config exists and day is blocked
+            if (config != null && !config.IsDayAvailable(date.DayOfWeek))
+                return Enumerable.Empty<SlotAvailabilityVM>();
 
             var dayOfWeek = (int)date.DayOfWeek;
-            var daySlots = turf.Slots.Where(s => s.DayOfWeek == null || s.DayOfWeek == dayOfWeek);
+            var allSlots = turf.Slots
+                .Where(s => s.DayOfWeek == null || s.DayOfWeek == dayOfWeek)
+                .ToList();
 
+            // Get existing confirmed/pending bookings on this date
             var existingBookings = await _unitOfWork.Bookings.GetBookingsForTurfOnDateAsync(turfId, date);
             var bookedSlotIds = existingBookings.Select(b => b.SlotId).ToHashSet();
 
-            var result = daySlots.Select(s => new SlotAvailabilityDto
-            {
-                SlotId = s.Id,
-                StartTime = s.StartTime,
-                EndTime = s.EndTime,
-                IsAvailable = s.IsAvailable,
-                IsAlreadyBooked = bookedSlotIds.Contains(s.Id)
-            });
+            // Get active slot locks
+            var activeLocks = (await _unitOfWork.SlotLocks.GetAllAsync())
+                .Where(l => l.TurfId == turfId && l.BookingDate == date && l.IsActive)
+                .ToList();
 
-            return ApiResponse<IEnumerable<SlotAvailabilityDto>>.SuccessResponse(result);
+            var result = allSlots.Select(slot =>
+            {
+                SlotStatus status;
+                if (!slot.IsAvailable)
+                    status = SlotStatus.Unavailable;
+                else if (bookedSlotIds.Contains(slot.Id))
+                    status = SlotStatus.Booked;
+                else if (activeLocks.Any(l => l.StartTime < slot.EndTime && l.EndTime > slot.StartTime))
+                    status = SlotStatus.Locked;
+                else
+                    status = SlotStatus.Available;
+
+                var hours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
+
+                return new SlotAvailabilityVM
+                {
+                    SlotId = slot.Id,
+                    StartTime = slot.StartTime,
+                    EndTime = slot.EndTime,
+                    StartTimeDisplay = slot.StartTime.ToString(@"hh\:mm"),
+                    EndTimeDisplay = slot.EndTime.ToString(@"hh\:mm"),
+                    Price = hours * turf.PricePerHour,
+                    Status = status
+                };
+            }).OrderBy(s => s.StartTime).ToList();
+
+            return result;
         }
 
-        private BookingResponseDto MapToResponseDto(Booking booking)
+        // ────────────────────────────────────────────────────────────────────────────
+        // Queries
+        // ────────────────────────────────────────────────────────────────────────────
+        public async Task<Booking?> GetBookingWithDetailsAsync(Guid bookingId, int requesterId, string requesterRole)
         {
-            return new BookingResponseDto
+            var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
+            if (booking == null) return null;
+
+            bool isAdmin = turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(requesterRole) <= 1;
+            if (!isAdmin && booking.UserId != requesterId && booking.Turf.OwnerId != requesterId)
+                return null;
+
+            return booking;
+        }
+
+        public async Task<(IEnumerable<Booking> Items, int TotalCount)> GetMyBookingsAsync(int userId, int pageNumber, int pageSize, BookingStatus? status)
+        {
+            return await _unitOfWork.Bookings.GetPagedAsync(pageNumber, pageSize, userId, null, status);
+        }
+
+        public async Task<(IEnumerable<Booking> Items, int TotalCount)> GetTurfBookingsAsync(Guid turfId, int ownerId, int pageNumber, int pageSize)
+        {
+            var turf = await _unitOfWork.Turfs.GetByIdAsync(turfId);
+            if (turf == null || turf.OwnerId != ownerId)
+                return (Enumerable.Empty<Booking>(), 0);
+
+            return await _unitOfWork.Bookings.GetPagedAsync(pageNumber, pageSize, null, turfId, null);
+        }
+
+        public async Task<(IEnumerable<Booking> Items, int TotalCount)> GetOwnerAllBookingsAsync(int ownerId, int pageNumber, int pageSize, BookingStatus? status)
+        {
+            return await _unitOfWork.Bookings.GetPagedAsync(pageNumber, pageSize, null, null, status, ownerId);
+        }
+
+        public async Task<IEnumerable<Payment>> GetPendingPaymentsForOwnerAsync(int ownerId)
+        {
+            return await _unitOfWork.Payments.GetPendingPaymentsForOwnerAsync(ownerId);
+        }
+
+        // ────────────────────────────────────────────────────────────────────────────
+        // Helpers
+        // ────────────────────────────────────────────────────────────────────────────
+        private async Task WriteAuditLogAsync(string entityType, string entityId, string action,
+            string? oldValue, string? newValue, int? performedByUserId)
+        {
+            var log = new AuditLog
             {
-                Id = booking.Id,
-                TurfId = booking.TurfId,
-                TurfName = booking.Turf?.Name ?? "Unknown",
-                TurfCity = booking.Turf?.City ?? "Unknown",
-                MainImageUrl = booking.Turf?.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? "",
-                StartTime = booking.StartTime,
-                EndTime = booking.EndTime,
-                BookingDate = booking.BookingDate,
-                TotalHours = booking.TotalHours,
-                TotalAmount = booking.TotalAmount,
-                Status = booking.Status,
-                PaymentStatus = booking.PaymentStatus,
-                UserName = booking.User?.FullName ?? "Unknown",
-                OwnerName = booking.Turf?.Owner?.FullName ?? "Unknown",
-                SpecialRequest = booking.SpecialRequest,
-                CancellationReason = booking.CancellationReason,
-                CreatedAt = booking.CreatedAt
+                EntityType = entityType,
+                EntityId = entityId,
+                Action = action,
+                OldValue = oldValue,
+                NewValue = newValue,
+                PerformedByUserId = performedByUserId,
+                PerformedAt = DateTime.UtcNow
             };
+            await _unitOfWork.AuditLogs.AddAsync(log);
+            await _unitOfWork.CompleteAsync();
+        }
+
+        private async Task SendNotificationAsync(int userId, string title, string message,
+            NotificationType type, string? actionUrl)
+        {
+            var notification = new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                ActionUrl = actionUrl,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.Notifications.AddAsync(notification);
+            await _unitOfWork.CompleteAsync();
         }
     }
 }

@@ -56,8 +56,11 @@
                         </div>
                     </div>
                     <div class="card-footer bg-white border-top-0 d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary flex-fill">Edit</button>
-                        <button class="btn btn-sm btn-outline-info flex-fill">Slots</button>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary flex-fill">Edit</a>
+                        <a asp-action="Slots" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info flex-fill">Slots</a>
+                        <a asp-controller="TurfOwnerBooking" asp-action="BookingConfig" asp-route-turfId="@item.Id" class="btn btn-sm btn-outline-success flex-fill" title="Booking Rules">
+                            <i class="fas fa-cog"></i>
+                        </a>
                     </div>
                 </div>
             </div>

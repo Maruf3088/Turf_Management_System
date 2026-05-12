@@ -40,5 +40,9 @@ namespace turf_management_system.Models.ViewModels
 
         [Display(Name = "Business Contact Number")]
         public string? ContactNumber { get; set; }
+
+        [Display(Name = "National ID Number (NID)")]
+        [StringLength(50)]
+        public string? NationalIdNumber { get; set; }
     }
 }

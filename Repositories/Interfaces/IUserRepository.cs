@@ -7,6 +7,5 @@ namespace turf_management_system.Repositories.Interfaces
     {
         Task<User?> GetByEmailAsync(string email);
         Task<IEnumerable<User>> GetByRoleIdAsync(int roleId);
-        Task<int> GetCountAsync(Expression<Func<User, bool>>? predicate = null);
     }
 }

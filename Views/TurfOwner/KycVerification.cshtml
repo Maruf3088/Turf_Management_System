@@ -1,0 +1,113 @@
+@model turf_management_system.Models.ViewModels.KycUploadVM
+@using turf_management_system.Models.Enums
+@{
+    ViewData["Title"] = "KYC Verification";
+    Layout = "_TurfOwnerLayout";
+    var status = ViewBag.Status != null ? (VerificationStatus)ViewBag.Status : VerificationStatus.Pending;
+}
+
+<div class="container-fluid animate-up">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+                <div class="bg-primary bg-gradient p-4 text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="fas fa-shield-check fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">Turf Owner Verification (KYC)</h3>
+                            <p class="mb-0 text-white-50">Upload your legal documents to unlock platform features.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-5">
+                    @if (status == VerificationStatus.Rejected)
+                    {
+                        <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3 mt-1"></i>
+                            <div>
+                                <h5 class="alert-heading fw-bold">Verification Rejected</h5>
+                                <p class="mb-0">@ViewBag.Comments</p>
+                                <hr>
+                                <p class="mb-0 small">Please review the comments above and re-submit your documents.</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="alert bg-primary-subtle border-0 rounded-3 mb-5 p-4">
+                        <h5 class="text-primary fw-bold mb-3"><i class="fas fa-info-circle me-2"></i> Document Guidelines</h5>
+                        <ul class="mb-0 text-dark">
+                            <li>All images must be clear, readable, and in focus.</li>
+                            <li>Allowed formats: <strong>JPG, PNG, PDF</strong>.</li>
+                            <li>Maximum file size per document is <strong>5MB</strong>.</li>
+                            <li>Make sure all 4 corners of the documents are visible.</li>
+                        </ul>
+                    </div>
+
+                    <form asp-action="KycVerification" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-4"></div>
+
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="NidFrontImage" class="form-label fw-bold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="NidFrontImage" type="file" class="form-control bg-light" accept=".jpg,.jpeg,.png,.pdf" />
+                                        <span class="input-group-text bg-light"><i class="fas fa-id-card"></i></span>
+                                    </div>
+                                    <span asp-validation-for="NidFrontImage" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="NidBackImage" class="form-label fw-bold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="NidBackImage" type="file" class="form-control bg-light" accept=".jpg,.jpeg,.png,.pdf" />
+                                        <span class="input-group-text bg-light"><i class="fas fa-id-card"></i></span>
+                                    </div>
+                                    <span asp-validation-for="NidBackImage" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="UtilityBillImage" class="form-label fw-bold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="UtilityBillImage" type="file" class="form-control bg-light" accept=".jpg,.jpeg,.png,.pdf" />
+                                        <span class="input-group-text bg-light"><i class="fas fa-file-invoice"></i></span>
+                                    </div>
+                                    <span asp-validation-for="UtilityBillImage" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="TradeLicenseImage" class="form-label fw-bold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="TradeLicenseImage" type="file" class="form-control bg-light" accept=".jpg,.jpeg,.png,.pdf" />
+                                        <span class="input-group-text bg-light"><i class="fas fa-file-contract"></i></span>
+                                    </div>
+                                    <span asp-validation-for="TradeLicenseImage" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 d-flex justify-content-end">
+                            <a asp-action="Dashboard" class="btn btn-light px-4 py-2 me-3 fw-bold">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                                Submit for Verification <i class="fas fa-paper-plane ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,109 @@
+@model IEnumerable<turf_management_system.Models.Domain.Turf>
+@{
+    ViewData["Title"] = "Browse Turfs";
+}
+
+<div class="browse-hero py-5 mb-5" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);">
+    <div class="container text-white text-center">
+        <h1 class="display-4 fw-bold mb-2">Find Your Perfect Turf</h1>
+        <p class="lead opacity-75 mb-4">Search from hundreds of verified turfs across Bangladesh</p>
+        <form method="get" class="row g-2 justify-content-center">
+            <div class="col-md-3">
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-lg border-0 shadow" placeholder="Search turf name...">
+            </div>
+            <div class="col-md-2">
+                <select name="city" class="form-select form-select-lg border-0 shadow">
+                    <option value="">All Cities</option>
+                    @foreach (var city in (IEnumerable<string>)ViewBag.Cities)
+                    {
+                        if ((string?)ViewBag.SelectedCity == city)
+                        { <option value="@city" selected>@city</option> }
+                        else
+                        { <option value="@city">@city</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="sportType" class="form-select form-select-lg border-0 shadow">
+                    <option value="">All Sports</option>
+                    @foreach (var sport in (IEnumerable<string>)ViewBag.SportTypes)
+                    {
+                        if ((string?)ViewBag.SelectedSport == sport)
+                        { <option value="@sport" selected>@sport</option> }
+                        else
+                        { <option value="@sport">@sport</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success btn-lg px-4 shadow fw-bold">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No turfs found matching your criteria.</h4>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var turf in Model)
+            {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift">
+                        <div class="position-relative" style="height: 200px; background: linear-gradient(135deg,#1a472a,#2d6a4f);">
+                            @{
+                                var mainImg = turf.Images?.FirstOrDefault(i => i.IsMain);
+                            }
+                            @if (mainImg != null)
+                            {
+                                <img src="@mainImg.ImageUrl" class="w-100 h-100" style="object-fit:cover;" alt="@turf.Name">
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center h-100 text-white">
+                                    <i class="fas fa-football-ball fa-3x opacity-50"></i>
+                                </div>
+                            }
+                            <span class="position-absolute top-0 end-0 m-2 badge bg-success fs-6">
+                                ৳@turf.PricePerHour/hr
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start justify-content-between mb-2">
+                                <h5 class="fw-bold mb-0">@turf.Name</h5>
+                                <span class="badge bg-info text-dark">@turf.SportType</span>
+                            </div>
+                            <p class="text-muted small mb-3">
+                                <i class="fas fa-map-marker-alt me-1 text-danger"></i>@turf.Location, @turf.City
+                            </p>
+                            @if (!string.IsNullOrEmpty(turf.TurfSize))
+                            {
+                                <p class="text-muted small mb-3">
+                                    <i class="fas fa-users me-1"></i>@turf.TurfSize
+                                </p>
+                            }
+                            <a asp-controller="Booking" asp-action="SelectSlot" asp-route-turfId="@turf.Id"
+                               class="btn btn-success w-100 rounded-3 fw-bold">
+                                <i class="fas fa-calendar-check me-2"></i>Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+.hover-lift { transition: transform .2s, box-shadow .2s; }
+.hover-lift:hover { transform: translateY(-6px); box-shadow: 0 16px 32px rgba(0,0,0,.12) !important; }
+</style>

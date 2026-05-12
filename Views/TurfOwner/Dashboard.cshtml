@@ -4,86 +4,217 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="mb-4">
-    <h2 class="fw-bold">Welcome back, @Model.FullName!</h2>
-    <p class="text-muted">Here's what's happening with your turfs today.</p>
-</div>
+<div class="container-fluid py-4">
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <div class="premium-hero p-5 rounded-4 shadow-sm position-relative overflow-hidden mb-4">
+                <div class="position-relative z-index-1">
+                    <span class="badge bg-white text-dark px-3 py-2 rounded-pill mb-3 shadow-sm fw-bold">
+                        <i class="fas fa-crown text-warning me-2"></i> Turf Owner Portal
+                    </span>
+                    <h1 class="display-5 fw-bold text-white mb-2">Welcome back, @Model.FullName!</h1>
+                    <p class="lead text-white-50 mb-0">Your turf business at a glance. Manage your empire with ease.</p>
+                </div>
+                <div class="hero-decoration"></div>
+            </div>
+        </div>
+    </div>
 
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #1a472a !important;">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-light p-3 me-3">
-                    <i class="fas fa-map-marker-alt fa-2x" style="color: #1a472a;"></i>
-                </div>
-                <div>
-                    <h6 class="text-muted mb-0">My Turfs</h6>
-                    <h3 class="fw-bold mb-0">@Model.MyTurfs</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #f4a300 !important;">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-light p-3 me-3">
-                    <i class="fas fa-calendar-day fa-2x" style="color: #f4a300;"></i>
-                </div>
-                <div>
-                    <h6 class="text-muted mb-0">Today's Bookings</h6>
-                    <h3 class="fw-bold mb-0">@Model.TodaysBookings</h3>
+    @if (Model.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Pending || Model.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Rejected)
+    {
+        <div class="row mb-4 animate__animated animate__fadeInUp">
+            <div class="col-12">
+                <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1"><i class="fas fa-exclamation-circle text-warning me-2"></i> KYC Verification Required</h5>
+                        <p class="mb-0 text-dark">You cannot add turfs or receive bookings until your identity and business are verified.</p>
+                    </div>
+                    <a asp-controller="TurfOwner" asp-action="KycVerification" class="btn btn-warning fw-bold px-4 rounded-pill">Complete KYC Now</a>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid #0d6efd !important;">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-light p-3 me-3">
-                    <i class="fas fa-history fa-2x" style="color: #0d6efd;"></i>
-                </div>
-                <div>
-                    <h6 class="text-muted mb-0">Total Bookings</h6>
-                    <h3 class="fw-bold mb-0">@Model.TotalBookings</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 p-3" style="border-left: 5px solid @(Model.IsActive ? "#198754" : "#dc3545") !important;">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-light p-3 me-3">
-                    <i class="fas @(Model.IsActive ? "fa-check-circle" : "fa-times-circle") fa-2x" style="color: @(Model.IsActive ? "#198754" : "#dc3545");"></i>
-                </div>
-                <div>
-                    <h6 class="text-muted mb-0">My Status</h6>
-                    <h3 class="fw-bold mb-0 @(Model.IsActive ? "text-success" : "text-danger")">@(Model.IsActive ? "Active" : "Inactive")</h3>
+    }
+    else if (Model.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Submitted)
+    {
+        <div class="row mb-4 animate__animated animate__fadeInUp">
+            <div class="col-12">
+                <div class="alert bg-primary-subtle border-0 shadow-sm rounded-4 p-4 d-flex align-items-center">
+                    <i class="fas fa-clock text-primary fa-2x me-3"></i>
+                    <div>
+                        <h5 class="fw-bold text-primary mb-1">Documents Under Review</h5>
+                        <p class="mb-0 text-dark">Your KYC documents have been submitted and are pending admin approval. We will notify you once verified.</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    }
 
-<div class="card border-0 shadow-sm p-5 text-center">
-    <div class="mb-4">
-        <div class="bg-light d-inline-block rounded-circle p-4 mb-3">
-            <i class="fas fa-tools fa-3x text-muted"></i>
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card h-100 p-4 rounded-4 border-0 shadow-sm bg-white hover-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="stats-icon bg-success-light text-success">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <span class="text-success small fw-bold">+12% <i class="fas fa-arrow-up"></i></span>
+                </div>
+                <h6 class="text-muted text-uppercase small ls-1 fw-bold">My Turfs</h6>
+                <h2 class="fw-extrabold mb-0">@Model.MyTurfs</h2>
+            </div>
         </div>
-        <h3 class="fw-bold">Turf Management Features</h3>
-        <p class="text-muted mx-auto" style="max-width: 500px;">
-            We are working hard to bring you the best tools to manage your turfs, set availability, and track revenue.
-        </p>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card h-100 p-4 rounded-4 border-0 shadow-sm bg-white hover-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="stats-icon bg-warning-light text-warning">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <span class="text-warning small fw-bold">Today</span>
+                </div>
+                <h6 class="text-muted text-uppercase small ls-1 fw-bold">Today's Bookings</h6>
+                <h2 class="fw-extrabold mb-0">@Model.TodaysBookings</h2>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card h-100 p-4 rounded-4 border-0 shadow-sm bg-white hover-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="stats-icon bg-primary-light text-primary">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <span class="text-primary small fw-bold">Lifetime</span>
+                </div>
+                <h6 class="text-muted text-uppercase small ls-1 fw-bold">Total Bookings</h6>
+                <h2 class="fw-extrabold mb-0">@Model.TotalBookings</h2>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card h-100 p-4 rounded-4 border-0 shadow-sm bg-white hover-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="stats-icon @(Model.IsActive ? "bg-info-light text-info" : "bg-danger-light text-danger")">
+                        <i class="fas @(Model.IsActive ? "fa-shield-alt" : "fa-exclamation-triangle")"></i>
+                    </div>
+                    <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger") rounded-pill">Status</span>
+                </div>
+                <h6 class="text-muted text-uppercase small ls-1 fw-bold">Account Status</h6>
+                <h2 class="fw-extrabold mb-0 @(Model.IsActive ? "text-success" : "text-danger")">@(Model.IsActive ? "Active" : "Pending")</h2>
+            </div>
+        </div>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="bg-light p-4 rounded-3 border border-dashed" style="border: 2px dashed #dee2e6 !important;">
-                <h5 class="fw-bold mb-3"><i class="fas fa-rocket me-2 text-warning"></i> Coming Soon</h5>
-                <ul class="list-unstyled text-start d-inline-block mx-auto">
-                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Real-time Availability Calendar</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Price Management per Slot</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Revenue Analytics & Reports</li>
-                    <li><i class="fas fa-check-circle text-success me-2"></i> Customer Chat & Notifications</li>
-                </ul>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3 border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">Recent Booking Requests</h5>
+                        <a asp-controller="TurfOwnerBooking" asp-action="Bookings" class="btn btn-sm btn-light rounded-pill px-3">View All</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentBookings == null || !Model.RecentBookings.Any())
+                    {
+                        <div class="p-5 text-center">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                                <i class="fas fa-calendar-alt fa-2x text-muted"></i>
+                            </div>
+                            <h5 class="fw-bold">No Bookings Yet</h5>
+                            <p class="text-muted mx-auto mb-4" style="max-width: 300px;">
+                                Your recent bookings will appear here once customers start reserving your turfs.
+                            </p>
+                            @if (Model.MyTurfs == 0)
+                            {
+                                <a asp-action="Create" class="btn btn-success rounded-pill px-4 shadow-sm">
+                                    <i class="fas fa-plus me-2"></i> Add Your First Turf
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-uppercase text-muted">
+                                        <th class="ps-4">Booking</th>
+                                        <th>Customer</th>
+                                        <th>Schedule</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var booking in Model.RecentBookings)
+                                    {
+                                        var statusBadge = booking.Status switch
+                                        {
+                                            turf_management_system.Models.Domain.BookingStatus.Confirmed => "bg-success",
+                                            turf_management_system.Models.Domain.BookingStatus.PendingPayment => "bg-warning",
+                                            turf_management_system.Models.Domain.BookingStatus.Cancelled => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="fw-bold">@booking.Turf?.Name</div>
+                                                <small class="text-muted">#@booking.Id.ToString()[..8].ToUpper()</small>
+                                            </td>
+                                            <td>@booking.User?.FullName</td>
+                                            <td>
+                                                <div class="small fw-bold">@booking.BookingDate.ToString("dd MMM")</div>
+                                                <div class="small text-muted">@booking.StartTime.ToString(@"hh\:mm")</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge @statusBadge rounded-pill">@booking.Status</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <a asp-controller="Booking" asp-action="Confirmation" asp-route-bookingId="@booking.Id" class="btn btn-sm btn-outline-primary rounded-pill">Details</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-dark text-white p-4 h-100 position-relative overflow-hidden">
+                <div class="position-relative z-index-1">
+                    <h5 class="fw-bold mb-4">Feature Roadmap</h5>
+                    <div class="roadmap-item mb-3 p-3 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning rounded-circle p-2 me-3">
+                                <i class="fas fa-bolt text-dark"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Live Availability</h6>
+                                <small class="text-white-50">Real-time slot tracking</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="roadmap-item mb-3 p-3 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded-circle p-2 me-3">
+                                <i class="fas fa-dollar-sign text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Dynamic Pricing</h6>
+                                <small class="text-white-50">Weekend & Peak rates</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="roadmap-item p-3 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success rounded-circle p-2 me-3">
+                                <i class="fas fa-comments text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Customer Chat</h6>
+                                <small class="text-white-50">Direct communication</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="roadmap-decoration"></div>
             </div>
         </div>
     </div>
@@ -91,8 +222,70 @@
 
 @section Styles {
     <style>
-        .border-dashed {
-            border-style: dashed !important;
+        :root {
+            --success-light: #e8f5e9;
+            --warning-light: #fff3e0;
+            --primary-light: #e3f2fd;
+            --info-light: #e0f7fa;
+            --danger-light: #ffebee;
         }
+
+        .premium-hero {
+            background: linear-gradient(135deg, #1a472a 0%, #2e7d32 100%);
+            border: none;
+        }
+
+        .hero-decoration {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .stats-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+        .stats-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .bg-success-light { background-color: var(--success-light); }
+        .bg-warning-light { background-color: var(--warning-light); }
+        .bg-primary-light { background-color: var(--primary-light); }
+        .bg-info-light { background-color: var(--info-light); }
+        .bg-danger-light { background-color: var(--danger-light); }
+
+        .fw-extrabold { font-weight: 800; }
+        .ls-1 { letter-spacing: 1px; }
+
+        .roadmap-decoration {
+            position: absolute;
+            bottom: -20px;
+            right: -20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 30px;
+            transform: rotate(15deg);
+        }
+        
+        .z-index-1 { z-index: 1; }
     </style>
 }
+

@@ -1,0 +1,221 @@
+@model (turf_management_system.Models.Domain.Turf Turf, IEnumerable<turf_management_system.Models.ViewModels.SlotAvailabilityVM> Slots)
+@using turf_management_system.Models.ViewModels
+@{
+    ViewData["Title"] = $"Select Slot — {Model.Turf.Name}";
+    var bookingDate = (DateOnly)ViewBag.BookingDate;
+    var config = ViewBag.Config as turf_management_system.Models.Domain.TurfBookingConfig;
+    var maxDays = config?.MaxAdvanceBookingDays ?? 30;
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Browse" class="btn btn-outline-secondary me-3 rounded-pill">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold mb-0">@Model.Turf.Name</h2>
+            <p class="text-muted mb-0"><i class="fas fa-map-marker-alt me-1 text-danger"></i>@Model.Turf.Location, @Model.Turf.City</p>
+        </div>
+        <div class="ms-auto text-end">
+            <h4 class="fw-bold text-success mb-0">৳@Model.Turf.PricePerHour<small class="text-muted fs-6">/hr</small></h4>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Date Selector -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 p-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-auto">
+                <label class="fw-bold mb-1 d-block">Select Date</label>
+                <input type="date" id="datePicker"
+                       class="form-control form-control-lg"
+                       value="@bookingDate.ToString("yyyy-MM-dd")"
+                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                       max="@DateTime.Today.AddDays(maxDays).ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-auto">
+                <div class="d-flex gap-3 mt-3">
+                    <span class="badge-slot-legend available">Available</span>
+                    <span class="badge-slot-legend locked">Locked (5 min)</span>
+                    <span class="badge-slot-legend booked">Booked</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slots Grid -->
+    <div id="slotsContainer">
+        @await Html.PartialAsync("_SlotGrid", Model.Slots)
+    </div>
+</div>
+
+<!-- Booking Confirmation Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Confirm Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="bg-light rounded-3 p-3 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Turf</span>
+                        <strong>@Model.Turf.Name</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Date</span>
+                        <strong id="modalDate"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Time</span>
+                        <strong id="modalTime"></strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">Total Amount</span>
+                        <span class="fw-bold text-success fs-5" id="modalAmount"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Special Request (optional)</label>
+                    <textarea id="specialRequest" class="form-control" rows="2" placeholder="e.g. Need extra lighting..."></textarea>
+                </div>
+                <div class="alert alert-warning small mb-0">
+                    <i class="fas fa-clock me-1"></i>You have <strong>5 minutes</strong> to complete payment after locking the slot.
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                <form id="lockSlotForm" asp-controller="Booking" asp-action="LockSlot" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="turfId" value="@Model.Turf.Id">
+                    <input type="hidden" name="slotId" id="hiddenSlotId">
+                    <input type="hidden" name="bookingDate" id="hiddenBookingDate">
+                    <input type="hidden" name="specialRequest" id="hiddenSpecialRequest">
+                    <button type="submit" class="btn btn-success rounded-3 px-4 fw-bold">
+                        <i class="fas fa-lock me-2"></i>Lock Slot & Pay
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.slot-card { cursor: pointer; transition: all .2s; border: 2px solid transparent; }
+.slot-card:hover.available { border-color: #198754; transform: translateY(-2px); }
+.slot-card.available { background: #f0fff4; }
+.slot-card.locked { background: #fff8e1; cursor: not-allowed; opacity:.8; }
+.slot-card.booked { background: #fce4e4; cursor: not-allowed; opacity:.8; }
+.slot-card.unavailable { background: #f5f5f5; cursor: not-allowed; opacity:.5; }
+.badge-slot-legend { padding: 4px 10px; border-radius: 20px; font-size: .8rem; font-weight:600; }
+.badge-slot-legend.available { background:#d1fae5; color:#065f46; }
+.badge-slot-legend.locked { background:#fef9c3; color:#713f12; }
+.badge-slot-legend.booked { background:#fee2e2; color:#991b1b; }
+</style>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.7/signalr.min.js"></script>
+    <script>
+        const turfId = '@Model.Turf.Id';
+        let currentDate = '@bookingDate.ToString("yyyy-MM-dd")';
+
+        // ── SignalR Connection ─────────────────────────────────────────────────
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/booking")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("SlotLocked", (slotId, lockedUntil) => {
+            const card = document.querySelector(`[data-slot-id="${slotId}"]`);
+            if (card) {
+                card.className = 'slot-card locked card border-0 shadow-sm rounded-3 p-3 text-center';
+                card.querySelector('.slot-status').textContent = '⏳ Locked';
+                card.querySelector('.slot-status').className = 'slot-status text-warning small fw-bold';
+                card.onclick = null;
+            }
+        });
+
+        connection.on("SlotBooked", (slotId) => {
+            const card = document.querySelector(`[data-slot-id="${slotId}"]`);
+            if (card) {
+                card.className = 'slot-card booked card border-0 shadow-sm rounded-3 p-3 text-center';
+                card.querySelector('.slot-status').textContent = '❌ Booked';
+                card.onclick = null;
+            }
+        });
+
+        connection.on("SlotReleased", (slotId) => {
+            refreshSlots();
+        });
+
+        connection.start().then(() => {
+            connection.invoke("JoinTurfDateGroup", turfId, currentDate);
+        });
+
+        // ── Date Change ───────────────────────────────────────────────────────
+        document.getElementById('datePicker').addEventListener('change', function() {
+            const newDate = this.value;
+            connection.invoke("LeaveTurfDateGroup", turfId, currentDate);
+            currentDate = newDate;
+            refreshSlots(newDate);
+            connection.invoke("JoinTurfDateGroup", turfId, currentDate);
+        });
+
+        function refreshSlots(date) {
+            const d = date || currentDate;
+            fetch(`/api/booking/slots/${turfId}?date=${d}`)
+                .then(r => r.json())
+                .then(slots => {
+                    renderSlots(slots);
+                });
+        }
+
+        function renderSlots(slots) {
+            const container = document.getElementById('slotsContainer');
+            if (!slots || slots.length === 0) {
+                container.innerHTML = '<div class="text-center py-5 text-muted"><i class="fas fa-calendar-times fa-3x mb-3"></i><h5>No slots available on this day.</h5></div>';
+                return;
+            }
+            let html = '<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">';
+            slots.forEach(slot => {
+                const statusClass = ['available','locked','booked','unavailable'][slot.status];
+                const statusIcon = ['✅ Available', '⏳ Locked', '❌ Booked', '🚫 Unavailable'][slot.status];
+                const statusColor = ['text-success','text-warning','text-danger','text-muted'][slot.status];
+                const clickable = slot.status === 0 ? `onclick="selectSlot('${slot.slotId}','${slot.startTimeDisplay}','${slot.endTimeDisplay}',${slot.price})"` : '';
+                html += `<div class="col">
+                    <div class="slot-card ${statusClass} card border-0 shadow-sm rounded-3 p-3 text-center" data-slot-id="${slot.slotId}" ${clickable}>
+                        <div class="fw-bold">${slot.startTimeDisplay} – ${slot.endTimeDisplay}</div>
+                        <div class="text-success fw-bold mt-1">৳${slot.price.toFixed(0)}</div>
+                        <div class="slot-status ${statusColor} small fw-bold mt-1">${statusIcon}</div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ── Slot Selection ────────────────────────────────────────────────────
+        function selectSlot(slotId, start, end, price) {
+            document.getElementById('hiddenSlotId').value = slotId;
+            document.getElementById('hiddenBookingDate').value = currentDate;
+            document.getElementById('modalDate').textContent = new Date(currentDate + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+            document.getElementById('modalTime').textContent = `${start} – ${end}`;
+            document.getElementById('modalAmount').textContent = `৳${price.toFixed(0)}`;
+            document.getElementById('lockSlotForm').onsubmit = function() {
+                document.getElementById('hiddenSpecialRequest').value = document.getElementById('specialRequest').value;
+            };
+            new bootstrap.Modal(document.getElementById('bookingModal')).show();
+        }
+    </script>
+}

@@ -34,11 +34,18 @@ namespace turf_management_system.Models.Domain
         [StringLength(100)]
         public string? TurfSize { get; set; } // e.g. 5v5, 7v7
 
-        public string? Amenities { get; set; } // Comma-separated or JSON
+        public string? Amenities { get; set; }
+
+        [StringLength(50)]
+        public string? IndoorOutdoor { get; set; }
+
+        [StringLength(20)]
+        public string? ContactNumber { get; set; }
 
         public bool IsApproved { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; } = false;
+        public bool IsDraft { get; set; } = true;
 
         [Required]
         public int OwnerId { get; set; }

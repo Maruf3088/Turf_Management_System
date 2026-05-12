@@ -131,6 +131,9 @@
                 <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "TurfOwners" ? "active" : "")">
                     <a asp-controller="Admin" asp-action="TurfOwners"><i class="fas fa-user-tie"></i> Turf Owners</a>
                 </li>
+                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "KycQueue" ? "active" : "")">
+                    <a asp-controller="Admin" asp-action="KycQueue"><i class="fas fa-shield-alt"></i> KYC Queue <span class="badge bg-danger ms-2">New</span></a>
+                </li>
                 <li>
                     <a href="#"><i class="fas fa-calendar-alt"></i> Bookings</a>
                 </li>
@@ -152,6 +155,49 @@
                     </button>
                     <div class="ms-auto d-flex align-items-center">
                         <span class="me-3">Welcome, <strong>@User.Identity?.Name</strong></span>
+                        
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <div class="dropdown me-3">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-random"></i> Test Role
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li><h6 class="dropdown-header">Quick Login (Demo)</h6></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="SuperAdmin" />
+                                            <button class="dropdown-item" type="submit">Super Admin</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="Admin" />
+                                            <button class="dropdown-item" type="submit">General Admin</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="TurfOwner" />
+                                            <button class="dropdown-item" type="submit">Turf Owner</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="TurfManager" />
+                                            <button class="dropdown-item" type="submit">Turf Manager</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="User" />
+                                            <button class="dropdown-item" type="submit">Customer (User)</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+
                         <form asp-controller="Account" asp-action="Logout" method="post">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
                         </form>

@@ -200,28 +200,35 @@
                 return;
             }
 
-            tbody.innerHTML = currentSlots.map(slot => \`
+            tbody.innerHTML = currentSlots.map(slot => {
+                const dayOfWeek = slot.dayOfWeek !== undefined ? slot.dayOfWeek : slot.DayOfWeek;
+                const startTime = slot.startTime || slot.StartTime;
+                const endTime = slot.endTime || slot.EndTime;
+                const isAvailable = slot.isAvailable !== undefined ? slot.isAvailable : slot.IsAvailable;
+                const slotId = slot.id || slot.Id;
+
+                return `
                 <tr>
-                    <td class="ps-4 fw-medium">\${getDayName(slot.dayOfWeek)}</td>
-                    <td>\${formatTime(slot.startTime)} - \${formatTime(slot.endTime)}</td>
+                    <td class="ps-4 fw-medium">${getDayName(dayOfWeek)}</td>
+                    <td>${formatTime(startTime)} - ${formatTime(endTime)}</td>
                     <td>
-                        <span class="status-pill \${slot.isAvailable ? 'status-available' : 'status-unavailable'}">
-                            \${slot.isAvailable ? 'Available' : 'Unavailable'}
+                        <span class="status-pill ${isAvailable ? 'status-available' : 'status-unavailable'}">
+                            ${isAvailable ? 'Available' : 'Unavailable'}
                         </span>
                     </td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSlot('\${slot.id}')">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSlot('${slotId}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>
-            \`).join('');
+            `;}).join('');
         }
 
         function renderCalendar() {
             // Clear all day columns
             for (let i = 0; i < 7; i++) {
-                document.getElementById(\`day-col-\${i}\`).innerHTML = '';
+                document.getElementById(`day-col-${i}`).innerHTML = '';
             }
 
             currentSlots.forEach(slot => {

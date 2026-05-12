@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using turf_management_system.Models.Enums;
+
 namespace turf_management_system.Models.Domain
 {
     public class TurfOwner
@@ -19,7 +21,27 @@ namespace turf_management_system.Models.Domain
         [StringLength(20)]
         public string? ContactNumber { get; set; }
 
-        public bool IsVerified { get; set; } = false;
+        public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Pending;
+
+        [StringLength(50)]
+        public string? NationalIdNumber { get; set; }
+
+        [StringLength(255)]
+        public string? NidFrontImagePath { get; set; }
+
+        [StringLength(255)]
+        public string? NidBackImagePath { get; set; }
+
+        [StringLength(255)]
+        public string? TradeLicenseImagePath { get; set; }
+
+        [StringLength(255)]
+        public string? UtilityBillImagePath { get; set; }
+
+        [StringLength(1000)]
+        public string? AdminComments { get; set; }
+
+        public DateTime? SubmittedAt { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

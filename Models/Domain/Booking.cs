@@ -5,24 +5,27 @@ namespace turf_management_system.Models.Domain
 {
     public enum BookingStatus
     {
-        Pending = 0,
-        Confirmed = 1,
-        Rejected = 2,
-        Cancelled = 3,
-        Completed = 4
+        PendingPayment = 0,  // Slot locked, awaiting payment submission
+        SlotLocked = 1,      // Legacy/alias for PendingPayment
+        Confirmed = 2,       // Payment verified, booking active
+        Cancelled = 3,       // Cancelled by user or owner
+        Expired = 4,         // Lock expired before payment was made
+        Refunded = 5,        // Refund processed after cancellation
+        Completed = 6        // Booking date/time has passed
     }
 
     public enum PaymentStatus
     {
         Unpaid = 0,
-        Paid = 1,
-        Refunded = 2
+        PartiallyPaid = 1,   // Deposit paid, balance pending at venue
+        FullyPaid = 2,
+        Refunded = 3
     }
 
     public class Booking
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         public Guid TurfId { get; set; }
@@ -50,8 +53,11 @@ namespace turf_management_system.Models.Domain
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AmountPaid { get; set; } = 0;
+
         [Required]
-        public BookingStatus Status { get; set; } = BookingStatus.Pending;
+        public BookingStatus Status { get; set; } = BookingStatus.PendingPayment;
 
         [Required]
         public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
@@ -61,8 +67,13 @@ namespace turf_management_system.Models.Domain
 
         public string? CancellationReason { get; set; }
 
+        // The SlotLock ID that reserved this slot
+        public Guid? SlotLockId { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public DateTime? ConfirmedAt { get; set; }
+        public DateTime? CancelledAt { get; set; }
 
         // Navigation properties
         [ForeignKey("TurfId")]
@@ -73,5 +84,8 @@ namespace turf_management_system.Models.Domain
 
         [ForeignKey("SlotId")]
         public TurfSlot Slot { get; set; } = null!;
+
+        // Payments for this booking
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

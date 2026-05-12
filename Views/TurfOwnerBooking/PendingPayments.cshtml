@@ -1,0 +1,128 @@
+@model IEnumerable<turf_management_system.Models.Domain.Payment>
+@using turf_management_system.Models.Domain
+@{
+    ViewData["Title"] = "Pending Payments";
+    Layout = "_TurfOwnerLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-money-check-alt me-2 text-success"></i>Pending Payment Verifications
+        </h4>
+        <span class="badge bg-warning text-dark fs-6">@Model.Count() pending</span>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success rounded-3 shadow-sm border-0"><i class="fas fa-check me-2"></i>@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-3 shadow-sm border-0"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+            <div class="py-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h5 class="text-muted">No pending payments. You're all caught up!</h5>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var payment in Model)
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4 hover-lift">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="fw-bold mb-0 me-2">@payment.User?.FullName</h6>
+                                        <span class="badge bg-@(payment.PaymentMethod == PaymentMethod.Bkash ? "danger" : payment.PaymentMethod == PaymentMethod.Nagad ? "warning" : "info")">
+                                            @payment.PaymentMethod
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mb-1">
+                                        <i class="fas fa-receipt me-1"></i>TX: <strong>@payment.TransactionId</strong>
+                                    </div>
+                                    <div class="text-muted small mb-1">
+                                        <i class="fas fa-calendar me-1"></i>@payment.Booking?.BookingDate.ToString("dd MMM yyyy")
+                                        &nbsp;&nbsp;
+                                        <i class="fas fa-clock me-1"></i>@payment.Booking?.StartTime.ToString(@"hh\:mm") – @payment.Booking?.EndTime.ToString(@"hh\:mm")
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>@payment.Booking?.Turf?.Name
+                                        &nbsp;·&nbsp;
+                                        Submitted: @payment.SubmittedAt.ToLocalTime().ToString("dd MMM HH:mm")
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="text-success fw-bold fs-4">৳@payment.Amount.ToString("F2")</div>
+                                    <small class="text-muted">@payment.PaymentType Payment</small>
+                                </div>
+                                <div class="col-md-3 text-md-end mt-3 mt-md-0">
+                                    <a asp-action="VerifyPayment" asp-route-paymentId="@payment.Id" class="btn btn-light btn-sm rounded-pill px-3 me-1">
+                                        <i class="fas fa-eye me-1"></i>Details
+                                    </a>
+                                    
+                                    <form asp-action="ConfirmPayment" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Confirm this payment?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="paymentId" value="@payment.Id">
+                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 me-1">
+                                            <i class="fas fa-check me-1"></i>Verify
+                                        </button>
+                                    </form>
+
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                            data-bs-toggle="modal" data-bs-target="#rejectModal"
+                                            onclick="setRejectPayment('@payment.Id')">
+                                        <i class="fas fa-times me-1"></i>Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Reject Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="RejectPayment" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="paymentId" id="rejectPaymentId">
+                <div class="modal-body">
+                    <label class="form-label fw-bold">Reason for Rejection <span class="text-danger">*</span></label>
+                    <textarea name="reason" class="form-control rounded-3" rows="3" required
+                              placeholder="e.g. Invalid transaction ID, amount mismatch..."></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Reject Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function setRejectPayment(id) {
+    document.getElementById('rejectPaymentId').value = id;
+}
+</script>
+}

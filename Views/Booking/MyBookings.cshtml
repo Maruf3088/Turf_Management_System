@@ -1,0 +1,111 @@
+@model IEnumerable<turf_management_system.Models.Domain.Booking>
+@using turf_management_system.Models.Domain
+@{
+    ViewData["Title"] = "My Bookings";
+    var selectedStatus = ViewBag.SelectedStatus as BookingStatus?;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">My Bookings</h2>
+        <a asp-action="Browse" class="btn btn-success rounded-3">
+            <i class="fas fa-plus me-2"></i>New Booking
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success rounded-3"><i class="fas fa-check me-2"></i>@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-3"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]</div>
+    }
+
+    <!-- Status Filter -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a asp-action="MyBookings" class="btn btn-sm @(selectedStatus == null ? "btn-dark" : "btn-outline-secondary") rounded-pill">All</a>
+        @foreach (var status in Enum.GetValues<BookingStatus>())
+        {
+            <a asp-action="MyBookings" asp-route-status="@((int)status)"
+               class="btn btn-sm @(selectedStatus == status ? "btn-dark" : "btn-outline-secondary") rounded-pill">
+                @status
+            </a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">No bookings found.</h5>
+            <a asp-action="Browse" class="btn btn-success mt-3">Browse Turfs</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var booking in Model)
+            {
+                var statusColor = booking.Status switch
+                {
+                    BookingStatus.Confirmed => "success",
+                    BookingStatus.PendingPayment => "warning",
+                    BookingStatus.Cancelled => "danger",
+                    BookingStatus.Expired => "secondary",
+                    BookingStatus.Completed => "primary",
+                    BookingStatus.Refunded => "info",
+                    _ => "secondary"
+                };
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="fw-bold mb-0 me-3">@booking.Turf?.Name</h5>
+                                        <span class="badge bg-@statusColor">@booking.Status</span>
+                                    </div>
+                                    <p class="text-muted mb-1">
+                                        <i class="fas fa-calendar me-1"></i>@booking.BookingDate.ToString("dd MMM yyyy")
+                                        &nbsp;
+                                        <i class="fas fa-clock ms-2 me-1"></i>@booking.StartTime.ToString(@"hh\:mm") – @booking.EndTime.ToString(@"hh\:mm")
+                                    </p>
+                                    <p class="text-muted mb-0">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>@booking.Turf?.City
+                                        &nbsp;·&nbsp;
+                                        <span class="text-success fw-bold">৳@booking.TotalAmount.ToString("F2")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                    @if (booking.Status == BookingStatus.PendingPayment)
+                                    {
+                                        <a asp-action="Payment" asp-route-bookingId="@booking.Id"
+                                           class="btn btn-warning btn-sm rounded-3 me-2">
+                                            <i class="fas fa-credit-card me-1"></i>Pay Now
+                                        </a>
+                                    }
+                                    <a asp-action="Confirmation" asp-route-bookingId="@booking.Id"
+                                       class="btn btn-outline-secondary btn-sm rounded-3 me-2">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                    @if (booking.Status == BookingStatus.Confirmed || booking.Status == BookingStatus.PendingPayment)
+                                    {
+                                        <form asp-action="Cancel" method="post" style="display:inline;"
+                                              onsubmit="return confirm('Are you sure you want to cancel this booking?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookingId" value="@booking.Id">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-3">
+                                                <i class="fas fa-times me-1"></i>Cancel
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

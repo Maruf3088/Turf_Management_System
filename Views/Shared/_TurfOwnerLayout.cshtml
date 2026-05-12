@@ -155,11 +155,22 @@
                 <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
                     <a asp-controller="TurfOwner" asp-action="Dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
                 </li>
-                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "MyTurfs" ? "active" : "")">
-                    <a asp-controller="TurfOwner" asp-action="MyTurfs"><i class="fas fa-map-marker-alt"></i> My Turfs</a>
+                
+                @if (User.IsInRole("TurfOwner") || User.IsInRole("TurfManager"))
+                {
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "MyTurfs" ? "active" : "")">
+                        <a asp-controller="TurfOwner" asp-action="MyTurfs"><i class="fas fa-map-marker-alt"></i> My Turfs</a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")">
+                        <a asp-controller="Staff" asp-action="Index"><i class="fas fa-users-cog"></i> Staff Management</a>
+                    </li>
+                }
+
+                <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "TurfOwnerBooking" && ViewContext.RouteData.Values["action"]?.ToString() == "Bookings" ? "active" : "")">
+                    <a asp-controller="TurfOwnerBooking" asp-action="Bookings"><i class="fas fa-calendar-check"></i> Bookings</a>
                 </li>
-                <li>
-                    <a href="#"><i class="fas fa-calendar-check"></i> Bookings</a>
+                <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "TurfOwnerBooking" && ViewContext.RouteData.Values["action"]?.ToString() == "PendingPayments" ? "active" : "")">
+                    <a asp-controller="TurfOwnerBooking" asp-action="PendingPayments"><i class="fas fa-money-check-alt"></i> Pending Payments</a>
                 </li>
             </ul>
 
@@ -184,7 +195,50 @@
                             <span class="d-block small text-muted">Signed in as</span>
                             <strong class="d-block">@User.Identity?.Name</strong>
                         </div>
-                        <span class="role-badge me-3">TURF OWNER</span>
+                        
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <div class="dropdown me-3">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-random"></i> Test Role
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li><h6 class="dropdown-header">Quick Login (Demo)</h6></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="SuperAdmin" />
+                                            <button class="dropdown-item" type="submit">Super Admin</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="Admin" />
+                                            <button class="dropdown-item" type="submit">General Admin</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="TurfOwner" />
+                                            <button class="dropdown-item" type="submit">Turf Owner</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="TurfManager" />
+                                            <button class="dropdown-item" type="submit">Turf Manager</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="AutoLogin" method="post">
+                                            <input type="hidden" name="role" value="User" />
+                                            <button class="dropdown-item" type="submit">Customer (User)</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+
+                        <span class="role-badge me-3">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
                     </div>
                 </div>
             </nav>

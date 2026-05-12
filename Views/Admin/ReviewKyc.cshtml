@@ -1,0 +1,206 @@
+@model turf_management_system.Models.Domain.TurfOwner
+@{
+    ViewData["Title"] = "Review KYC";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid animate-up">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-0 text-gray-800 fw-bold">Review KYC Documents</h2>
+            <p class="text-muted mb-0">Applicant: @Model.User.FullName</p>
+        </div>
+        <a asp-action="KycQueue" class="btn btn-light border"><i class="fas fa-arrow-left me-2"></i> Back to Queue</a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Applicant Details -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold mb-0">Applicant Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <div class="avatar bg-primary-subtle text-primary fw-bold rounded-circle mx-auto mb-3" style="width: 80px; height: 80px; font-size: 32px; display: flex; align-items: center; justify-content: center;">
+                            @(Model.User.FullName.Substring(0, 1).ToUpper())
+                        </div>
+                        <h5 class="fw-bold mb-1">@Model.User.FullName</h5>
+                        <p class="text-muted mb-0">@Model.User.Email</p>
+                        <p class="text-muted small">@Model.User.PhoneNumber</p>
+                    </div>
+
+                    <hr />
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold ls-1 mb-1">Business Name</small>
+                        <span class="fw-medium">@Model.BusinessName</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold ls-1 mb-1">Business Address</small>
+                        <span>@(Model.BusinessAddress ?? "N/A")</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold ls-1 mb-1">National ID Number</small>
+                        <span class="badge bg-light text-dark border fs-6 p-2 font-monospace">@Model.NationalIdNumber</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold ls-1 mb-1">Submitted At</small>
+                        <span>@Model.SubmittedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold mb-0">Uploaded Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-light text-center h-100">
+                                <h6 class="fw-bold mb-3">NID Front</h6>
+                                @if (!string.IsNullOrEmpty(Model.NidFrontImagePath))
+                                {
+                                    var isPdf = Model.NidFrontImagePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                                    if (isPdf)
+                                    {
+                                        <div class="d-grid gap-2">
+                                            <a href="@Model.NidFrontImagePath" target="_blank" class="btn btn-outline-primary py-4">
+                                                <i class="fas fa-file-pdf fa-3x mb-2"></i><br/>View PDF Document
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Model.NidFrontImagePath" target="_blank">
+                                            <img src="@Model.NidFrontImagePath" class="img-fluid rounded border shadow-sm" alt="NID Front" style="max-height: 300px; width: 100%; object-fit: contain;" />
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted py-4"><i class="fas fa-image fa-3x mb-2 opacity-25"></i><br/>Not provided</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-light text-center h-100">
+                                <h6 class="fw-bold mb-3">NID Back</h6>
+                                @if (!string.IsNullOrEmpty(Model.NidBackImagePath))
+                                {
+                                    var isPdf = Model.NidBackImagePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                                    if (isPdf)
+                                    {
+                                        <div class="d-grid gap-2">
+                                            <a href="@Model.NidBackImagePath" target="_blank" class="btn btn-outline-primary py-4">
+                                                <i class="fas fa-file-pdf fa-3x mb-2"></i><br/>View PDF Document
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Model.NidBackImagePath" target="_blank">
+                                            <img src="@Model.NidBackImagePath" class="img-fluid rounded border shadow-sm" alt="NID Back" style="max-height: 300px; width: 100%; object-fit: contain;" />
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted py-4"><i class="fas fa-image fa-3x mb-2 opacity-25"></i><br/>Not provided</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-light text-center h-100">
+                                <h6 class="fw-bold mb-3">Utility Bill / Address Proof</h6>
+                                @if (!string.IsNullOrEmpty(Model.UtilityBillImagePath))
+                                {
+                                    var isPdf = Model.UtilityBillImagePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                                    if (isPdf)
+                                    {
+                                        <div class="d-grid gap-2">
+                                            <a href="@Model.UtilityBillImagePath" target="_blank" class="btn btn-outline-primary py-4">
+                                                <i class="fas fa-file-pdf fa-3x mb-2"></i><br/>View PDF Document
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Model.UtilityBillImagePath" target="_blank">
+                                            <img src="@Model.UtilityBillImagePath" class="img-fluid rounded border shadow-sm" alt="Utility Bill" style="max-height: 300px; width: 100%; object-fit: contain;" />
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted py-4"><i class="fas fa-image fa-3x mb-2 opacity-25"></i><br/>Not provided</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-light text-center h-100">
+                                <h6 class="fw-bold mb-3">Trade License</h6>
+                                @if (!string.IsNullOrEmpty(Model.TradeLicenseImagePath))
+                                {
+                                    var isPdf = Model.TradeLicenseImagePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                                    if (isPdf)
+                                    {
+                                        <div class="d-grid gap-2">
+                                            <a href="@Model.TradeLicenseImagePath" target="_blank" class="btn btn-outline-primary py-4">
+                                                <i class="fas fa-file-pdf fa-3x mb-2"></i><br/>View PDF Document
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Model.TradeLicenseImagePath" target="_blank">
+                                            <img src="@Model.TradeLicenseImagePath" class="img-fluid rounded border shadow-sm" alt="Trade License" style="max-height: 300px; width: 100%; object-fit: contain;" />
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted py-4"><i class="fas fa-file-alt fa-3x mb-2 opacity-25"></i><br/>Not provided</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Panel -->
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 bg-primary-subtle rounded-4">
+                    <h5 class="fw-bold text-primary mb-3">Decision</h5>
+                    <form asp-action="ProcessKyc" method="post">
+                        <input type="hidden" name="id" value="@Model.UserId" />
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Rejection Reason (If rejecting)</label>
+                            <textarea name="reason" class="form-control border-0 bg-white" rows="3" placeholder="Explain why the documents are being rejected..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" name="approve" value="true" class="btn btn-success btn-lg flex-grow-1 fw-bold">
+                                <i class="fas fa-check-circle me-2"></i> Approve Account
+                            </button>
+                            <button type="submit" name="approve" value="false" class="btn btn-danger btn-lg flex-grow-1 fw-bold">
+                                <i class="fas fa-times-circle me-2"></i> Reject Documents
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -30,13 +30,21 @@
                         <td>@item.User.FullName</td>
                         <td>@item.ContactNumber</td>
                         <td>
-                            @if (item.IsVerified)
+                            @if (item.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Approved)
                             {
-                                <span class="badge bg-primary">Verified</span>
+                                <span class="badge bg-success">Approved</span>
+                            }
+                            else if (item.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Pending)
+                            {
+                                <span class="badge bg-warning">Pending</span>
+                            }
+                            else if (item.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Rejected)
+                            {
+                                <span class="badge bg-danger">Rejected</span>
                             }
                             else
                             {
-                                <span class="badge bg-secondary">Unverified</span>
+                                <span class="badge bg-secondary">@item.VerificationStatus.ToString()</span>
                             }
                         </td>
                         <td>

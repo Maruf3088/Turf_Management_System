@@ -25,7 +25,8 @@ namespace turf_management_system.Controllers
                 return RedirectToAction("Index", "Home");
 
             var roles = await _unitOfWork.Roles.GetAllAsync();
-            ViewBag.Roles = roles.Where(r => r.RoleName != "Admin").ToList();
+            // Show all roles EXCEPT Platform Admins (Level 0 and 1)
+            ViewBag.Roles = roles.Where(r => turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(r.RoleName) >= 2).ToList();
 
             return View();
         }
@@ -36,6 +37,15 @@ namespace turf_management_system.Controllers
         {
             if (ModelState.IsValid)
             {
+                var role = await _unitOfWork.Roles.GetByIdAsync(model.RoleId);
+                if (role == null || turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(role.RoleName) < 2)
+                {
+                    ModelState.AddModelError("RoleId", "Invalid role selection.");
+                    var roles = await _unitOfWork.Roles.GetAllAsync();
+                    ViewBag.Roles = roles.Where(r => turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(r.RoleName) >= 2).ToList();
+                    return View(model);
+                }
+
                 var existingUser = await _unitOfWork.Users.GetByEmailAsync(model.Email);
                 if (existingUser != null)
                 {
@@ -58,7 +68,6 @@ namespace turf_management_system.Controllers
                 await _unitOfWork.CompleteAsync();
 
                 // If TurfOwner, create profile
-                var role = await _unitOfWork.Roles.GetByIdAsync(model.RoleId);
                 if (role?.RoleName == "TurfOwner")
                 {
                     var turfOwner = new TurfOwner
@@ -67,7 +76,8 @@ namespace turf_management_system.Controllers
                         BusinessName = model.BusinessName ?? "My Turf Business",
                         BusinessAddress = model.BusinessAddress,
                         ContactNumber = model.ContactNumber ?? model.PhoneNumber,
-                        IsVerified = false,
+                        VerificationStatus = turf_management_system.Models.Enums.VerificationStatus.Pending,
+                        NationalIdNumber = model.NationalIdNumber,
                         CreatedAt = DateTime.UtcNow
                     };
                     await _unitOfWork.TurfOwners.AddAsync(turfOwner);
@@ -120,6 +130,26 @@ namespace turf_management_system.Controllers
                         new Claim(ClaimTypes.Role, user.Role.RoleName)
                     };
 
+                    // Add Scoped Claims
+                    if (user.Role.RoleName == "TurfOwner")
+                    {
+                        // TurfOwner acts as the owner of their Turfs, so we can use NameIdentifier as OwnerId in queries
+                        claims.Add(new Claim("OwnerId", user.UserId.ToString()));
+                    }
+                    else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(user.Role.RoleName))
+                    {
+                        var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == user.UserId && s.IsActive);
+                        if (staffProfile != null)
+                        {
+                            claims.Add(new Claim("TurfId", staffProfile.TurfId.ToString()));
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("", "Your staff profile is inactive or not assigned to a turf.");
+                            return View(model);
+                        }
+                    }
+
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     
                     var authProperties = new AuthenticationProperties
@@ -133,18 +163,93 @@ namespace turf_management_system.Controllers
                         new ClaimsPrincipal(claimsIdentity),
                         authProperties);
 
-                    if (user.Role.RoleName == "Admin")
+                    // Professional Redirection Logic
+                    var roleName = user.Role.RoleName;
+                    
+                    if (turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(roleName) <= 1)
+                    {
+                        // Platforms Admins (SuperAdmin, Admin, Support, etc.)
                         return RedirectToAction("Dashboard", "Admin");
-                    if (user.Role.RoleName == "TurfOwner")
+                    }
+                    else if (roleName == "TurfOwner" || roleName == "TurfManager")
+                    {
+                        // Turf Management
                         return RedirectToAction("Dashboard", "TurfOwner");
-
-                    return RedirectToAction("Index", "Home");
+                    }
+                    else if (new[] { "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(roleName))
+                    {
+                        // Staff - Should probably have their own dashboard eventually
+                        return RedirectToAction("Dashboard", "TurfOwner");
+                    }
+                    else
+                    {
+                        // Customers/Users
+                        return RedirectToAction("Index", "Home");
+                    }
                 }
 
                 ModelState.AddModelError("", "Invalid email or password.");
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AutoLogin(string role)
+        {
+            var email = role switch
+            {
+                "SuperAdmin" => "superadmin@turf.com",
+                "Admin" => "admin@turf.com",
+                "TurfOwner" => "owner@turf.com",
+                "TurfManager" => "manager@turf.com",
+                "Receptionist" => "receptionist@turf.com",
+                "User" => "user@turf.com",
+                _ => null
+            };
+
+            if (email == null) return RedirectToAction("Login");
+
+            var user = await _unitOfWork.Users.GetByEmailAsync(email);
+            if (user != null)
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Name, user.FullName),
+                    new Claim(ClaimTypes.Role, user.Role.RoleName)
+                };
+
+                if (user.Role.RoleName == "TurfOwner") claims.Add(new Claim("OwnerId", user.UserId.ToString()));
+                else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(user.Role.RoleName))
+                {
+                    var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == user.UserId && s.IsActive);
+                    if (staffProfile != null) claims.Add(new Claim("TurfId", staffProfile.TurfId.ToString()));
+                }
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+                // Professional Redirection Logic
+                var roleName = user.Role.RoleName;
+
+                if (turf_management_system.Models.Logic.RoleHierarchy.GetRoleLevel(roleName) <= 1)
+                {
+                    return RedirectToAction("Dashboard", "Admin");
+                }
+                else if (roleName == "TurfOwner" || roleName == "TurfManager" || new[] { "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(roleName))
+                {
+                    return RedirectToAction("Dashboard", "TurfOwner");
+                }
+                else
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            TempData["Error"] = $"Test user for role {role} ({email}) does not exist yet.";
+            return RedirectToAction("Login");
         }
 
         [HttpPost]

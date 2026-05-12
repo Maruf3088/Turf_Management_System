@@ -16,40 +16,79 @@
 <!-- Stats Cards -->
 <div class="row g-4 mb-4">
     <div class="col-md-4">
-        <div class="card card-stats p-4 bg-white">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
             <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary">
-                    <i class="fas fa-users fa-2x"></i>
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3 text-danger">
+                    <i class="fas fa-user-shield fa-2x"></i>
                 </div>
                 <div>
-                    <h5 class="text-muted mb-0">Total Users</h5>
-                    <h2 class="fw-bold mb-0">@ViewBag.TotalUsers</h2>
+                    <h5 class="text-muted mb-0">Platform Admins</h5>
+                    <h2 class="fw-bold mb-0">@ViewBag.TotalAdmins</h2>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card card-stats p-4 bg-white">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary">
+                    <i class="fas fa-building fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="text-muted mb-0">Turf Owners</h5>
+                    <h2 class="fw-bold mb-0">@ViewBag.TotalOwners</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning">
+                    <i class="fas fa-id-badge fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="text-muted mb-0">Turf Staff</h5>
+                    <h2 class="fw-bold mb-0">@ViewBag.TotalStaff</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3 text-info">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="text-muted mb-0">Customers</h5>
+                    <h2 class="fw-bold mb-0">@ViewBag.TotalCustomers</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success">
+                    <i class="fas fa-futbol fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="text-muted mb-0">Active Turfs</h5>
+                    <h2 class="fw-bold mb-0">@ViewBag.TotalTurfs</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-stats p-4 bg-white border-0 shadow-sm rounded-4 h-100">
             <div class="d-flex align-items-center">
                 <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success">
                     <i class="fas fa-user-check fa-2x"></i>
                 </div>
                 <div>
-                    <h5 class="text-muted mb-0">Active Users</h5>
+                    <h5 class="text-muted mb-0">Active Accounts</h5>
                     <h2 class="fw-bold mb-0">@ViewBag.ActiveUsers</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-stats p-4 bg-white">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3 text-info">
-                    <i class="fas fa-user-tag fa-2x"></i>
-                </div>
-                <div>
-                    <h5 class="text-muted mb-0">Total Roles</h5>
-                    <h2 class="fw-bold mb-0">@ViewBag.TotalRoles</h2>
                 </div>
             </div>
         </div>

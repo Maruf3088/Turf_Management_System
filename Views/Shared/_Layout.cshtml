@@ -182,7 +182,7 @@
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllTurfs" ? "active" : "")" asp-controller="Home" asp-action="AllTurfs">Browse Turfs</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Booking" && ViewContext.RouteData.Values["action"]?.ToString() == "Browse" ? "active" : "")" asp-controller="Booking" asp-action="Browse">Browse Turfs</a>
                         </li>
                         
                         @if (User.Identity?.IsAuthenticated == true)
@@ -212,7 +212,7 @@
                                         <span class="d-block small text-muted text-uppercase fw-bold ls-1">Account</span>
                                         <span class="fw-bold">@User.Identity.Name</span>
                                     </li>
-                                    <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="MyBookings"><i class="fas fa-calendar-alt me-2 text-muted"></i>My Bookings</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Booking" asp-action="MyBookings"><i class="fas fa-calendar-alt me-2 text-muted"></i>My Bookings</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">

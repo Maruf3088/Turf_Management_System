@@ -31,6 +31,12 @@ namespace turf_management_system.DTOs.Turf
         public string? TurfSize { get; set; }
 
         public string? Amenities { get; set; }
+
+        [StringLength(50)]
+        public string? IndoorOutdoor { get; set; }
+
+        [StringLength(20)]
+        public string? ContactNumber { get; set; }
     }
 
     public class UpdateTurfDto
@@ -119,5 +125,17 @@ namespace turf_management_system.DTOs.Turf
         public TimeSpan EndTime { get; set; }
 
         public int? DayOfWeek { get; set; }
+    }
+    public class UpdateBookingConfigDto
+    {
+        public TimeSpan OpeningTime { get; set; }
+        public TimeSpan ClosingTime { get; set; }
+        public int SlotDurationMinutes { get; set; }
+        public int MaxAdvanceBookingDays { get; set; }
+        public bool RequireFullPayment { get; set; }
+        public bool AcceptBkash { get; set; }
+        public bool AcceptNagad { get; set; }
+        public bool AcceptRocket { get; set; }
+        public int AvailableDaysMask { get; set; }
     }
 }

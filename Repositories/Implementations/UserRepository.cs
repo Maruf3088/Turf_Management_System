@@ -27,13 +27,5 @@ namespace turf_management_system.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task<int> GetCountAsync(Expression<Func<User, bool>>? predicate = null)
-        {
-            if (predicate != null)
-            {
-                return await _context.Users.CountAsync(predicate);
-            }
-            return await _context.Users.CountAsync();
-        }
     }
 }

@@ -92,6 +92,12 @@
                                 <input asp-for="BusinessAddress" class="form-control border-0 p-3" placeholder="123 Green Way, Dhaka" />
                                 <span asp-validation-for="BusinessAddress" class="text-danger small"></span>
                             </div>
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="NationalIdNumber" class="form-label fw-bold small text-uppercase ls-1">National ID Number (NID)</label>
+                                <input asp-for="NationalIdNumber" class="form-control border-0 p-3" placeholder="e.g. 1234567890" />
+                                <span asp-validation-for="NationalIdNumber" class="text-danger small"></span>
+                                <small class="text-muted d-block mt-1"><i class="fas fa-shield-alt text-primary me-1"></i> Required for Turf Owner KYC verification.</small>
+                            </div>
                         </div>
                     </div>
                 </div>

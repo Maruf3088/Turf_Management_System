@@ -126,5 +126,22 @@ namespace turf_management_system.Controllers
             var result = await _turfService.DeleteSlotAsync(slotId, ownerId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+        [HttpPost("{id}/booking-config")]
+        [Authorize(Roles = "TurfOwner,TurfManager")]
+        public async Task<IActionResult> UpdateBookingConfig(Guid id, [FromBody] UpdateBookingConfigDto dto)
+        {
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _turfService.UpdateBookingConfigAsync(id, dto, ownerId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("{id}/publish")]
+        [Authorize(Roles = "TurfOwner,TurfManager")]
+        public async Task<IActionResult> PublishTurf(Guid id)
+        {
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _turfService.PublishTurfAsync(id, ownerId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
     }
 }

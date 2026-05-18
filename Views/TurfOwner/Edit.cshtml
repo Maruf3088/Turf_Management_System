@@ -1,0 +1,210 @@
+@model turf_management_system.DTOs.Turf.UpdateTurfDto
+@{
+    Layout = "_TurfOwnerLayout";
+    ViewData["Title"] = "Edit Turf - " + Model.Name;
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-9 col-lg-10">
+            <!-- Edit Card Container -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4 bg-white border border-light">
+                <div class="card-header bg-success text-white py-4 px-4 position-relative" style="background: linear-gradient(135deg, #1A3C34, #0F2D25) !important;">
+                    <div class="d-flex align-items-center justify-content-between position-relative z-3">
+                        <div>
+                            <span class="text-uppercase font-monospace text-gold fw-bold" style="font-size:0.75rem; letter-spacing: 0.1em;"><i class="fas fa-edit me-1"></i> Venue Management</span>
+                            <h2 class="h3 fw-extrabold mb-1 display-font text-white">Edit Arena Details</h2>
+                            <p class="mb-0 text-light opacity-75 small">Update the settings, pricing, and properties of your arena.</p>
+                        </div>
+                        <a asp-action="MyTurfs" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold"><i class="fas fa-arrow-left me-1"></i> Back to List</a>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger rounded-3 mb-4 shadow-sm">
+                            <i class="fas fa-triangle-exclamation me-2"></i> Please fix the errors highlighted below.
+                            <div asp-validation-summary="All" class="small mt-2"></div>
+                        </div>
+                    }
+
+                    <form asp-action="Edit" asp-route-id="@ViewBag.TurfId" method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-4">
+                            <!-- Turf Name -->
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-signature me-1"></i> Arena Name <span class="text-danger">*</span></label>
+                                <input type="text" asp-for="Name" class="form-control form-control-lg border rounded-3" placeholder="e.g. Dream Arena Stadium" required />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Sport Type -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-futbol me-1"></i> Sport Type <span class="text-danger">*</span></label>
+                                <select asp-for="SportType" class="form-select form-select-lg border rounded-3" required>
+                                    <option value="">Select Category...</option>
+                                    <option value="Football">Football</option>
+                                    <option value="Cricket">Cricket</option>
+                                    <option value="Basketball">Basketball</option>
+                                    <option value="Badminton">Badminton</option>
+                                </select>
+                                <span asp-validation-for="SportType" class="text-danger small"></span>
+                            </div>
+
+                            <!-- City & Size -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-city me-1"></i> City <span class="text-danger">*</span></label>
+                                <input type="text" asp-for="City" class="form-control border rounded-3" placeholder="e.g. Dhaka" required />
+                                <span asp-validation-for="City" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-maximize me-1"></i> Turf Size <span class="text-danger">*</span></label>
+                                <input type="text" asp-for="TurfSize" class="form-control border rounded-3" placeholder="e.g. 120ft x 80ft or 5v5 / 7v7" required />
+                                <span asp-validation-for="TurfSize" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Contact Number & Indoor/Outdoor -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-phone me-1"></i> Contact Number</label>
+                                <input type="text" asp-for="ContactNumber" class="form-control border rounded-3" placeholder="e.g. +8801700000000" />
+                                <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-building me-1"></i> Field Setup <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check border p-2 px-4 rounded-3 flex-fill text-center pointer-label @(Model.IndoorOutdoor == "Indoor" ? "checked-bg" : "")">
+                                        <input class="form-check-input d-none" type="radio" asp-for="IndoorOutdoor" id="radioIndoor" value="Indoor" required>
+                                        <label class="form-check-label w-100 pointer fw-bold text-dark" for="radioIndoor">Indoor</label>
+                                    </div>
+                                    <div class="form-check border p-2 px-4 rounded-3 flex-fill text-center pointer-label @(Model.IndoorOutdoor == "Outdoor" ? "checked-bg" : "")">
+                                        <input class="form-check-input d-none" type="radio" asp-for="IndoorOutdoor" id="radioOutdoor" value="Outdoor" required>
+                                        <label class="form-check-label w-100 pointer fw-bold text-dark" for="radioOutdoor">Outdoor</label>
+                                    </div>
+                                </div>
+                                <span asp-validation-for="IndoorOutdoor" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Pricing Matrix Banner Details -->
+                            <div class="col-12 mt-4">
+                                <div class="p-3 bg-light rounded-4 mb-2 border border-start-gold border-4">
+                                    <h6 class="fw-bold mb-1"><i class="fas fa-tag text-gold me-2"></i>Hourly Pricing Dashboard</h6>
+                                    <p class="text-muted small mb-0 font-monospace">Specify custom peak morning vs peak evening price schedules below to maximize revenue.</p>
+                                </div>
+                            </div>
+
+                            <!-- Prices Columns -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">🎯 Base Price per Hour (৳) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">৳</span>
+                                    <input type="number" asp-for="PricePerHour" class="form-control border-start-0 border rounded-end-3" required placeholder="1500" min="0" step="0.01" />
+                                </div>
+                                <span asp-validation-for="PricePerHour" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">🌅 Morning Peak Price (৳) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">৳</span>
+                                    <input type="number" asp-for="MorningPricePerHour" class="form-control border-start-0 border rounded-end-3" required placeholder="1200" min="0" step="0.01" />
+                                </div>
+                                <span asp-validation-for="MorningPricePerHour" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">🌙 Evening Peak Price (৳) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">৳</span>
+                                    <input type="number" asp-for="EveningPricePerHour" class="form-control border-start-0 border rounded-end-3" required placeholder="1800" min="0" step="0.01" />
+                                </div>
+                                <span asp-validation-for="EveningPricePerHour" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Location Address -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-map-marker-alt me-1"></i> Full Address <span class="text-danger">*</span></label>
+                                <textarea asp-for="Location" class="form-control border rounded-3" rows="2" required placeholder="Provide full road, area details to guide customers..."></textarea>
+                                <span asp-validation-for="Location" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-file-lines me-1"></i> Arena Description</label>
+                                <textarea asp-for="Description" class="form-control border rounded-3" rows="4" placeholder="Highlight pitch features, rules, lighting facilities, rules..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Amenities -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-sparkles me-1"></i> Amenities (Comma-separated)</label>
+                                <input type="text" asp-for="Amenities" class="form-control border rounded-3" placeholder="Parking, Washroom, Night Lights, Cafeteria, Locker Rooms" />
+                                <span asp-validation-for="Amenities" class="text-danger small"></span>
+                                <p class="text-muted small mt-1 font-monospace" style="font-size:0.75rem;">Tip: Enter key services separated by a comma (e.g. Parking, Washroom, Lighting)</p>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-3 justify-content-end mt-5 pt-4 border-top">
+                            <a asp-action="MyTurfs" class="btn btn-light px-4 py-3 rounded-pill fw-bold text-muted border">Cancel</a>
+                            <button type="submit" class="btn btn-success px-5 py-3 rounded-pill fw-bold text-uppercase shadow-md" style="background: linear-gradient(135deg, #1A3C34, #122c26); border:none;">
+                                <i class="fas fa-circle-check me-2 text-gold"></i> Save Turf Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .text-gold { color: #C9A84C !important; }
+        .border-start-gold { border-left-color: #C9A84C !important; }
+        
+        .pointer-label {
+            cursor: pointer;
+            transition: all 0.25s;
+            border-color: #e2e8f0 !important;
+        }
+
+        .pointer-label:hover {
+            border-color: #1A3C34 !important;
+            background: rgba(26,60,52,0.03);
+        }
+
+        .pointer-label.checked-bg, .form-check-input:checked + label {
+            background-color: rgba(26,60,52,0.06) !important;
+            border-color: #1A3C34 !important;
+        }
+        
+        .form-check-input:checked ~ .form-check-label {
+            font-weight: 800 !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Real-time radio button highlights
+        document.querySelectorAll('input[name="IndoorOutdoor"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.pointer-label').forEach(lbl => lbl.classList.remove('checked-bg'));
+                if (this.checked) {
+                    this.closest('.pointer-label').classList.add('checked-bg');
+                }
+            });
+        });
+
+        // Seed initial values for radio styling
+        document.querySelectorAll('input[name="IndoorOutdoor"]').forEach(radio => {
+            if (radio.checked) {
+                radio.closest('.pointer-label').classList.add('checked-bg');
+            }
+        });
+    </script>
+}

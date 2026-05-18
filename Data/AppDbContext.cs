@@ -198,9 +198,9 @@ namespace turf_management_system.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
 
-                // Enforce globally unique transaction IDs to prevent fraud
-                entity.HasIndex(e => e.TransactionId).IsUnique()
-                    .HasDatabaseName("IX_Payment_TransactionId_Unique");
+                // Allow same transaction ID for multiple bookings in a single checkout transaction
+                entity.HasIndex(e => e.TransactionId)
+                    .HasDatabaseName("IX_Payment_TransactionId");
 
                 entity.HasOne(d => d.User)
                     .WithMany()

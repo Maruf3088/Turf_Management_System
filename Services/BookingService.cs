@@ -280,25 +280,39 @@ namespace turf_management_system.Services
             if (payment.Booking.Turf.OwnerId != verifierUserId)
                 return (false, "You are not authorized to verify this payment.");
 
-            // Mark payment as verified
+            // Find all pending payments that share this transaction ID to verify them as a batch
+            var sharedPayments = new List<Payment>();
+            if (!string.IsNullOrWhiteSpace(payment.TransactionId))
+            {
+                var allPayments = await _unitOfWork.Payments.GetAllAsync(includeProperties: "Booking,Booking.Turf,User");
+                sharedPayments = allPayments.Where(p => 
+                    p.Id != payment.Id &&
+                    p.TransactionId == payment.TransactionId && 
+                    p.Status == PaymentVerificationStatus.Pending &&
+                    p.Booking != null &&
+                    p.Booking.Turf != null &&
+                    p.Booking.Turf.OwnerId == verifierUserId
+                ).ToList();
+            }
+
+            // Mark main payment as verified
             payment.Status = PaymentVerificationStatus.Verified;
             payment.VerifiedAt = DateTime.UtcNow;
             payment.VerifiedByAdminId = verifierUserId;
             _unitOfWork.Payments.Update(payment);
 
-            // Update booking
+            // Update main booking
             var booking = payment.Booking;
             booking.AmountPaid += payment.Amount;
             booking.Status = BookingStatus.Confirmed;
             booking.ConfirmedAt = DateTime.UtcNow;
             booking.UpdatedAt = DateTime.UtcNow;
 
-            // Set payment status
             booking.PaymentStatus = booking.AmountPaid >= booking.TotalAmount
                 ? PaymentStatus.FullyPaid
                 : PaymentStatus.PartiallyPaid;
 
-            // Release the slot lock
+            // Release the main slot lock
             var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(booking.Id);
             if (slotLock != null)
             {
@@ -307,9 +321,8 @@ namespace turf_management_system.Services
             }
 
             _unitOfWork.Bookings.Update(booking);
-            await _unitOfWork.CompleteAsync();
 
-            // Notify customer
+            // Notify main customer
             await SendNotificationAsync(booking.UserId,
                 "Booking Confirmed! ✅",
                 $"Your booking at {booking.Turf.Name} on {booking.BookingDate:dd MMM yyyy} has been confirmed. Booking ID: #{booking.Id.ToString()[..8].ToUpper()}",
@@ -319,7 +332,46 @@ namespace turf_management_system.Services
             await WriteAuditLogAsync("Booking", booking.Id.ToString(), "Confirmed",
                 "PendingPayment", "Confirmed", verifierUserId);
 
-            return (true, "Payment verified. Booking confirmed successfully.");
+            // Verify all other payments sharing the same TransactionId
+            foreach (var sp in sharedPayments)
+            {
+                sp.Status = PaymentVerificationStatus.Verified;
+                sp.VerifiedAt = DateTime.UtcNow;
+                sp.VerifiedByAdminId = verifierUserId;
+                _unitOfWork.Payments.Update(sp);
+
+                var sb = sp.Booking;
+                sb.AmountPaid += sp.Amount;
+                sb.Status = BookingStatus.Confirmed;
+                sb.ConfirmedAt = DateTime.UtcNow;
+                sb.UpdatedAt = DateTime.UtcNow;
+
+                sb.PaymentStatus = sb.AmountPaid >= sb.TotalAmount
+                    ? PaymentStatus.FullyPaid
+                    : PaymentStatus.PartiallyPaid;
+
+                var sLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(sb.Id);
+                if (sLock != null)
+                {
+                    sLock.IsReleased = true;
+                    _unitOfWork.SlotLocks.Update(sLock);
+                }
+                _unitOfWork.Bookings.Update(sb);
+
+                await SendNotificationAsync(sb.UserId,
+                    "Booking Confirmed! ✅",
+                    $"Your booking at {sb.Turf.Name} on {sb.BookingDate:dd MMM yyyy} has been confirmed. Booking ID: #{sb.Id.ToString()[..8].ToUpper()}",
+                    NotificationType.BookingConfirmed,
+                    $"/Booking/Confirmation/{sb.Id}");
+
+                await WriteAuditLogAsync("Booking", sb.Id.ToString(), "Confirmed",
+                    "PendingPayment", "Confirmed", verifierUserId);
+            }
+
+            await _unitOfWork.CompleteAsync();
+
+            string suffixMsg = sharedPayments.Count > 0 ? $" and {sharedPayments.Count} related batch payments verified" : "";
+            return (true, $"Payment verified{suffixMsg}. Bookings confirmed successfully.");
         }
 
         // ────────────────────────────────────────────────────────────────────────────
@@ -334,13 +386,26 @@ namespace turf_management_system.Services
             if (payment.Booking.Turf.OwnerId != verifierUserId) return (false, "Unauthorized.");
             if (payment.Status != PaymentVerificationStatus.Pending) return (false, "Payment already processed.");
 
+            // Find all pending payments that share this transaction ID to reject them together
+            var sharedPayments = new List<Payment>();
+            if (!string.IsNullOrWhiteSpace(payment.TransactionId))
+            {
+                var allPayments = await _unitOfWork.Payments.GetAllAsync(includeProperties: "Booking,Booking.Turf,User");
+                sharedPayments = allPayments.Where(p => 
+                    p.Id != payment.Id &&
+                    p.TransactionId == payment.TransactionId && 
+                    p.Status == PaymentVerificationStatus.Pending &&
+                    p.Booking != null &&
+                    p.Booking.Turf != null &&
+                    p.Booking.Turf.OwnerId == verifierUserId
+                ).ToList();
+            }
+
             payment.Status = PaymentVerificationStatus.Failed;
             payment.RejectionReason = reason;
             payment.VerifiedByAdminId = verifierUserId;
             payment.VerifiedAt = DateTime.UtcNow;
             _unitOfWork.Payments.Update(payment);
-
-            await _unitOfWork.CompleteAsync();
 
             // Notify customer
             await SendNotificationAsync(payment.Booking.UserId,
@@ -349,7 +414,25 @@ namespace turf_management_system.Services
                 NotificationType.PaymentFailed,
                 $"/Booking/Payment/{payment.BookingId}");
 
-            return (true, "Payment rejected. Customer has been notified.");
+            foreach (var sp in sharedPayments)
+            {
+                sp.Status = PaymentVerificationStatus.Failed;
+                sp.RejectionReason = reason;
+                sp.VerifiedByAdminId = verifierUserId;
+                sp.VerifiedAt = DateTime.UtcNow;
+                _unitOfWork.Payments.Update(sp);
+
+                await SendNotificationAsync(sp.Booking.UserId,
+                    "Payment Rejected",
+                    $"Your payment for booking #{sp.Booking.Id.ToString()[..8].ToUpper()} was rejected. Reason: {reason}. Please resubmit with correct details.",
+                    NotificationType.PaymentFailed,
+                    $"/Booking/Payment/{sp.BookingId}");
+            }
+
+            await _unitOfWork.CompleteAsync();
+
+            string suffixMsg = sharedPayments.Count > 0 ? $" and {sharedPayments.Count} related batch payments rejected" : "";
+            return (true, $"Payment rejected{suffixMsg}. Customer has been notified.");
         }
 
         // ────────────────────────────────────────────────────────────────────────────

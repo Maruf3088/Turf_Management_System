@@ -1,16 +1,16 @@
 @model turf_management_system.DTOs.Turf.TurfResponseDto
 @{
-    ViewData["Title"] = Model.Name + " - Details";
+    ViewData["Title"] = Model.Name + " - Arena Details";
     var mainImage = Model.MainImageUrl ?? "/images/turf-placeholder.jpg";
 }
 
-<!-- Hero Section -->
-<section class="turf-hero">
+<!-- Immersive Full-Width Turf Gallery Hero -->
+<section class="full-width-breakout turf-hero position-relative overflow-hidden mb-4">
     <div id="turfCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel">
         <div class="carousel-indicators">
             @for (int i = 0; i < Model.Images.Count; i++)
             {
-                <button type="button" data-bs-target="#turfCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+                <button type="button" data-bs-target="#turfCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" style="width:12px; height:12px; border-radius:50%; margin: 0 4px;"></button>
             }
         </div>
         <div class="carousel-inner h-100">
@@ -19,7 +19,7 @@
                 @foreach (var img in Model.Images)
                 {
                     <div class="carousel-item h-100 @(img.IsMain ? "active" : "")">
-                        <img src="@img.ImageUrl" class="d-block w-100 h-100 object-fit-cover" alt="@Model.Name">
+                        <img src="@img.ImageUrl" class="d-block w-100 h-100 object-fit-cover animate-zoom" alt="@Model.Name">
                     </div>
                 }
             }
@@ -30,182 +30,195 @@
                 </div>
             }
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#turfCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
+        <button class="carousel-control-prev" type="button" data-bs-target="#turfCarousel" data-bs-slide="prev" style="width: 5%;">
+            <span class="carousel-control-prev-icon bg-dark p-3 rounded-circle" aria-hidden="true" style="background-size: 50% 50%;"></span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#turfCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
+        <button class="carousel-control-next" type="button" data-bs-target="#turfCarousel" data-bs-slide="next" style="width: 5%;">
+            <span class="carousel-control-next-icon bg-dark p-3 rounded-circle" aria-hidden="true" style="background-size: 50% 50%;"></span>
         </button>
     </div>
 
+    <!-- Stadium Glow & Overlay Details -->
     <div class="hero-overlay">
-        <div class="container h-100 d-flex flex-column justify-content-end pb-5">
+        <div class="container h-100 d-flex flex-column justify-content-end pb-5 position-relative z-3">
             <div class="animate-up">
                 <div class="d-flex gap-2 mb-3">
-                    <span class="badge bg-accent text-dark px-3 py-2 fw-bold text-uppercase">@Model.SportType</span>
-                    <span class="badge bg-white text-dark px-3 py-2 fw-bold text-uppercase">@Model.TurfSize</span>
+                    @{
+                        var badgeColor = "bg-success";
+                        var badgeIcon = "fa-futbol";
+                        if (Model.SportType.Equals("Cricket", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-warning text-dark"; badgeIcon = "fa-baseball-bat-ball"; }
+                        else if (Model.SportType.Equals("Badminton", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-info"; badgeIcon = "fa-table-tennis-paddle-ball"; }
+                    }
+                    <span class="badge @badgeColor px-3 py-2 rounded-3 shadow-sm fw-bold"><i class="fas @badgeIcon me-1"></i> @Model.SportType</span>
+                    <span class="badge bg-white text-dark px-3 py-2 rounded-3 shadow-sm fw-bold"><i class="fas fa-maximize me-1 text-gold"></i> @(Model.TurfSize ?? "Standard Size")</span>
                 </div>
-                <h1 class="display-1 text-white fw-bold mb-2">@Model.Name</h1>
-                <p class="text-white-50 fs-5 mb-0"><i class="fas fa-map-marker-alt me-2"></i>@Model.Location, @Model.City</p>
+                <h1 class="display-3 text-white fw-extrabold mb-2 display-font">@Model.Name</h1>
+                <p class="text-light-gray fs-5 mb-0 fw-light"><i class="fas fa-map-marker-alt me-2 text-danger"></i>@Model.Location, @Model.City</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Info Bar -->
-<div class="info-bar sticky-top shadow-sm animate-up">
-    <div class="container d-flex justify-content-between align-items-center h-100">
-        <div class="d-flex gap-4 info-items">
-            <div class="info-item">
-                <span class="label">Price</span>
-                <span class="value">৳@Model.PricePerHour<small>/hr</small></span>
+<!-- Sticky Smart Info Bar displaying detailed rates -->
+<div class="full-width-breakout info-bar sticky-top shadow-sm border-bottom py-3 bg-white mb-5" style="top:70px; z-index:1000;">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-4 align-items-center">
+            <div class="rate-indicator border-end pe-4 d-none d-sm-block">
+                <span class="d-block text-muted small font-monospace">🌅 Morning Peak</span>
+                <strong class="fs-5 text-dark">৳@Model.MorningPricePerHour<small class="text-muted small">/hr</small></strong>
             </div>
-            <div class="info-item d-none d-md-block">
-                <span class="label">Sport</span>
-                <span class="value">@Model.SportType</span>
+            <div class="rate-indicator border-end pe-4 d-none d-sm-block">
+                <span class="d-block text-muted small font-monospace">🌙 Evening Peak</span>
+                <strong class="fs-5 text-dark">৳@Model.EveningPricePerHour<small class="text-muted small">/hr</small></strong>
             </div>
-            <div class="info-item d-none d-md-block">
-                <span class="label">Rating</span>
-                <span class="value text-accent"><i class="fas fa-star me-1"></i>4.8</span>
+            <div class="rate-indicator">
+                <span class="d-block text-muted small font-monospace">🎯 Base Rate</span>
+                <strong class="fs-5 text-gold-accent">৳@Model.PricePerHour<small class="text-muted small">/hr</small></strong>
             </div>
         </div>
-        <a href="#booking-section" class="btn btn-accent px-4 py-2 fw-bold">Book Now</a>
+        <a href="#booking-section" class="btn btn-gold rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size:0.85rem;">Select Slot</a>
     </div>
 </div>
 
-<div class="container mt-5 pt-3">
-    <div class="row g-5">
-        <!-- Main Content -->
-        <div class="col-lg-8 animate-up">
-            <div class="mb-5">
-                <h3 class="display-font mb-4">About the Turf</h3>
-                <p class="text-muted fs-5 leading-relaxed">@Model.Description</p>
+<div class="container py-2">
+    <div class="row g-4">
+        <!-- Left Content Column -->
+        <div class="col-lg-8">
+            <!-- About description card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h4 class="fw-bold mb-3 display-font border-bottom pb-2"><i class="fas fa-circle-info text-gold me-2"></i>About the Arena</h4>
+                <p class="text-muted fs-5 leading-relaxed fw-light mb-0">@Model.Description</p>
             </div>
 
-            <div class="mb-5">
-                <h3 class="display-font mb-4">Amenities</h3>
-                <div class="d-flex flex-wrap gap-3">
+            <!-- Amenities Chips -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h4 class="fw-bold mb-3 display-font border-bottom pb-2"><i class="fas fa-sparkles text-gold me-2"></i>Premium Amenities</h4>
+                <div class="d-flex flex-wrap gap-2">
                     @if (!string.IsNullOrEmpty(Model.Amenities))
                     {
                         @foreach (var amenity in Model.Amenities.Split(','))
                         {
-                            <div class="amenity-chip">
+                            <div class="amenity-chip border px-3 py-2 bg-light rounded-3 d-flex align-items-center gap-2">
                                 @{
                                     var icon = amenity.Trim().ToLower() switch {
-                                        "parking" => "fa-parking",
-                                        "washroom" => "fa-restroom",
-                                        "lighting" => "fa-lightbulb",
-                                        "cafeteria" => "fa-coffee",
-                                        _ => "fa-check-circle"
+                                        "parking" => "fa-parking text-primary",
+                                        "washroom" => "fa-restroom text-success",
+                                        "lighting" => "fa-lightbulb text-warning",
+                                        "cafeteria" => "fa-coffee text-info",
+                                        _ => "fa-check-circle text-muted"
                                     };
                                 }
-                                <i class="fas @icon me-2 text-primary"></i>
-                                <span>@amenity.Trim()</span>
+                                <i class="fas @icon"></i>
+                                <span class="fw-bold small text-dark">@amenity.Trim()</span>
                             </div>
                         }
                     }
                 </div>
             </div>
 
-            <div id="booking-section" class="mb-5 pt-4">
-                <h3 class="display-font mb-4">Available Slots</h3>
-                <div class="card p-4 border-0 bg-white">
-                    <div class="d-flex gap-2 overflow-x-auto pb-3 mb-4" id="day-tabs">
-                        @for (int i = 0; i < 7; i++)
-                        {
-                            var date = DateTime.Today.AddDays(i);
-                            <button class="btn btn-day @(i == 0 ? "active" : "")" 
-                                    onclick="loadAvailableSlots('@date.ToString("yyyy-MM-dd")', this)">
-                                <span class="day">@date.ToString("ddd")</span>
-                                <span class="date">@date.Day</span>
-                            </button>
-                        }
-                    </div>
+            <!-- Calendar & Live Slots grid -->
+            <div id="booking-section" class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h4 class="fw-bold mb-3 display-font border-bottom pb-2"><i class="fas fa-calendar-days text-gold me-2"></i>Select Booking Date & Slot</h4>
+                <div class="d-flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-thin" id="day-tabs">
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        var date = DateOnly.FromDateTime(DateTime.Today.AddDays(i));
+                        <button class="btn btn-day @(i == 0 ? "active" : "") border p-2 d-flex flex-column align-items-center justify-content-center" 
+                                onclick="loadAvailableSlots('@date.ToString("yyyy-MM-dd")', this)"
+                                style="min-width: 65px; height: 75px; border-radius:12px; transition: all 0.25s;">
+                            <span class="day text-uppercase text-muted font-monospace small mb-1" style="font-size:0.75rem;">@date.ToString("ddd")</span>
+                            <span class="date fs-4 fw-extrabold text-dark">@date.Day</span>
+                        </button>
+                    }
+                </div>
 
-                    <div id="slots-container" class="row g-3">
-                        <!-- Slots will be loaded here via AJAX -->
-                        <div class="text-center py-4">
-                            <span class="spinner-border text-primary"></span>
-                        </div>
+                <div id="slots-container" class="row g-3">
+                    <!-- Loaded dynamically via AJAX -->
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="mb-5">
-                <h3 class="display-font mb-4">Location</h3>
-                <div class="rounded-4 overflow-hidden shadow-sm" style="height: 400px; background: #eee;">
-                    <!-- Placeholder for Map -->
-                    <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-                        <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
-                        <p>Interactive Map Integration Coming Soon</p>
-                        <p class="small">@Model.Location, @Model.City</p>
+            <!-- Location Placeholder card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h4 class="fw-bold mb-3 display-font border-bottom pb-2"><i class="fas fa-map-location text-gold me-2"></i>Location Map</h4>
+                <div class="rounded-4 overflow-hidden position-relative border" style="height: 300px; background: #f8fafc;">
+                    <div class="h-100 d-flex flex-column align-items-center justify-content-center text-center p-4">
+                        <i class="fas fa-map-marked-alt fa-3x text-muted mb-3 opacity-50 animate-pulse"></i>
+                        <h5 class="fw-bold text-dark mb-1">Interactive Map Integration</h5>
+                        <p class="text-muted small mb-0">@Model.Location, @Model.City</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar / Booking Card -->
+        <!-- Right Reservation Checkout Sticky Sidebar -->
         <div class="col-lg-4">
             <div class="sticky-sidebar">
-                <div class="card p-4 border-0 shadow-lg">
-                    <h4 class="display-font mb-4">Reserve Your Slot</h4>
+                <div class="card border-0 shadow-lg rounded-4 p-4 bg-white border border-light">
+                    <h4 class="fw-bold display-font border-bottom pb-2 mb-4 text-dark"><i class="fas fa-circle-check text-success me-2"></i>Reserve Arena</h4>
                     
                     <form id="booking-form">
                         <input type="hidden" name="TurfId" value="@Model.Id" />
                         <input type="hidden" name="SlotId" id="selected-slot-id" required />
                         
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase ls-1">Selected Date</label>
-                            <input type="text" id="display-date" class="form-control bg-light" readonly value="@DateTime.Today.ToString("MMM dd, yyyy")" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase ls-1 text-muted">Selected Date</label>
+                            <div class="input-icon-group">
+                                <i class="fas fa-calendar-day input-icon text-muted" style="left:12px;"></i>
+                                <input type="text" id="display-date" class="form-control bg-light border ps-4" readonly value="@DateTime.Today.ToString("MMM dd, yyyy")" style="border-radius:10px; font-weight:600;" />
+                            </div>
                             <input type="hidden" name="BookingDate" id="booking-date" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
                         </div>
 
+                        <!-- Reactive selection card displaying calculated rates -->
                         <div id="selection-summary" style="display: none;">
-                            <div class="p-3 bg-light rounded-3 mb-4 border-start border-4 border-accent">
-                                <div class="d-flex justify-content-between mb-1">
+                            <div class="p-3 bg-light border border-light-white rounded-3 mb-3 border-start border-4 border-gold">
+                                <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted small">Time Slot</span>
-                                    <span class="fw-bold" id="summary-time">--</span>
+                                    <strong class="text-dark small" id="summary-time">--</strong>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted small">Price per Hour</span>
-                                    <span class="fw-bold text-primary">৳@Model.PricePerHour</span>
+                                    <span class="text-muted small">Hourly Price</span>
+                                    <strong class="text-gold-accent" id="summary-price">৳0</strong>
                                 </div>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-uppercase ls-1">Special Request</label>
-                                <textarea name="SpecialRequest" class="form-control" rows="2" placeholder="Any requests?"></textarea>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase ls-1 text-muted">Special Requests</label>
+                                <textarea name="SpecialRequest" class="form-control border" rows="2" placeholder="Requests, requests, gear notes..." style="border-radius:10px;"></textarea>
                             </div>
 
-                            <div class="border-top pt-3 mb-4">
+                            <div class="border-top pt-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fs-5 fw-bold">Total Amount</span>
-                                    <span class="fs-4 fw-bold text-primary" id="summary-total">৳0</span>
+                                    <span class="fs-6 fw-bold text-muted">Aggregated Sum</span>
+                                    <span class="fs-4 fw-extrabold text-gold-accent" id="summary-total">৳0</span>
                                 </div>
                             </div>
                         </div>
 
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <button type="submit" id="btn-proceed" class="btn btn-primary w-100 py-3 fw-bold" disabled>
-                                Proceed to Book
+                            <button type="submit" id="btn-proceed" class="btn btn-gold btn-lg w-100 py-3 fw-bold text-uppercase rounded-3 shadow-md" disabled style="font-size:0.9rem;">
+                                Proceed to Checkout
                             </button>
                         }
                         else
                         {
-                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-primary w-100 py-3 fw-bold">
-                                Login to Book
+                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-primary btn-lg w-100 py-3 fw-bold text-uppercase rounded-3 shadow-md" style="font-size:0.9rem;">
+                                Login to Reserve
                             </a>
                         }
                     </form>
 
-                    <div class="mt-4 pt-4 border-top">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-sm me-3">@Model.OwnerName[0]</div>
-                            <div>
-                                <p class="mb-0 fw-bold">@Model.OwnerName</p>
-                                <p class="mb-0 text-muted small">Verified Turf Owner</p>
-                            </div>
+                    <div class="mt-4 pt-3 border-top d-flex align-items-center">
+                        <div class="avatar-circle-profile bg-primary text-white d-flex align-items-center justify-content-center rounded-circle me-3" style="width:40px; height:40px; font-weight:bold; font-size:1.1rem;">
+                            @Model.OwnerName[0].ToString().ToUpper()
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold text-dark small">@Model.OwnerName</p>
+                            <p class="mb-0 text-muted small" style="font-size:0.75rem;"><i class="fas fa-circle-check text-success me-1"></i>Verified Venue Owner</p>
                         </div>
                     </div>
                 </div>
@@ -216,223 +229,225 @@
 
 @section Styles {
     <style>
-        .turf-hero { height: 520px; position: relative; overflow: hidden; }
+        /* Breakout layout container custom edges styling */
+        .full-width-breakout {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        /* ── Hero Gallery ───────────────────────────────────────── */
+        .turf-hero { height: 500px; }
         .hero-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+            background: linear-gradient(to bottom, transparent, rgba(15,28,24,0.92));
             pointer-events: none;
         }
+        
+        .animate-zoom {
+            animation: zoomSlow 12s infinite alternate;
+        }
+        @@keyframes zoomSlow {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
 
+        /* ── Sticky Info Bar ───────────────────────────────────── */
         .info-bar { 
-            background: white; 
-            height: 80px; 
-            z-index: 1020; 
-            top: 70px; /* Offset for main navbar */
+            border-color: rgba(0,0,0,0.06) !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
         }
-        .info-item .label { display: block; font-size: 11px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; }
-        .info-item .value { font-size: 18px; font-weight: 700; color: var(--color-primary); }
-
-        .amenity-chip {
-            background: white;
-            border: 1px solid var(--color-border);
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            font-weight: 500;
+        .text-gold-accent {
+            color: #C9A84C;
         }
 
+        .btn-gold {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+            border: none;
+            color: #0f1c18 !important;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(201,168,76,0.2);
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #F0CC5F, #B8952F);
+            transform: translateY(-1px);
+        }
+
+        .text-light-gray {
+            color: #D1D5DB;
+        }
+
+        /* ── Calendar Tabs ──────────────────────────────────────── */
         .btn-day {
-            min-width: 70px;
-            height: 80px;
             background: white;
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .btn-day.active { background: var(--color-primary); border-color: var(--color-primary); color: white; }
-        .btn-day .day { font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-        .btn-day .date { font-size: 20px; font-weight: 800; }
+        .btn-day.active {
+            background: var(--color-primary) !important;
+            border-color: var(--color-primary) !important;
+        }
+        .btn-day.active .day, .btn-day.active .date {
+            color: white !important;
+        }
 
-        /* Premium Slot Card Layout */
+        /* ── Live Slots Grid Cards ──────────────────────────────── */
         .slot-card {
             background: #ffffff;
             border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+            height:100%;
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
         }
         .slot-card::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; height: 4px;
             background: transparent;
-            transition: all 0.3s;
+            transition: all 0.25s;
         }
 
-        /* Available Style */
         .slot-card.available {
-            border-color: #b9f6ca;
+            border-color: #d1fae5;
             background: #f0fdf4;
         }
         .slot-card.available::before {
-            background: #00e676;
+            background: #10b981;
         }
         .slot-card.available:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 20px -8px rgba(0, 230, 118, 0.25);
-            border-color: #00e676;
+            transform: translateY(-3px);
+            border-color: #10b981;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.15);
         }
         .slot-card.available .slot-badge {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
 
-        /* Selected Style (Active selection by current user) */
-        .slot-card.selected, .slot-card.active {
+        /* Selected Slot style */
+        .slot-card.active, .slot-card.selected {
             border-color: #ffb300 !important;
             background: #fff8e1 !important;
-            transform: scale(1.02);
-            box-shadow: 0 8px 16px -4px rgba(255, 179, 0, 0.3) !important;
+            transform: scale(1.01);
+            box-shadow: 0 8px 16px -4px rgba(255, 179, 0, 0.25) !important;
         }
-        .slot-card.selected::before, .slot-card.active::before {
+        .slot-card.active::before, .slot-card.selected::before {
             background: #ffb300 !important;
         }
-        .slot-card.selected .slot-badge, .slot-card.active .slot-badge {
+        .slot-card.active .slot-badge, .slot-card.selected .slot-badge {
             background: #ffb300;
             color: #ffffff;
             border: 1px solid #ffb300;
             font-weight: 700;
         }
 
-        /* In Progress Style (Reserved/locked by another user) */
+        /* In Progress styles */
         .slot-card.in-progress {
-            border-color: #ffe082;
-            background: #fffde7;
+            border-color: #fef3c7;
+            background: #fffbeb;
             cursor: not-allowed;
-            opacity: 0.85;
         }
         .slot-card.in-progress::before {
-            background: #f57f17;
+            background: #d97706;
         }
         .slot-card.in-progress .slot-badge {
-            background: #fffde7;
-            color: #f57f17;
-            border: 1px solid #fff59d;
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
         }
 
-        /* Booked Style */
+        /* Booked slot styles */
         .slot-card.booked {
-            border-color: #ffcdd2;
-            background: #ffebee;
+            border-color: #fee2e2;
+            background: #fef2f2;
             cursor: not-allowed;
-            opacity: 0.75;
+            opacity: 0.8;
         }
         .slot-card.booked::before {
-            background: #d32f2f;
+            background: #ef4444;
         }
         .slot-card.booked .slot-badge {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
         }
 
-        /* Blocked (Unavailable) Style */
+        /* Blocked slot styles */
         .slot-card.blocked {
-            border-color: #cfd8dc;
-            background: #eceff1;
+            border-color: #e2e8f0;
+            background: #f8fafc;
             cursor: not-allowed;
             opacity: 0.6;
         }
         .slot-card.blocked::before {
-            background: #37474f;
+            background: #475569;
         }
         .slot-card.blocked .slot-badge {
-            background: #eceff1;
-            color: #37474f;
-            border: 1px solid #b0bec5;
+            background: #e2e8f0;
+            color: #475569;
+            border: 1px solid #cbd5e1;
         }
 
         .slot-card.disabled {
             pointer-events: none;
         }
 
-        /* Inner Slot Elements */
         .slot-time {
             font-weight: 700;
-            font-size: 14px;
-            color: #1a202c;
-            margin-bottom: 6px;
+            font-size: 13px;
+            color: #1e293b;
+            margin-bottom: 4px;
         }
         .slot-shift {
-            font-size: 11px;
-            font-weight: 600;
-            color: #718096;
-            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+            text-uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .slot-price {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             color: #1a3c34;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .slot-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
             text-transform: uppercase;
             align-self: center;
             width: fit-content;
             margin: 0 auto;
         }
 
-        .sticky-sidebar { position: sticky; top: 170px; }
-
-        .avatar-sm {
-            width: 44px; height: 44px;
-            background: var(--color-primary-light);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .ls-1 { letter-spacing: 0.05em; }
-        .leading-relaxed { line-height: 1.8; }
+        .sticky-sidebar { position: sticky; top: 155px; }
+        .leading-relaxed { line-height: 1.85; }
     </style>
 }
 
 @section Scripts {
     <script>
-        const turfPrice = @Model.PricePerHour;
-        
         async function loadAvailableSlots(date, btn) {
-            // Update active state
             if (btn) {
                 document.querySelectorAll('.btn-day').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -441,23 +456,23 @@
             const container = document.getElementById('slots-container');
             container.innerHTML = `
                 <div class="col-12 text-center py-5">
-                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
-                    <p class="text-muted animate-pulse">Synchronizing with live calendar...</p>
+                    <div class="spinner-border text-primary mb-3" style="width: 2.5rem; height: 2.5rem;"></div>
+                    <p class="text-muted small animate-pulse">Syncing schedule calendar...</p>
                 </div>
             `;
             
             document.getElementById('booking-date').value = date;
             document.getElementById('display-date').value = new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
-            // Reset selection state
+            // Reset state
+            selectedSlots = [];
             document.getElementById('selected-slot-id').value = '';
             document.getElementById('selection-summary').style.display = 'none';
             document.getElementById('btn-proceed').disabled = true;
 
             try {
-                // Ensure correct relative URL and parameters
                 const response = await fetch(`/api/bookings/slots/@Model.Id?date=${date}`);
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('Network response not ok');
                 
                 const result = await response.json();
                 
@@ -469,37 +484,37 @@
                         container.innerHTML = `
                             <div class="col-12 text-center py-5 bg-light rounded-4">
                                 <i class="fas fa-calendar-times fa-3x text-muted mb-3 opacity-25"></i>
-                                <h5 class="text-muted">No Slots Available</h5>
-                                <p class="small mb-0">The turf might be closed or fully booked on this date.</p>
+                                <h5 class="text-muted mb-1">No Available Time Slots</h5>
+                                <p class="small text-muted mb-0">The arena configuration is fully booked or closed on this date.</p>
                             </div>
                         `;
                     } else {
                         slots.forEach(slot => {
-                            // Status mapping: 0=Available, 1=Selected, 2=InProgress, 3=Booked, 4=Unavailable
                             const status = slot.status;
                             let statusText = 'Available';
                             let cssClass = 'available';
-                            let statusIcon = '<i class="fas fa-check-circle me-1"></i>';
+                            let statusIcon = '<i class="fas fa-circle-check me-1"></i>';
                             let clickHandler = `selectSlot(this, '${slot.slotId}', '${slot.startTimeDisplay} – ${slot.endTimeDisplay}', ${slot.price})`;
 
-                            if (status === 1) { // Selected
+                            // Integer and string resilience
+                            if (status === 1 || status === 'Locked' || status === 'SlotLocked') {
                                 statusText = 'Selected';
                                 cssClass = 'selected';
-                                statusIcon = '<i class="fas fa-star me-1"></i>';
-                            } else if (status === 2) { // InProgress
+                                statusIcon = '<i class="fas fa-circle-check me-1"></i>';
+                            } else if (status === 2 || status === 'PendingPayment') {
                                 statusText = 'In Progress';
                                 cssClass = 'disabled in-progress';
                                 statusIcon = '<i class="fas fa-spinner fa-spin me-1"></i>';
                                 clickHandler = '';
-                            } else if (status === 3) { // Booked
+                            } else if (status === 3 || status === 'Confirmed' || status === 'Booked') {
                                 statusText = 'Booked';
                                 cssClass = 'disabled booked';
                                 statusIcon = '<i class="fas fa-ban me-1"></i>';
                                 clickHandler = '';
-                            } else if (status === 4) { // Unavailable
+                            } else if (status === 4 || status === 'Cancelled' || status === 'Expired' || status === 'Blocked') {
                                 statusText = 'Blocked';
                                 cssClass = 'disabled blocked';
-                                statusIcon = '<i class="fas fa-minus-circle me-1"></i>';
+                                statusIcon = '<i class="fas fa-circle-minus me-1"></i>';
                                 clickHandler = '';
                             }
 
@@ -508,7 +523,7 @@
                             col.innerHTML = `
                                 <div class="slot-card ${cssClass}" onclick="${clickHandler}" data-slot-id="${slot.slotId}">
                                     <div class="slot-time">${slot.startTimeDisplay} – ${slot.endTimeDisplay}</div>
-                                    <div class="slot-shift">${slot.pricingVariant}</div>
+                                    <div class="slot-shift"><i class="fas ${slot.pricingVariant === 'Evening' ? 'fa-moon text-info' : 'fa-sun text-warning'} me-1"></i> ${slot.pricingVariant}</div>
                                     <div class="slot-price">৳${Math.round(slot.price)}</div>
                                     <div class="slot-badge">${statusIcon} ${statusText}</div>
                                 </div>
@@ -517,82 +532,113 @@
                         });
                     }
                 } else {
-                    throw new Error(result.message || 'Failed to load slots');
+                    throw new Error(result.message || 'Failed to parse slots');
                 }
             } catch (error) {
-                console.error('Slot loading error:', error);
+                console.error(error);
                 container.innerHTML = `
                     <div class="col-12 text-center py-5">
-                        <div class="alert alert-danger d-inline-block">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Failed to sync slots. 
+                        <div class="alert alert-danger d-inline-block rounded-3 shadow-sm">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Failed to sync slots details. 
                             <button class="btn btn-link btn-sm p-0 ms-2" onclick="loadAvailableSlots('${date}')">Try Again</button>
                         </div>
                     </div>
                 `;
-                toastr.error('Synchronization failed. Please check your connection.');
             }
         }
 
+        let selectedSlots = [];
+
         function selectSlot(el, id, timeRange, price) {
-            document.querySelectorAll('.slot-card').forEach(p => {
-                p.classList.remove('active');
-                p.classList.remove('selected');
-            });
-            el.classList.add('active');
-            el.classList.add('selected');
+            // Toggle selection
+            if (el.classList.contains('selected')) {
+                el.classList.remove('active');
+                el.classList.remove('selected');
+                selectedSlots = selectedSlots.filter(s => s.id !== id);
+            } else {
+                el.classList.add('active');
+                el.classList.add('selected');
+                selectedSlots.push({ id, timeRange, price });
+            }
             
-            document.getElementById('selected-slot-id').value = id;
-            document.getElementById('summary-time').innerText = timeRange;
-            document.getElementById('summary-total').innerText = '৳' + price.toLocaleString();
-            
-            document.getElementById('selection-summary').style.display = 'block';
-            document.getElementById('btn-proceed').disabled = false;
+            if (selectedSlots.length > 0) {
+                // Update summary UI
+                document.getElementById('summary-time').innerHTML = selectedSlots.map(s => `<div>${s.timeRange}</div>`).join('');
+                document.getElementById('summary-price').innerHTML = selectedSlots.map(s => `<div>৳${s.price.toLocaleString()}</div>`).join('');
+                
+                const total = selectedSlots.reduce((sum, s) => sum + s.price, 0);
+                document.getElementById('summary-total').innerText = '৳' + total.toLocaleString();
+                
+                document.getElementById('selection-summary').style.display = 'block';
+                document.getElementById('btn-proceed').disabled = false;
+            } else {
+                document.getElementById('selection-summary').style.display = 'none';
+                document.getElementById('btn-proceed').disabled = true;
+            }
         }
 
         document.getElementById('booking-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            if (selectedSlots.length === 0) return;
+
             const btn = document.getElementById('btn-proceed');
             const originalHtml = btn.innerHTML;
             
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Locking Slot...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Locking Slots...';
 
-            const payload = {
-                TurfId: "@Model.Id",
-                SlotId: document.getElementById('selected-slot-id').value,
-                BookingDate: document.getElementById('booking-date').value,
-                SpecialRequest: this.querySelector('[name="SpecialRequest"]').value
-            };
+            const bookingDate = document.getElementById('booking-date').value;
+            const specialRequest = this.querySelector('[name="SpecialRequest"]').value;
+            
+            let successfulBookingIds = [];
+            let failedLocks = 0;
 
-            try {
-                const response = await fetch('/api/bookings/lock', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+            for (const slot of selectedSlots) {
+                const payload = {
+                    TurfId: "@Model.Id",
+                    SlotId: slot.id,
+                    BookingDate: bookingDate,
+                    SpecialRequest: specialRequest
+                };
 
-                const result = await response.json();
-                if (result.success) {
-                    toastr.success('Success! Slot reserved for 5 minutes.');
-                    // Redirect to payment/confirmation as per routing
-                    setTimeout(() => {
-                        window.location.href = `/Booking/Confirmation/${result.bookingId || result.BookingId}`;
-                    }, 800);
-                } else {
-                    toastr.error(result.message || 'Reservation failed. Slot might have been taken.');
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
-                    // Auto-refresh slots
-                    loadAvailableSlots(payload.BookingDate);
+                try {
+                    const response = await fetch('/api/bookings/lock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        successfulBookingIds.push(result.bookingId || result.BookingId);
+                    } else {
+                        failedLocks++;
+                        toastr.error(`Slot ${slot.timeRange} could not be reserved: ` + (result.message || 'Rejected.'));
+                    }
+                } catch (error) {
+                    failedLocks++;
+                    toastr.error(`Network error for slot ${slot.timeRange}.`);
                 }
-            } catch (error) {
-                toastr.error('A system error occurred. Please refresh and try again.');
+            }
+
+            if (successfulBookingIds.length > 0) {
+                if (failedLocks > 0) {
+                    toastr.warning(`Proceeding with ${successfulBookingIds.length} successfully locked slots.`);
+                } else {
+                    toastr.success('Success! Slots locked safely.');
+                }
+                setTimeout(() => {
+                    window.location.href = `/Booking/Payment?bookingIds=${successfulBookingIds.join(',')}`;
+                }, 800);
+            } else {
+                toastr.error('Failed to reserve any slots. Refreshing...');
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
+                loadAvailableSlots(bookingDate);
             }
         });
 
-        // Initial Load
+        // Seed slots initial state trigger
         loadAvailableSlots('@DateTime.Today.ToString("yyyy-MM-dd")');
     </script>
 }

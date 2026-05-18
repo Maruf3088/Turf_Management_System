@@ -80,6 +80,12 @@ namespace turf_management_system.DTOs.Turf
 
         public string? Amenities { get; set; }
         
+        [StringLength(50)]
+        public string? IndoorOutdoor { get; set; }
+
+        [StringLength(20)]
+        public string? ContactNumber { get; set; }
+
         public bool? IsActive { get; set; }
     }
 
@@ -97,6 +103,8 @@ namespace turf_management_system.DTOs.Turf
         public string SportType { get; set; } = string.Empty;
         public string? TurfSize { get; set; }
         public string? Amenities { get; set; }
+        public string? IndoorOutdoor { get; set; }
+        public string? ContactNumber { get; set; }
         public bool IsApproved { get; set; }
         public bool IsActive { get; set; }
         public int OwnerId { get; set; }

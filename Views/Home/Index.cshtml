@@ -1,83 +1,159 @@
 @using turf_management_system.DTOs.Turf
 @model IEnumerable<TurfListItemDto>
 @{
-    ViewData["Title"] = "Your Game, Our Turf";
+    ViewData["Title"] = "Premium Sports Arenas";
 }
 
-<!-- Hero Section -->
-<section class="hero-section">
-    <div class="container h-100">
-        <div class="row h-100 align-items-center">
-            <div class="col-lg-6 text-white animate-up">
-                <span class="badge bg-accent text-dark px-3 py-2 mb-4 fw-bold text-uppercase ls-1">Premium Sports Venues</span>
-                <h1 class="display-2 fw-bold mb-4">Your Game,<br><span class="text-accent">Our Turf.</span></h1>
-                <p class="fs-5 text-white-50 mb-5 pe-lg-5">Discover and book the finest sports turfs in your city. Real-time availability, instant confirmation, and premium amenities.</p>
-                <div class="d-flex gap-3">
-                    <a asp-action="AllTurfs" class="btn btn-accent btn-lg px-5 py-3 fw-bold">Book a Turf</a>
-                    <a href="#featured" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold">Explore Fields</a>
+<!-- Hero Section Breakout Container -->
+<div class="full-width-breakout hero-wrapper position-relative overflow-hidden mb-5">
+    <!-- Stadium Backdrop Glow & Stadium Lights Overlay -->
+    <div class="stadium-lights-backdrop"></div>
+    <div class="hero-dark-overlay"></div>
+    
+    <div class="container position-relative h-100 z-3 text-white">
+        <div class="row h-100 align-items-center py-5">
+            <!-- Left Headline & Integrated Search Console -->
+            <div class="col-lg-7 text-start animate-up">
+                <span class="badge bg-gold-gradient text-dark px-3 py-2 mb-3 fw-bold text-uppercase tracking-wider rounded-pill shadow-sm">
+                    ⚡ Instant Booking & Concurrency Guaranteed
+                </span>
+                <h1 class="display-3 fw-extrabold mb-3 tracking-tight display-font">
+                    Elevate Your Game.<br><span class="text-gold-glow">Book Premium Turfs.</span>
+                </h1>
+                <p class="fs-5 text-light-gray mb-4 pe-lg-5 fw-light">
+                    Find and book top-tier local sports venues in real-time. Secured by cutting-edge booking locks and instantly verified.
+                </p>
+                
+                <!-- Immersive Search Console -->
+                <div class="search-console-wrapper p-4 rounded-4 shadow-2xl mb-4 border border-light-white">
+                    <h5 class="fw-bold mb-3 text-white"><i class="fas fa-search me-2 text-gold"></i>Find Your Perfect Pitch</h5>
+                    <form action="/Booking/Browse" method="get">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <div class="input-icon-group">
+                                    <i class="fas fa-search input-icon text-muted"></i>
+                                    <input type="text" name="search" class="form-control form-control-lg bg-dark-input text-white border-0 shadow-none ps-5" placeholder="Enter turf or venue name..." style="border-radius:12px; font-size:0.95rem;">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="city" class="form-select form-select-lg bg-dark-input text-white border-0 shadow-none" style="border-radius:12px; font-size:0.95rem;">
+                                    <option value="" class="bg-dark">All Cities</option>
+                                    <option value="Dhaka" class="bg-dark">Dhaka</option>
+                                    <option value="Chittagong" class="bg-dark">Chittagong</option>
+                                    <option value="Sylhet" class="bg-dark">Sylhet</option>
+                                    <option value="Khulna" class="bg-dark">Khulna</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="sportType" class="form-select form-select-lg bg-dark-input text-white border-0 shadow-none" style="border-radius:12px; font-size:0.95rem;">
+                                    <option value="" class="bg-dark">All Sports</option>
+                                    <option value="Football" class="bg-dark">⚽ Football</option>
+                                    <option value="Cricket" class="bg-dark">🏏 Cricket</option>
+                                    <option value="Badminton" class="bg-dark">🏸 Badminton</option>
+                                    <option value="Basketball" class="bg-dark">🏀 Basketball</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-gold btn-lg w-100 rounded-3 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fas fa-calendar-check"></i> Check Real-Time Slots Availability
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <div class="col-lg-6 d-none d-lg-block">
-                <div class="hero-image-wrapper animate-up" style="animation-delay: 0.2s;">
-                    <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200" alt="Turf" class="img-fluid rounded-5 shadow-2xl">
-                    <div class="floating-card p-4 rounded-4 shadow-lg animate-up" style="animation-delay: 0.4s;">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="icon-circle bg-success-light">
-                                <i class="fas fa-check text-success"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold">Instant Booking</h6>
-                                <p class="mb-0 text-muted small">No more waiting calls</p>
-                            </div>
+            
+            <!-- Right Column Interactive Device Preview -->
+            <div class="col-lg-5 d-none d-lg-block animate-up" style="animation-delay: 0.2s;">
+                <div class="interactive-preview-wrapper position-relative">
+                    <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200" alt="Stadium" class="img-fluid rounded-5 shadow-2xl stadium-img border border-light-white">
+                    
+                    <!-- Floating Widget 1 -->
+                    <div class="floating-widget bg-glass p-3 rounded-4 shadow-lg border border-light-white d-flex align-items-center gap-3 widget-top animate-pulse">
+                        <div class="widget-icon bg-gold-gradient rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="fas fa-lock text-dark"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-white small">Secure Lock Guard</h6>
+                            <p class="mb-0 text-white-50 super-small">No double bookings</p>
+                        </div>
+                    </div>
+
+                    <!-- Floating Widget 2 -->
+                    <div class="floating-widget bg-glass p-3 rounded-4 shadow-lg border border-light-white d-flex align-items-center gap-3 widget-bottom">
+                        <div class="widget-icon bg-success-gradient rounded-circle d-flex align-items-center justify-content-center text-white">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-white small">Instant Payment</h6>
+                            <p class="mb-0 text-white-50 super-small">Simulated verification active</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
+</div>
 
-<!-- Stats Section -->
-<section class="py-5 bg-white border-bottom">
-    <div class="container">
-        <div class="row g-4 text-center">
-            <div class="col-md-3 col-6">
-                <div class="p-3">
-                    <h2 class="display-font text-primary mb-1">50+</h2>
-                    <p class="text-muted small text-uppercase fw-bold ls-1">Premium Turfs</p>
-                </div>
+<!-- Category Pills Row -->
+<div class="container mb-5">
+    <div class="text-center mb-4">
+        <span class="text-uppercase fw-bold ls-1 text-gold small">Filter by Arena Class</span>
+        <h3 class="fw-bold tracking-tight mb-0 display-font">Popular Sports Categories</h3>
+    </div>
+    <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+        <a href="/Booking/Browse?sportType=Football" class="category-pill shadow-sm"><i class="fas fa-futbol me-2 text-success"></i> Football Fields</a>
+        <a href="/Booking/Browse?sportType=Cricket" class="category-pill shadow-sm"><i class="fas fa-cricket me-2 text-warning"></i> Cricket Nets</a>
+        <a href="/Booking/Browse?sportType=Badminton" class="category-pill shadow-sm"><i class="fas fa-table-tennis-paddle-ball me-2 text-info"></i> Badminton Courts</a>
+        <a href="/Booking/Browse?sportType=Basketball" class="category-pill shadow-sm"><i class="fas fa-basketball me-2 text-danger"></i> Basketball Courts</a>
+    </div>
+</div>
+
+<!-- Stats Dashboard Row -->
+<div class="container mb-5">
+    <div class="row g-4 text-center">
+        <div class="col-md-3 col-6">
+            <div class="stat-glass-card p-4 rounded-4 shadow-sm border border-light">
+                <div class="stat-icon mb-2 text-gold"><i class="fas fa-map-location-dot fa-2x"></i></div>
+                <h3 class="fw-extrabold mb-1 display-font text-dark">50+</h3>
+                <p class="text-muted small text-uppercase fw-bold ls-1 mb-0">Premium Arenas</p>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="p-3">
-                    <h2 class="display-font text-primary mb-1">10k+</h2>
-                    <p class="text-muted small text-uppercase fw-bold ls-1">Happy Players</p>
-                </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-glass-card p-4 rounded-4 shadow-sm border border-light">
+                <div class="stat-icon mb-2 text-gold"><i class="fas fa-users-viewfinder fa-2x"></i></div>
+                <h3 class="fw-extrabold mb-1 display-font text-dark">15k+</h3>
+                <p class="text-muted small text-uppercase fw-bold ls-1 mb-0">Active Players</p>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="p-3">
-                    <h2 class="display-font text-primary mb-1">24/7</h2>
-                    <p class="text-muted small text-uppercase fw-bold ls-1">Availability</p>
-                </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-glass-card p-4 rounded-4 shadow-sm border border-light">
+                <div class="stat-icon mb-2 text-gold"><i class="fas fa-clock-rotate-left fa-2x"></i></div>
+                <h3 class="fw-extrabold mb-1 display-font text-dark">24/7</h3>
+                <p class="text-muted small text-uppercase fw-bold ls-1 mb-0">Booking Windows</p>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="p-3">
-                    <h2 class="display-font text-primary mb-1">100%</h2>
-                    <p class="text-muted small text-uppercase fw-bold ls-1">Secure Payments</p>
-                </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-glass-card p-4 rounded-4 shadow-sm border border-light">
+                <div class="stat-icon mb-2 text-gold"><i class="fas fa-shield-halved fa-2x"></i></div>
+                <h3 class="fw-extrabold mb-1 display-font text-dark">100%</h3>
+                <p class="text-muted small text-uppercase fw-bold ls-1 mb-0">Secure Checkouts</p>
             </div>
         </div>
     </div>
-</section>
+</div>
 
-<!-- Featured Turfs -->
-<section class="py-120 bg-light" id="featured">
+<!-- Featured Turfs Grid -->
+<section class="py-5 bg-white-glow rounded-5 shadow-inner mb-5" id="featured">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-end mb-5">
-            <div class="animate-up">
-                <h6 class="text-primary text-uppercase fw-bold ls-1 mb-2">Editor's Choice</h6>
-                <h2 class="display-4 fw-bold mb-0">Featured Turfs</h2>
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <span class="text-gold text-uppercase fw-bold ls-1 mb-2 d-block small">Top Selections</span>
+                <h2 class="fw-bold mb-0 display-font tracking-tight text-dark">Featured Arenas</h2>
             </div>
-            <a asp-action="AllTurfs" class="btn btn-outline-primary rounded-pill px-4 py-2 animate-up">View All <i class="fas fa-arrow-right ms-2"></i></a>
+            <a asp-action="AllTurfs" class="btn btn-outline-dark rounded-pill px-4 py-2 border-2 fw-bold" style="font-size:0.9rem;">View All Fields <i class="fas fa-arrow-right ms-2"></i></a>
         </div>
 
         <div class="row g-4">
@@ -85,20 +161,42 @@
             {
                 @foreach (var turf in Model)
                 {
-                    <div class="col-md-4 animate-up">
-                        <div class="card h-100 overflow-hidden border-0 shadow-sm">
+                    <div class="col-md-4">
+                        <div class="card h-100 overflow-hidden border-0 shadow-lg turf-premium-card rounded-4">
                             <div class="position-relative">
-                                <img src="@(turf.MainImageUrl ?? "/images/turf-placeholder.jpg")" class="card-img-top" style="height: 240px; object-fit: cover;" alt="@turf.Name">
+                                <img src="@(turf.MainImageUrl ?? "/images/turf-placeholder.jpg")" class="card-img-top card-zoom" style="height: 250px; object-fit: cover;" alt="@turf.Name">
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-gold text-dark fw-bold px-3 py-2 rounded-3 shadow-md" style="font-size:0.85rem;">৳@turf.PricePerHour/hr</span>
+                                </div>
                                 <div class="position-absolute bottom-0 start-0 m-3">
-                                    <span class="badge bg-white text-dark rounded-pill px-3 py-2 shadow-sm fw-bold">৳@turf.PricePerHour/hr</span>
+                                    @{
+                                        var badgeColor = "bg-success";
+                                        var badgeIcon = "fa-futbol";
+                                        if (turf.SportType.Equals("Cricket", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-warning text-dark"; badgeIcon = "fa-baseball-bat-ball"; }
+                                        else if (turf.SportType.Equals("Badminton", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-info"; badgeIcon = "fa-table-tennis-paddle-ball"; }
+                                    }
+                                    <span class="badge @badgeColor px-3 py-2 rounded-3 shadow-sm fw-bold"><i class="fas @badgeIcon me-1"></i> @turf.SportType</span>
                                 </div>
                             </div>
-                            <div class="card-body p-4">
-                                <h4 class="fw-bold mb-2">@turf.Name</h4>
-                                <p class="text-muted small mb-4"><i class="fas fa-map-marker-alt me-2 text-primary"></i> @turf.City</p>
-                                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                    <span class="badge bg-light text-primary px-3 py-2">@turf.SportType</span>
-                                    <a asp-action="Details" asp-route-id="@turf.Id" class="btn btn-primary btn-sm rounded-pill px-4">Book Now</a>
+                            <div class="card-body p-4 bg-white">
+                                <h4 class="fw-bold mb-1 text-dark">@turf.Name</h4>
+                                <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-2 text-danger"></i> @turf.City</p>
+                                
+                                <div class="p-3 bg-light rounded-3 mb-3 border d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block font-monospace">🌅 Morning Peak</small>
+                                        <strong class="text-dark">৳@turf.MorningPricePerHour</strong>
+                                    </div>
+                                    <div class="vr" style="height: 25px;"></div>
+                                    <div class="text-end">
+                                        <small class="text-muted d-block font-monospace">🌙 Evening Peak</small>
+                                        <strong class="text-dark">৳@turf.EveningPricePerHour</strong>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                    <span class="text-muted small fw-bold"><i class="fas fa-maximize me-1 text-gold"></i> @(turf.TurfSize ?? "Standard Size")</span>
+                                    <a asp-action="Details" asp-route-id="@turf.Id" class="btn btn-primary rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size: 0.85rem;">Book Slots</a>
                                 </div>
                             </div>
                         </div>
@@ -108,73 +206,359 @@
             else
             {
                 <div class="col-12 text-center py-5">
-                    <p class="text-muted">No featured turfs available right now. Check back later!</p>
+                    <div class="p-5 border border-dashed rounded-4 bg-light">
+                        <i class="fas fa-calendar-xmark fa-3x text-muted mb-3"></i>
+                        <h5>No Premium Venues Found</h5>
+                        <p class="text-muted mb-0">Be the first to list a premium turf inside your community!</p>
+                    </div>
                 </div>
             }
         </div>
     </div>
 </section>
 
-<!-- Call to Action -->
-<section class="py-120 bg-primary text-white position-relative overflow-hidden">
-    <div class="cta-circles"></div>
-    <div class="container position-relative z-1">
-        <div class="row justify-content-center text-center">
-            <div class="col-lg-8 animate-up">
-                <h2 class="display-3 fw-bold mb-4">Are you a Turf Owner?</h2>
-                <p class="fs-5 text-white-50 mb-5">Join our network of premium sports venues and grow your business with our state-of-the-art management system.</p>
-                <div class="d-flex justify-content-center gap-3">
-                    <a asp-controller="Account" asp-action="Register" class="btn btn-accent btn-lg px-5 py-3 fw-bold">Partner with Us</a>
-                    <a href="#" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold">Learn More</a>
+<!-- The TurfMaster Guarantee Section -->
+<div class="container py-5 mb-5 rounded-5 shadow-lg border border-light-white bg-dark text-white guarantee-wrapper position-relative overflow-hidden">
+    <div class="guarantee-overlay"></div>
+    <div class="row align-items-center position-relative z-3 p-4">
+        <div class="col-lg-5 text-start mb-4 mb-lg-0">
+            <span class="text-gold fw-bold text-uppercase ls-1 small d-block mb-1">State-of-the-Art Operations</span>
+            <h2 class="display-5 fw-extrabold mb-3 display-font">The TurfMaster<br>Infrastructure</h2>
+            <p class="text-light-gray fw-light pe-lg-4 mb-4">
+                We designed the finest automated booking and lock security system to keep your game running seamlessly.
+            </p>
+            <a asp-action="AllTurfs" class="btn btn-gold btn-lg px-4 py-3 fw-bold rounded-3 shadow-md">Book a Premium Field</a>
+        </div>
+        <div class="col-lg-7">
+            <div class="row g-4">
+                <div class="col-sm-6">
+                    <div class="guarantee-card p-4 rounded-4 bg-glass border border-light-white">
+                        <div class="icon text-gold mb-3"><i class="fas fa-fingerprint fa-2xl"></i></div>
+                        <h5 class="fw-bold mb-2">Anti-Collision Locks</h5>
+                        <p class="text-light-gray small mb-0 fw-light">Automatic 5-minute database holding locks secure your selected slot immediately.</p>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="guarantee-card p-4 rounded-4 bg-glass border border-light-white">
+                        <div class="icon text-gold mb-3"><i class="fas fa-clock fa-2xl"></i></div>
+                        <h5 class="fw-bold mb-2">Adaptive Pricing</h5>
+                        <p class="text-light-gray small mb-0 fw-light">Smart algorithms instantly separate morning and evening peak slots rates.</p>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="guarantee-card p-4 rounded-4 bg-glass border border-light-white">
+                        <div class="icon text-gold mb-3"><i class="fas fa-bolt-lightning fa-2xl"></i></div>
+                        <h5 class="fw-bold mb-2">Simulated Wallets</h5>
+                        <p class="text-light-gray small mb-0 fw-light">Pay instantly using simulated secure OTP gateways for Nagad, Rocket, or bKash.</p>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="guarantee-card p-4 rounded-4 bg-glass border border-light-white">
+                        <div class="icon text-gold mb-3"><i class="fas fa-clipboard-list fa-2xl"></i></div>
+                        <h5 class="fw-bold mb-2">Owner Controls</h5>
+                        <p class="text-light-gray small mb-0 fw-light">Locked schedule systems prohibit administrative edits on booked fields.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
+</div>
+
+<!-- Immersive Partner CTA Breakout -->
+<div class="full-width-breakout cta-wrapper position-relative overflow-hidden py-5 text-center text-white">
+    <div class="stadium-backdrop-cta"></div>
+    <div class="cta-dark-overlay"></div>
+    
+    <div class="container position-relative z-3 py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <span class="badge bg-gold text-dark px-3 py-2 mb-3 fw-bold text-uppercase ls-1">Turf Owner Partnership</span>
+                <h2 class="display-4 fw-extrabold mb-3 display-font">Ready to Monetize Your Space?</h2>
+                <p class="fs-5 text-light-gray mb-4">
+                    List your venue in under 5 minutes. Generate automated time slots, configure booking rates, and manage bookings effortlessly with zero system collisions.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-gold btn-lg px-5 py-3 fw-bold rounded-3 shadow-md">Register as Partner</a>
+                    <a href="#featured" class="btn btn-outline-light btn-lg px-4 py-3 fw-bold rounded-3 border-2">Explore Fields first</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Styles {
     <style>
-        .hero-section {
-            height: 750px;
-            background: linear-gradient(rgba(26,60,52,0.8), rgba(26,60,52,0.8)), url('https://images.unsplash.com/photo-1556056504-517cf0121f3c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+        /* Breakout CSS to extend sections to full browser width from within layout container */
+        .full-width-breakout {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        /* ── Hero Styles ────────────────────────────────────────── */
+        .hero-wrapper {
+            height: auto;
+            min-height: 700px;
+            background: #0f1c18;
+            padding: 80px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .stadium-lights-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26,60,52,0.9), rgba(15,28,24,0.95)), 
+                        url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1920');
             background-size: cover;
             background-position: center;
-            position: relative;
+            opacity: 0.85;
+            filter: brightness(0.65) contrast(1.1);
         }
 
-        .hero-image-wrapper { position: relative; padding-left: 50px; }
-        .hero-image-wrapper img { border: 10px solid rgba(255,255,255,0.1); }
-        
-        .floating-card {
+        .hero-dark-overlay {
             position: absolute;
-            bottom: -30px;
-            left: 0;
-            background: white;
-            width: 250px;
-            z-index: 10;
-        }
-
-        .icon-circle {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-        }
-        .bg-success-light { background: #DCFCE7; }
-
-        .py-120 { padding: 120px 0; }
-        
-        .ls-1 { letter-spacing: 0.1em; }
-        
-        .cta-circles {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 800px; height: 800px;
-            background: radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 70% 30%, rgba(201,168,76,0.12), transparent 60%);
             pointer-events: none;
         }
 
-        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        /* ── Search Console ─────────────────────────────────────── */
+        .search-console-wrapper {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .bg-dark-input {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            transition: all 0.25s;
+        }
+
+        .bg-dark-input:focus {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: var(--color-accent) !important;
+        }
+
+        .input-icon-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.95rem;
+        }
+
+        /* ── Premium Buttons ─────────────────────────────────────── */
+        .btn-gold {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+            border: none;
+            color: #0f1c18 !important;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #F0CC5F, #B8952F);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201,168,76,0.45);
+        }
+
+        .bg-gold-gradient {
+            background: linear-gradient(135deg, #F0CC5F, #C9A84C);
+        }
+
+        .bg-success-gradient {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .text-gold-glow {
+            color: #E5BA44;
+            text-shadow: 0 0 20px rgba(229,186,68,0.25);
+        }
+
+        .text-gold {
+            color: #C9A84C;
+        }
+
+        .text-light-gray {
+            color: #D1D5DB;
+        }
+
+        .border-light-white {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* ── Category Pills ─────────────────────────────────────── */
+        .category-pill {
+            background: white;
+            color: #1A3C34;
+            border: 1px solid #E5E0D8;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .category-pill:hover {
+            background: #1A3C34;
+            color: white !important;
+            border-color: #1A3C34;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(26,60,52,0.15) !important;
+        }
+
+        /* ── Interactive Device ─────────────────────────────────── */
+        .interactive-preview-wrapper {
+            perspective: 1000px;
+            padding-left: 20px;
+        }
+
+        .stadium-img {
+            border: 8px solid rgba(255,255,255,0.06);
+            transform: rotateY(-5deg) rotateX(2deg);
+            transition: all 0.5s;
+        }
+
+        .stadium-img:hover {
+            transform: rotateY(0deg) rotateX(0deg);
+        }
+
+        .bg-glass {
+            background: rgba(15, 28, 24, 0.7) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .floating-widget {
+            position: absolute;
+            width: 230px;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .widget-top {
+            top: 20px;
+            left: -40px;
+        }
+
+        .widget-bottom {
+            bottom: 20px;
+            right: -20px;
+        }
+
+        .widget-icon {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+        }
+
+        .super-small {
+            font-size: 0.72rem;
+        }
+
+        /* ── Stat Cards ─────────────────────────────────────────── */
+        .stat-glass-card {
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .stat-glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.06) !important;
+        }
+
+        .stat-icon {
+            opacity: 0.85;
+            transition: all 0.2s;
+        }
+
+        .stat-glass-card:hover .stat-icon {
+            transform: scale(1.1);
+        }
+
+        /* ── Premium Card ────────────────────────────────────────── */
+        .turf-premium-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: white;
+        }
+
+        .turf-premium-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 30px rgba(26,60,52,0.15) !important;
+        }
+
+        .card-zoom {
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .turf-premium-card:hover .card-zoom {
+            transform: scale(1.05);
+        }
+
+        /* ── Guarantee Wrapper ───────────────────────────────────── */
+        .guarantee-wrapper {
+            background-color: #0f1c18 !important;
+        }
+
+        .guarantee-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 10% 80%, rgba(201,168,76,0.08), transparent 50%);
+            pointer-events: none;
+        }
+
+        .guarantee-card {
+            transition: all 0.3s;
+        }
+
+        .guarantee-card:hover {
+            background: rgba(255,255,255,0.06) !important;
+            transform: translateY(-2px);
+        }
+
+        /* ── CTA Breakout ───────────────────────────────────────── */
+        .cta-wrapper {
+            background: #0f1c18;
+        }
+
+        .stadium-backdrop-cta {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(26,60,52,0.9), rgba(15,28,24,0.95)), 
+                        url('https://images.unsplash.com/photo-1556056504-517cf0121f3c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.9;
+            filter: brightness(0.6);
+        }
+
+        .cta-dark-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(201,168,76,0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Pulse animations */
+        @@keyframes pulseSlow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pulse {
+            animation: pulseSlow 4s infinite alternate;
+        }
     </style>
 }

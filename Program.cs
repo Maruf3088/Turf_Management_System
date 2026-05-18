@@ -76,6 +76,22 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<AppDbContext>();
 
+    // Dynamic Database Index Upgrade: Drop unique constraint on TransactionId to support shared payment transaction IDs
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+            IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Payment_TransactionId_Unique' AND object_id = OBJECT_ID('Payments'))
+            BEGIN
+                DROP INDEX IX_Payment_TransactionId_Unique ON Payments;
+            END
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Payment_TransactionId' AND object_id = OBJECT_ID('Payments'))
+            BEGIN
+                CREATE INDEX IX_Payment_TransactionId ON Payments(TransactionId);
+            END
+        ");
+    }
+    catch (Exception) { /* Handle DB setup gracefully */ }
+
     var requiredRoles = new[]
     {
         "SuperAdmin", "Admin", "SupportAdmin", "FinanceAdmin", "OperationsAdmin",

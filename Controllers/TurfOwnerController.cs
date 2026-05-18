@@ -89,6 +89,60 @@ namespace turf_management_system.Controllers
         }
 
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            var result = await _turfService.GetTurfByIdAsync(id);
+            if (!result.Success) return NotFound();
+
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (result.Data!.OwnerId != ownerId) return Forbid();
+
+            var turf = result.Data;
+            var dto = new UpdateTurfDto
+            {
+                Name = turf.Name,
+                Description = turf.Description,
+                Location = turf.Location,
+                City = turf.City,
+                PricePerHour = turf.PricePerHour,
+                MorningPricePerHour = turf.MorningPricePerHour,
+                EveningPricePerHour = turf.EveningPricePerHour,
+                SportType = turf.SportType,
+                TurfSize = turf.TurfSize,
+                Amenities = turf.Amenities,
+                IndoorOutdoor = turf.IndoorOutdoor,
+                ContactNumber = turf.ContactNumber
+            };
+
+            ViewBag.TurfId = id;
+            return View(dto);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Guid id, UpdateTurfDto dto)
+        {
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.TurfId = id;
+                return View(dto);
+            }
+
+            var result = await _turfService.UpdateTurfAsync(id, dto, ownerId);
+            if (result.Success)
+            {
+                TempData["Success"] = "Turf details updated successfully!";
+                return RedirectToAction(nameof(MyTurfs));
+            }
+
+            ModelState.AddModelError("", result.Message ?? "Failed to update turf.");
+            ViewBag.TurfId = id;
+            return View(dto);
+        }
+
         public async Task<IActionResult> MyTurfs()
         {
             var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

@@ -2,112 +2,106 @@
 @using turf_management_system.DTOs.Turf
 @model PagedResultDto<TurfListItemDto>
 @{
-    ViewData["Title"] = "Find Your Perfect Turf";
+    ViewData["Title"] = "Explore Fields";
 }
 
-<!-- Search Hero -->
-<section class="search-hero">
-    <div class="container h-100 d-flex flex-column justify-content-center align-items-center text-center">
-        <h1 class="display-3 fw-bold text-white mb-3 animate-up">Find Your Perfect Turf</h1>
-        <p class="fs-5 text-white-50 mb-5 animate-up" style="animation-delay: 0.1s;">Book premium sports turfs near you for football, cricket, and more.</p>
+<!-- Premium Search Hero -->
+<section class="full-width-breakout search-hero position-relative overflow-hidden mb-5">
+    <div class="stadium-lights-backdrop"></div>
+    <div class="hero-dark-overlay"></div>
+    
+    <div class="container position-relative h-100 z-3 text-white d-flex flex-column justify-content-center align-items-center text-center py-5">
+        <span class="badge bg-gold-gradient text-dark px-3 py-2 mb-3 fw-bold text-uppercase tracking-wider rounded-pill shadow-sm animate-up">
+            ⚡ Professional Grade Arenas
+        </span>
+        <h1 class="display-3 fw-extrabold text-white mb-2 animate-up display-font">Explore Premium Fields</h1>
+        <p class="fs-5 text-light-gray mb-4 animate-up fw-light" style="animation-delay: 0.1s;">Book prime-time slots with real-time schedule locking guarantees.</p>
         
-        <div class="search-bar-wrapper shadow-lg animate-up" style="animation-delay: 0.2s;">
-            <form asp-action="AllTurfs" method="get" class="row g-0">
-                <div class="col-md-4 border-end">
-                    <div class="p-3 d-flex align-items-center">
-                        <i class="fas fa-search text-muted me-3"></i>
-                        <input type="text" name="search" class="form-control border-0 shadow-none" placeholder="Search by name..." value="@ViewContext.HttpContext.Request.Query["search"]">
-                    </div>
-                </div>
-                <div class="col-md-3 border-end">
-                    <div class="p-3 d-flex align-items-center">
-                        <i class="fas fa-map-marker-alt text-muted me-3"></i>
-                        <select name="city" class="form-select border-0 shadow-none">
-                            <option value="">All Cities</option>
-                            <option value="Dhaka" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Dhaka")">Dhaka</option>
-                            <option value="Chittagong" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Chittagong")">Chittagong</option>
-                        </select>
+        <!-- Search Console -->
+        <div class="search-bar-wrapper shadow-2xl animate-up p-2 border border-light-white" style="animation-delay: 0.2s; width: 100%; max-width: 950px; background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius:24px;">
+            <form asp-action="AllTurfs" method="get" class="row g-2 p-2">
+                <div class="col-md-4">
+                    <div class="input-icon-group h-100">
+                        <i class="fas fa-search input-icon text-muted" style="left:15px;"></i>
+                        <input type="text" name="search" class="form-control form-control-lg bg-dark-input text-white border-0 shadow-none ps-5" placeholder="Search field by name..." value="@ViewContext.HttpContext.Request.Query["search"]" style="border-radius:14px; font-size:0.95rem; height:50px;">
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="p-3 d-flex align-items-center">
-                        <i class="fas fa-volleyball-ball text-muted me-3"></i>
-                        <select name="sportType" class="form-select border-0 shadow-none">
-                            <option value="">All Sports</option>
-                            <option value="Football" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Football")">Football</option>
-                            <option value="Cricket" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Cricket")">Cricket</option>
-                        </select>
-                    </div>
+                    <select name="city" class="form-select form-select-lg bg-dark-input text-white border-0 shadow-none h-100" style="border-radius:14px; font-size:0.95rem; height:50px;">
+                        <option value="" class="bg-dark">All Cities</option>
+                        <option value="Dhaka" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Dhaka")" class="bg-dark">Dhaka</option>
+                        <option value="Chittagong" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Chittagong")" class="bg-dark">Chittagong</option>
+                        <option value="Sylhet" selected="@(ViewContext.HttpContext.Request.Query["city"] == "Sylhet")" class="bg-dark">Sylhet</option>
+                    </select>
                 </div>
-                <div class="col-md-2 p-2">
-                    <button type="submit" class="btn btn-primary w-100 h-100 rounded-pill">Search</button>
+                <div class="col-md-3">
+                    <select name="sportType" class="form-select form-select-lg bg-dark-input text-white border-0 shadow-none h-100" style="border-radius:14px; font-size:0.95rem; height:50px;">
+                        <option value="" class="bg-dark">All Sports</option>
+                        <option value="Football" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Football")" class="bg-dark">⚽ Football</option>
+                        <option value="Cricket" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Cricket")" class="bg-dark">🏏 Cricket</option>
+                        <option value="Badminton" selected="@(ViewContext.HttpContext.Request.Query["sportType"] == "Badminton")" class="bg-dark">🏸 Badminton</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-gold btn-lg w-100 h-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="border-radius:14px; height:50px; font-size:0.95rem;">
+                        <i class="fas fa-magnifying-glass"></i> Search
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </section>
 
-<div class="container py-5 mt-4">
-    <div class="row g-5">
+<div class="container py-4">
+    <div class="row g-4">
         <!-- Sidebar Filters -->
         <div class="col-lg-3">
-            <div class="filter-sidebar">
+            <div class="filter-sidebar p-4 rounded-4 shadow-sm border bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="display-font mb-0">Filters</h4>
-                    <a asp-action="AllTurfs" class="text-muted small text-decoration-none">Clear All</a>
+                    <h4 class="fw-bold mb-0 display-font" style="font-size:1.3rem;">Filters</h4>
+                    <a asp-action="AllTurfs" class="text-gold fw-bold small text-decoration-none"><i class="fas fa-rotate-left me-1"></i>Reset</a>
                 </div>
 
+                <hr class="my-3">
+
+                <!-- Sport Types filters -->
                 <div class="filter-section mb-4">
-                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Price Range</h6>
-                    <div class="px-2">
-                        <input type="range" class="form-range" min="0" max="5000" step="100" id="priceRange">
-                        <div class="d-flex justify-content-between text-muted small">
-                            <span>৳0</span>
-                            <span id="priceValue">৳5,000</span>
-                        </div>
+                    <h6 class="fw-bold text-uppercase small text-gold ls-1 mb-3">Sport Type</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/Home/AllTurfs?sportType=Football" class="btn btn-light btn-sm text-start py-2 px-3 rounded-3 d-flex justify-content-between align-items-center border">
+                            <span>⚽ Football</span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="/Home/AllTurfs?sportType=Cricket" class="btn btn-light btn-sm text-start py-2 px-3 rounded-3 d-flex justify-content-between align-items-center border">
+                            <span>🏏 Cricket</span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
+                        </a>
+                        <a href="/Home/AllTurfs?sportType=Badminton" class="btn btn-light btn-sm text-start py-2 px-3 rounded-3 d-flex justify-content-between align-items-center border">
+                            <span>🏸 Badminton</span>
+                            <i class="fas fa-chevron-right text-muted small"></i>
+                        </a>
                     </div>
                 </div>
 
-                <div class="filter-section mb-4">
-                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Sport Type</h6>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" value="Football" id="sport-fb">
-                        <label class="form-check-label" for="sport-fb">Football</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" value="Cricket" id="sport-cr">
-                        <label class="form-check-label" for="sport-cr">Cricket</label>
-                    </div>
-                </div>
-
-                <div class="filter-section">
-                    <h6 class="fw-bold text-uppercase small ls-1 mb-3">Amenities</h6>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" value="Parking" id="am-parking">
-                        <label class="form-check-label" for="am-parking">Parking</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" value="Washroom" id="am-wash">
-                        <label class="form-check-label" for="am-wash">Washroom</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" value="Lighting" id="am-light">
-                        <label class="form-check-label" for="am-light">Night Lights</label>
-                    </div>
+                <!-- Guarantees Info block -->
+                <div class="filter-section p-3 rounded-3 bg-light border border-light-white mt-4">
+                    <h6 class="fw-bold mb-2 small text-dark"><i class="fas fa-shield-halved text-success me-2"></i>Secure Locks Actived</h6>
+                    <p class="text-muted mb-0 small" style="font-size:0.78rem; line-height:1.4;">
+                        Select slots securely. Our system reserves slots immediately for 5 minutes during secure checkout sequences.
+                    </p>
                 </div>
             </div>
         </div>
 
         <!-- Results Grid -->
         <div class="col-lg-9">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <p class="text-muted mb-0">Showing <strong>@Model.TotalCount</strong> turfs</p>
-                <div class="d-flex gap-3">
-                    <select class="form-select form-select-sm border-0 bg-white shadow-sm" style="width: 150px;">
-                        <option>Recommended</option>
-                        <option>Price: Low to High</option>
-                        <option>Price: High to Low</option>
-                    </select>
+            <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded-4 shadow-sm border">
+                <p class="text-muted mb-0 font-monospace" style="font-size:0.9rem;">
+                    Showing <strong class="text-dark">@Model.TotalCount</strong> premium arenas
+                </p>
+                <div class="d-flex gap-2 align-items-center">
+                    <small class="text-muted d-none d-sm-inline">Layout View:</small>
+                    <span class="badge bg-primary px-3 py-2 rounded-pill"><i class="fas fa-grid-2 me-1"></i> Grid Layout</span>
                 </div>
             </div>
 
@@ -117,29 +111,42 @@
                     @foreach (var turf in Model.Items)
                     {
                         <div class="col-md-6 col-xl-4 animate-up">
-                            <div class="card h-100 overflow-hidden border-0 shadow-sm">
+                            <div class="card h-100 overflow-hidden border-0 shadow-lg turf-premium-card rounded-4">
                                 <div class="position-relative">
-                                    <img src="@(turf.MainImageUrl ?? "/images/turf-placeholder.jpg")" class="card-img-top" style="height: 200px; object-fit: cover;" alt="@turf.Name">
-                                    <div class="position-absolute top-0 start-0 m-3">
-                                        <span class="badge bg-white text-dark rounded-pill px-3 py-2 shadow-sm fw-bold">@turf.SportType</span>
+                                    <img src="@(turf.MainImageUrl ?? "/images/turf-placeholder.jpg")" class="card-img-top card-zoom" style="height: 220px; object-fit: cover;" alt="@turf.Name">
+                                    <div class="position-absolute top-0 end-0 m-3">
+                                        <span class="badge bg-gold text-dark fw-bold px-3 py-2 rounded-3 shadow-md" style="font-size:0.8rem;">৳@turf.PricePerHour/hr</span>
                                     </div>
-                                    <button class="btn btn-white btn-wishlist position-absolute top-0 end-0 m-3">
-                                        <i class="far fa-heart"></i>
-                                    </button>
+                                    <div class="position-absolute bottom-0 start-0 m-3">
+                                        @{
+                                            var badgeColor = "bg-success";
+                                            var badgeIcon = "fa-futbol";
+                                            if (turf.SportType.Equals("Cricket", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-warning text-dark"; badgeIcon = "fa-baseball-bat-ball"; }
+                                            else if (turf.SportType.Equals("Badminton", StringComparison.OrdinalIgnoreCase)) { badgeColor = "bg-info"; badgeIcon = "fa-table-tennis-paddle-ball"; }
+                                        }
+                                        <span class="badge @badgeColor px-3 py-2 rounded-3 shadow-sm fw-bold"><i class="fas @badgeIcon me-1"></i> @turf.SportType</span>
+                                    </div>
                                 </div>
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold mb-1">@turf.Name</h5>
-                                    <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-1 text-primary"></i> @turf.City</p>
-                                    <div class="d-flex align-items-center mb-4 text-muted small">
-                                        <span class="me-3"><i class="fas fa-expand-arrows-alt me-1"></i> @turf.TurfSize</span>
-                                        <span><i class="fas fa-star text-accent me-1"></i> 4.5</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                <div class="card-body p-4 bg-white d-flex flex-column h-100">
+                                    <h4 class="fw-bold mb-1 text-dark" style="font-size: 1.25rem;">@turf.Name</h4>
+                                    <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-2 text-danger"></i> @turf.City</p>
+                                    
+                                    <!-- Dynamic Morning vs Evening Peak pricing tables -->
+                                    <div class="p-3 bg-light rounded-3 mb-3 border d-flex justify-content-between align-items-center">
                                         <div>
-                                            <span class="d-block text-muted small uppercase">Hourly</span>
-                                            <span class="fs-5 fw-bold text-primary">৳@turf.PricePerHour</span>
+                                            <small class="text-muted d-block font-monospace" style="font-size:0.75rem;">🌅 Morning Peak</small>
+                                            <strong class="text-dark" style="font-size: 0.95rem;">৳@turf.MorningPricePerHour</strong>
                                         </div>
-                                        <a asp-action="Details" asp-route-id="@turf.Id" class="btn btn-outline-primary px-3 rounded-pill">Details</a>
+                                        <div class="vr" style="height: 25px;"></div>
+                                        <div class="text-end">
+                                            <small class="text-muted d-block font-monospace" style="font-size:0.75rem;">🌙 Evening Peak</small>
+                                            <strong class="text-dark" style="font-size: 0.95rem;">৳@turf.EveningPricePerHour</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                        <span class="text-muted small fw-bold"><i class="fas fa-maximize me-1 text-gold"></i> @(turf.TurfSize ?? "Standard Size")</span>
+                                        <a asp-action="Details" asp-route-id="@turf.Id" class="btn btn-primary rounded-3 px-3 py-2 fw-bold text-uppercase shadow-sm" style="font-size: 0.8rem;">Details</a>
                                     </div>
                                 </div>
                             </div>
@@ -149,35 +156,35 @@
                 else
                 {
                     <div class="col-12 text-center py-5">
-                        <div class="py-5">
-                            <i class="fas fa-search fa-4x text-muted mb-4 opacity-25"></i>
-                            <h3 class="display-font">No turfs match your search</h3>
-                            <p class="text-muted">Try adjusting your filters or browsing all areas.</p>
-                            <a asp-action="AllTurfs" class="btn btn-primary rounded-pill px-4 mt-3">Clear Filters</a>
+                        <div class="p-5 border border-dashed rounded-4 bg-light">
+                            <i class="fas fa-search-minus fa-4x text-muted mb-4 opacity-50"></i>
+                            <h3 class="display-font text-dark">No Arenas Match Your Search</h3>
+                            <p class="text-muted mb-4">Try clearing filters or checking another city query.</p>
+                            <a asp-action="AllTurfs" class="btn btn-primary rounded-3 px-4 py-2 fw-bold text-uppercase">Clear Filters</a>
                         </div>
                     </div>
                 }
             </div>
 
-            <!-- Pagination -->
+            <!-- Premium Pagination -->
             @if (Model.TotalPages > 1)
             {
                 <nav class="mt-5">
                     <ul class="pagination justify-content-center gap-2">
                         <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
-                            <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber - 1)">
-                                <i class="fas fa-arrow-left"></i>
+                            <a class="page-link border shadow-sm rounded-3 d-flex align-items-center justify-content-center bg-white" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber - 1)" style="width:40px; height:40px; color:#1C1C1C;">
+                                <i class="fas fa-chevron-left small"></i>
                             </a>
                         </li>
                         @for (int i = 1; i <= Model.TotalPages; i++)
                         {
                             <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                                <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@i">@i</a>
+                                <a class="page-link border shadow-sm rounded-3 d-flex align-items-center justify-content-center @(i == Model.PageNumber ? "bg-primary text-white" : "bg-white text-dark")" asp-action="AllTurfs" asp-route-pageNumber="@i" style="width:40px; height:40px; font-weight:600;">@i</a>
                             </li>
                         }
                         <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
-                            <a class="page-link border-0 shadow-sm rounded-3" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber + 1)">
-                                <i class="fas fa-arrow-right"></i>
+                            <a class="page-link border shadow-sm rounded-3 d-flex align-items-center justify-content-center bg-white" asp-action="AllTurfs" asp-route-pageNumber="@(Model.PageNumber + 1)" style="width:40px; height:40px; color:#1C1C1C;">
+                                <i class="fas fa-chevron-right small"></i>
                             </a>
                         </li>
                     </ul>
@@ -189,62 +196,123 @@
 
 @section Styles {
     <style>
+        /* Breakout CSS to extend hero banner full width */
+        .full-width-breakout {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        /* ── Search Hero ────────────────────────────────────────── */
         .search-hero {
-            height: 450px;
-            background: linear-gradient(rgba(26,60,52,0.85), rgba(26,60,52,0.85)), url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=2000');
+            height: 380px;
+            background: #0f1c18;
+            position: relative;
+        }
+
+        .stadium-lights-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26,60,52,0.9), rgba(15,28,24,0.95)), 
+                        url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1920');
             background-size: cover;
             background-position: center;
+            opacity: 0.9;
+            filter: brightness(0.65) contrast(1.15);
+        }
+
+        .hero-dark-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(201,168,76,0.1), transparent 70%);
+            pointer-events: none;
         }
 
         .search-bar-wrapper {
-            background: white;
-            border-radius: 100px;
-            padding: 8px;
             width: 100%;
-            max-width: 900px;
         }
 
-        .btn-wishlist {
-            background: white;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            color: var(--color-text-muted);
+        .bg-dark-input {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            transition: all 0.25s;
         }
-        .btn-wishlist:hover { color: var(--color-danger); }
 
+        .bg-dark-input:focus {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: var(--color-accent) !important;
+        }
+
+        .input-icon-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.95rem;
+        }
+
+        /* ── Premium Buttons ─────────────────────────────────────── */
+        .btn-gold {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+            border: none;
+            color: #0f1c18 !important;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(201,168,76,0.25);
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #F0CC5F, #B8952F);
+            transform: translateY(-1px);
+        }
+
+        .bg-gold-gradient {
+            background: linear-gradient(135deg, #F0CC5F, #C9A84C);
+        }
+
+        .text-gold {
+            color: #C9A84C;
+        }
+
+        .text-light-gray {
+            color: #D1D5DB;
+        }
+
+        .border-light-white {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* ── Sidebar Filters ─────────────────────────────────────── */
         .filter-sidebar {
             position: sticky;
-            top: 100px;
+            top: 90px;
         }
 
-        .ls-1 { letter-spacing: 0.1em; }
-        
-        .page-link {
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-text);
-            font-weight: 600;
+        .ls-1 { letter-spacing: 0.08em; }
+
+        /* ── Premium Card ────────────────────────────────────────── */
+        .turf-premium-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: white;
         }
-        .page-item.active .page-link {
-            background-color: var(--color-primary);
-            color: white;
+
+        .turf-premium-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 30px rgba(26,60,52,0.15) !important;
+        }
+
+        .card-zoom {
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .turf-premium-card:hover .card-zoom {
+            transform: scale(1.05);
         }
     </style>
-}
-
-@section Scripts {
-    <script>
-        document.getElementById('priceRange').addEventListener('input', function() {
-            document.getElementById('priceValue').innerText = '৳' + parseInt(this.value).toLocaleString();
-        });
-    </script>
 }

@@ -231,9 +231,8 @@ namespace turf_management_system.Controllers.Mvc
                 var b = bookings[i];
                 // Proportional amount for this booking
                 decimal bookingPaymentAmount = Math.Round(amount * (b.TotalAmount / totalAmountSum), 2);
-                
-                // Append suffix to subsequent bookings to avoid uniqueness constraints on TransactionId
-                string currentTxId = i == 0 ? transactionId : $"{transactionId}_{i}";
+                // Save all payments in the batch under the exact same transaction ID
+                string currentTxId = transactionId;
 
                 var (success, msg) = await _bookingService.SubmitPaymentAsync(
                     b.Id, userId, currentTxId, paymentMethod, bookingPaymentAmount, paymentType, isFake);

@@ -85,6 +85,8 @@ namespace turf_management_system.Services
 
             if (dto.TurfSize != null) turf.TurfSize = dto.TurfSize;
             if (dto.Amenities != null) turf.Amenities = dto.Amenities;
+            if (dto.IndoorOutdoor != null) turf.IndoorOutdoor = dto.IndoorOutdoor;
+            if (dto.ContactNumber != null) turf.ContactNumber = dto.ContactNumber;
             if (dto.IsActive.HasValue) turf.IsActive = dto.IsActive.Value;
 
             turf.UpdatedAt = DateTime.UtcNow;
@@ -122,6 +124,8 @@ namespace turf_management_system.Services
                     City = t.City,
                     SportType = t.SportType,
                     PricePerHour = t.PricePerHour,
+                    MorningPricePerHour = t.MorningPricePerHour,
+                    EveningPricePerHour = t.EveningPricePerHour,
                     TurfSize = t.TurfSize,
                     IsApproved = t.IsApproved,
                     MainImageUrl = t.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? t.Images.FirstOrDefault()?.ImageUrl
@@ -144,6 +148,8 @@ namespace turf_management_system.Services
                 City = t.City,
                 SportType = t.SportType,
                 PricePerHour = t.PricePerHour,
+                MorningPricePerHour = t.MorningPricePerHour,
+                EveningPricePerHour = t.EveningPricePerHour,
                 TurfSize = t.TurfSize,
                 IsApproved = t.IsApproved,
                 MainImageUrl = t.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? t.Images.FirstOrDefault()?.ImageUrl
@@ -393,6 +399,8 @@ namespace turf_management_system.Services
                 SportType = turf.SportType,
                 TurfSize = turf.TurfSize,
                 Amenities = turf.Amenities,
+                IndoorOutdoor = turf.IndoorOutdoor,
+                ContactNumber = turf.ContactNumber,
                 IsApproved = turf.IsApproved,
                 IsActive = turf.IsActive,
                 OwnerId = turf.OwnerId,

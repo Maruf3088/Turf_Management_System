@@ -16,7 +16,9 @@ namespace turf_management_system.Services.Interfaces
         Task<ApiResponse<bool>> UploadTurfImageAsync(Guid turfId, IFormFile image, bool isMain, int ownerId);
         Task<ApiResponse<bool>> DeleteTurfImageAsync(Guid imageId, int ownerId);
         Task<ApiResponse<TurfSlotDto>> AddSlotAsync(Guid turfId, CreateTurfSlotDto dto, int ownerId);
+        Task<ApiResponse<TurfSlotDto>> UpdateSlotAsync(Guid slotId, UpdateTurfSlotDto dto, int ownerId);
         Task<ApiResponse<bool>> DeleteSlotAsync(Guid slotId, int ownerId);
+
         Task<ApiResponse<IEnumerable<string>>> GetCitiesAsync();
         Task<ApiResponse<IEnumerable<string>>> GetSportTypesAsync();
         Task<ApiResponse<bool>> UpdateBookingConfigAsync(Guid turfId, UpdateBookingConfigDto dto, int ownerId);

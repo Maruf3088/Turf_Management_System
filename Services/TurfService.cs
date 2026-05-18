@@ -30,7 +30,10 @@ namespace turf_management_system.Services
                 Location = dto.Location,
                 City = dto.City,
                 PricePerHour = dto.PricePerHour,
+                MorningPricePerHour = dto.MorningPricePerHour,
+                EveningPricePerHour = dto.EveningPricePerHour,
                 SportType = dto.SportType,
+
                 TurfSize = dto.TurfSize,
                 Amenities = dto.Amenities,
                 IndoorOutdoor = dto.IndoorOutdoor,
@@ -73,7 +76,10 @@ namespace turf_management_system.Services
             if (dto.Location != null) turf.Location = dto.Location;
             if (dto.City != null) turf.City = dto.City;
             if (dto.PricePerHour.HasValue) turf.PricePerHour = dto.PricePerHour.Value;
+            if (dto.MorningPricePerHour.HasValue) turf.MorningPricePerHour = dto.MorningPricePerHour.Value;
+            if (dto.EveningPricePerHour.HasValue) turf.EveningPricePerHour = dto.EveningPricePerHour.Value;
             if (dto.SportType != null) turf.SportType = dto.SportType;
+
             if (dto.TurfSize != null) turf.TurfSize = dto.TurfSize;
             if (dto.Amenities != null) turf.Amenities = dto.Amenities;
             if (dto.IsActive.HasValue) turf.IsActive = dto.IsActive.Value;
@@ -277,7 +283,8 @@ namespace turf_management_system.Services
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 DayOfWeek = dto.DayOfWeek,
-                IsAvailable = true
+                IsAvailable = true,
+                PricingVariant = dto.PricingVariant ?? "Morning"
             };
 
             await _unitOfWork.TurfSlots.AddAsync(turfSlot);
@@ -289,8 +296,10 @@ namespace turf_management_system.Services
                 StartTime = turfSlot.StartTime,
                 EndTime = turfSlot.EndTime,
                 DayOfWeek = turfSlot.DayOfWeek,
-                IsAvailable = turfSlot.IsAvailable
+                IsAvailable = turfSlot.IsAvailable,
+                PricingVariant = turfSlot.PricingVariant
             }, "Slot added successfully.");
+
         }
 
         public async Task<ApiResponse<bool>> DeleteSlotAsync(Guid slotId, int ownerId)
@@ -307,7 +316,48 @@ namespace turf_management_system.Services
             return ApiResponse<bool>.SuccessResponse(true, "Slot deleted successfully.");
         }
 
+        public async Task<ApiResponse<TurfSlotDto>> UpdateSlotAsync(Guid slotId, UpdateTurfSlotDto dto, int ownerId)
+        {
+            var slot = await _unitOfWork.TurfSlots.GetByIdAsync(slotId);
+            if (slot == null) return ApiResponse<TurfSlotDto>.FailureResponse("Slot not found.");
+
+            var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(slot.TurfId);
+            if (turf == null || turf.OwnerId != ownerId) return ApiResponse<TurfSlotDto>.FailureResponse("Unauthorized.");
+
+            // Overlap validation (excluding the current slot itself)
+            var overlappingSlots = turf.Slots.Where(s => 
+                s.Id != slotId &&
+                (dto.DayOfWeek == null || s.DayOfWeek == null || s.DayOfWeek == dto.DayOfWeek) &&
+                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime)
+            );
+
+            if (overlappingSlots.Any())
+            {
+                return ApiResponse<TurfSlotDto>.FailureResponse("Slot overlaps with an existing slot on this day.");
+            }
+
+            slot.StartTime = dto.StartTime;
+            slot.EndTime = dto.EndTime;
+            slot.DayOfWeek = dto.DayOfWeek;
+            slot.IsAvailable = dto.IsAvailable;
+            slot.PricingVariant = dto.PricingVariant;
+
+            _unitOfWork.TurfSlots.Update(slot);
+            await _unitOfWork.CompleteAsync();
+
+            return ApiResponse<TurfSlotDto>.SuccessResponse(new TurfSlotDto
+            {
+                Id = slot.Id,
+                StartTime = slot.StartTime,
+                EndTime = slot.EndTime,
+                DayOfWeek = slot.DayOfWeek,
+                IsAvailable = slot.IsAvailable,
+                PricingVariant = slot.PricingVariant
+            }, "Slot updated successfully.");
+        }
+
         private TurfResponseDto MapToResponseDto(Turf turf)
+
         {
             return new TurfResponseDto
             {
@@ -317,6 +367,8 @@ namespace turf_management_system.Services
                 Location = turf.Location,
                 City = turf.City,
                 PricePerHour = turf.PricePerHour,
+                MorningPricePerHour = turf.MorningPricePerHour,
+                EveningPricePerHour = turf.EveningPricePerHour,
                 SportType = turf.SportType,
                 TurfSize = turf.TurfSize,
                 Amenities = turf.Amenities,
@@ -327,7 +379,8 @@ namespace turf_management_system.Services
                 CreatedAt = turf.CreatedAt,
                 MainImageUrl = turf.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? turf.Images.FirstOrDefault()?.ImageUrl,
                 Images = turf.Images.Select(i => new TurfImageDto { Id = i.Id, ImageUrl = i.ImageUrl, IsMain = i.IsMain }).ToList(),
-                Slots = turf.Slots.Select(s => new TurfSlotDto { Id = s.Id, StartTime = s.StartTime, EndTime = s.EndTime, IsAvailable = s.IsAvailable, DayOfWeek = s.DayOfWeek }).ToList()
+                Slots = turf.Slots.Select(s => new TurfSlotDto { Id = s.Id, StartTime = s.StartTime, EndTime = s.EndTime, IsAvailable = s.IsAvailable, DayOfWeek = s.DayOfWeek, PricingVariant = s.PricingVariant }).ToList()
+
             };
         }
 

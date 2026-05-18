@@ -24,6 +24,15 @@ namespace turf_management_system.DTOs.Turf
         public decimal PricePerHour { get; set; }
 
         [Required]
+        [Range(0, 1000000)]
+        public decimal MorningPricePerHour { get; set; }
+
+        [Required]
+        [Range(0, 1000000)]
+        public decimal EveningPricePerHour { get; set; }
+
+
+        [Required]
         [StringLength(100)]
         public string SportType { get; set; } = string.Empty;
 
@@ -56,6 +65,13 @@ namespace turf_management_system.DTOs.Turf
         [Range(0, 1000000)]
         public decimal? PricePerHour { get; set; }
 
+        [Range(0, 1000000)]
+        public decimal? MorningPricePerHour { get; set; }
+
+        [Range(0, 1000000)]
+        public decimal? EveningPricePerHour { get; set; }
+
+
         [StringLength(100)]
         public string? SportType { get; set; }
 
@@ -75,6 +91,9 @@ namespace turf_management_system.DTOs.Turf
         public string Location { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
         public decimal PricePerHour { get; set; }
+        public decimal MorningPricePerHour { get; set; }
+        public decimal EveningPricePerHour { get; set; }
+
         public string SportType { get; set; } = string.Empty;
         public string? TurfSize { get; set; }
         public string? Amenities { get; set; }
@@ -95,6 +114,9 @@ namespace turf_management_system.DTOs.Turf
         public string City { get; set; } = string.Empty;
         public string SportType { get; set; } = string.Empty;
         public decimal PricePerHour { get; set; }
+        public decimal MorningPricePerHour { get; set; }
+        public decimal EveningPricePerHour { get; set; }
+
         public string? TurfSize { get; set; }
         public bool IsApproved { get; set; }
         public string? MainImageUrl { get; set; }
@@ -114,6 +136,8 @@ namespace turf_management_system.DTOs.Turf
         public TimeSpan EndTime { get; set; }
         public bool IsAvailable { get; set; }
         public int? DayOfWeek { get; set; }
+        public string PricingVariant { get; set; } = "Morning";
+
     }
 
     public class CreateTurfSlotDto
@@ -125,7 +149,29 @@ namespace turf_management_system.DTOs.Turf
         public TimeSpan EndTime { get; set; }
 
         public int? DayOfWeek { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string PricingVariant { get; set; } = "Morning";
     }
+
+    public class UpdateTurfSlotDto
+    {
+        [Required]
+        public TimeSpan StartTime { get; set; }
+
+        [Required]
+        public TimeSpan EndTime { get; set; }
+
+        public int? DayOfWeek { get; set; }
+
+        public bool IsAvailable { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string PricingVariant { get; set; } = "Morning";
+    }
+
     public class UpdateBookingConfigDto
     {
         public TimeSpan OpeningTime { get; set; }

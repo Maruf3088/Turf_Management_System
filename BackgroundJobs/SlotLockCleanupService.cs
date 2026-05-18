@@ -1,5 +1,6 @@
 using turf_management_system.Data;
 using turf_management_system.Models.Domain;
+using turf_management_system.Hubs;
 using Microsoft.EntityFrameworkCore;
 
 namespace turf_management_system.BackgroundJobs
@@ -69,10 +70,27 @@ namespace turf_management_system.BackgroundJobs
                     .Where(b => bookingIds.Contains(b.Id) && b.Status == BookingStatus.PendingPayment)
                     .ToListAsync();
 
+                var notifier = scope.ServiceProvider.GetService<BookingHubNotifier>();
+
                 foreach (var booking in expiredBookings)
                 {
                     booking.Status = BookingStatus.Expired;
                     booking.UpdatedAt = now;
+
+                    if (notifier != null)
+                    {
+                        try
+                        {
+                            await notifier.NotifySlotReleased(
+                                booking.TurfId.ToString(),
+                                booking.BookingDate.ToString("yyyy-MM-dd"),
+                                booking.SlotId.ToString());
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error broadcasting SlotReleased for booking {BookingId}", booking.Id);
+                        }
+                    }
                 }
 
                 _logger.LogInformation(

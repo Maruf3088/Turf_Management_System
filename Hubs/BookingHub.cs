@@ -37,11 +37,12 @@ namespace turf_management_system.Hubs
             _hub = hub;
         }
 
-        public async Task NotifySlotLocked(string turfId, string date, string slotId, DateTime lockedUntil)
+        public async Task NotifySlotLocked(string turfId, string date, string slotId, DateTime lockedUntil, int lockedByUserId)
         {
             var group = $"turf-{turfId}-{date}";
-            await _hub.Clients.Group(group).SendAsync("SlotLocked", slotId, lockedUntil);
+            await _hub.Clients.Group(group).SendAsync("SlotLocked", slotId, lockedUntil, lockedByUserId);
         }
+
 
         public async Task NotifySlotReleased(string turfId, string date, string slotId)
         {

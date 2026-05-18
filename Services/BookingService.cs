@@ -82,7 +82,10 @@ namespace turf_management_system.Services
 
                 // Calculate price
                 var totalHours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
-                var totalAmount = totalHours * turf.PricePerHour;
+                decimal hourlyRate = slot.PricingVariant == "Evening"
+                    ? (turf.EveningPricePerHour > 0 ? turf.EveningPricePerHour : turf.PricePerHour)
+                    : (turf.MorningPricePerHour > 0 ? turf.MorningPricePerHour : turf.PricePerHour);
+                var totalAmount = totalHours * hourlyRate;
 
                 // Create the booking
                 var bookingId = Guid.NewGuid();
@@ -147,7 +150,7 @@ namespace turf_management_system.Services
         // STEP 2: Submit Payment
         // ────────────────────────────────────────────────────────────────────────────
         public async Task<(bool Success, string Message)> SubmitPaymentAsync(
-            Guid bookingId, int userId, string transactionId, PaymentMethod paymentMethod, decimal amount, PaymentType paymentType)
+            Guid bookingId, int userId, string transactionId, PaymentMethod paymentMethod, decimal amount, PaymentType paymentType, bool autoVerify = false)
         {
             var booking = await _unitOfWork.Bookings.GetBookingWithDetailsAsync(bookingId);
             if (booking == null)
@@ -198,31 +201,66 @@ namespace turf_management_system.Services
                 Amount = amount,
                 PaymentMethod = paymentMethod,
                 TransactionId = transactionId.Trim(),
-                Status = PaymentVerificationStatus.Pending,
+                Status = autoVerify ? PaymentVerificationStatus.Verified : PaymentVerificationStatus.Pending,
                 PaymentType = paymentType,
-                SubmittedAt = DateTime.UtcNow
+                SubmittedAt = DateTime.UtcNow,
+                VerifiedAt = autoVerify ? DateTime.UtcNow : null,
+                VerifiedByAdminId = autoVerify ? booking.Turf.OwnerId : null
             };
 
             await _unitOfWork.Payments.AddAsync(payment);
 
-            // Keep status as PendingPayment — owner must verify
-            booking.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.Bookings.Update(booking);
+            if (autoVerify)
+            {
+                booking.AmountPaid += amount;
+                booking.Status = BookingStatus.Confirmed;
+                booking.ConfirmedAt = DateTime.UtcNow;
+                booking.UpdatedAt = DateTime.UtcNow;
 
-            // Notify turf owner
-            await SendNotificationAsync(booking.Turf.OwnerId,
-                "New Payment Submitted",
-                $"Customer {booking.User.FullName} submitted payment of ৳{amount:F2} for booking #{bookingId.ToString()[..8].ToUpper()}. Please verify.",
-                NotificationType.PaymentSubmitted,
-                $"/TurfOwnerBooking/VerifyPayment/{payment.Id}");
+                booking.PaymentStatus = booking.AmountPaid >= booking.TotalAmount
+                    ? PaymentStatus.FullyPaid
+                    : PaymentStatus.PartiallyPaid;
+
+                if (slotLock != null)
+                {
+                    slotLock.IsReleased = true;
+                    _unitOfWork.SlotLocks.Update(slotLock);
+                }
+
+                _unitOfWork.Bookings.Update(booking);
+
+                // Notify user of instant confirmation
+                await SendNotificationAsync(userId, "Booking Confirmed!",
+                    $"Your booking at {booking.Turf.Name} on {booking.BookingDate:dd MMM yyyy} is CONFIRMED!",
+                    NotificationType.BookingConfirmed,
+                    $"/Booking/Details/{bookingId}");
+
+                await WriteAuditLogAsync("Payment", payment.Id.ToString(), "VerifiedAuto",
+                    null, $"TxId: {transactionId}, Amount: {amount}, Method: {paymentMethod} (Simulated Gateway)", userId);
+            }
+            else
+            {
+                booking.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Bookings.Update(booking);
+
+                // Notify turf owner
+                await SendNotificationAsync(booking.Turf.OwnerId,
+                    "New Payment Submitted",
+                    $"Customer {booking.User.FullName} submitted payment of ৳{amount:F2} for booking #{bookingId.ToString()[..8].ToUpper()}. Please verify.",
+                    NotificationType.PaymentSubmitted,
+                    $"/TurfOwnerBooking/VerifyPayment/{payment.Id}");
+
+                await WriteAuditLogAsync("Payment", payment.Id.ToString(), "Submitted",
+                    null, $"TxId: {transactionId}, Amount: {amount}, Method: {paymentMethod}", userId);
+            }
 
             await _unitOfWork.CompleteAsync();
 
-            await WriteAuditLogAsync("Payment", payment.Id.ToString(), "Submitted",
-                null, $"TxId: {transactionId}, Amount: {amount}, Method: {paymentMethod}", userId);
-
-            return (true, "Payment submitted successfully. Your booking will be confirmed after owner verification.");
+            return (true, autoVerify
+                ? "Payment verified instantly! Your booking is confirmed."
+                : "Payment submitted successfully. Your booking will be confirmed after owner verification.");
         }
+
 
         // ────────────────────────────────────────────────────────────────────────────
         // STEP 3: Verify Payment (Owner/Admin)
@@ -265,6 +303,7 @@ namespace turf_management_system.Services
             if (slotLock != null)
             {
                 slotLock.IsReleased = true;
+                _unitOfWork.SlotLocks.Update(slotLock);
             }
 
             _unitOfWork.Bookings.Update(booking);
@@ -357,6 +396,7 @@ namespace turf_management_system.Services
             if (slotLock != null && !slotLock.IsReleased)
             {
                 slotLock.IsReleased = true;
+                _unitOfWork.SlotLocks.Update(slotLock);
             }
 
             // Process refund if payment was made
@@ -394,7 +434,7 @@ namespace turf_management_system.Services
         // ────────────────────────────────────────────────────────────────────────────
         // Get Available Slots
         // ────────────────────────────────────────────────────────────────────────────
-        public async Task<IEnumerable<SlotAvailabilityVM>> GetAvailableSlotsAsync(Guid turfId, DateOnly date)
+        public async Task<IEnumerable<SlotAvailabilityVM>> GetAvailableSlotsAsync(Guid turfId, DateOnly date, int? currentUserId = null)
         {
             var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(turfId);
             if (turf == null) return Enumerable.Empty<SlotAvailabilityVM>();
@@ -426,27 +466,48 @@ namespace turf_management_system.Services
                     status = SlotStatus.Unavailable;
                 else if (bookedSlotIds.Contains(slot.Id))
                     status = SlotStatus.Booked;
-                else if (activeLocks.Any(l => l.StartTime < slot.EndTime && l.EndTime > slot.StartTime))
-                    status = SlotStatus.Locked;
                 else
-                    status = SlotStatus.Available;
+                {
+                    var lockForSlot = activeLocks.FirstOrDefault(l => l.StartTime < slot.EndTime && l.EndTime > slot.StartTime);
+                    if (lockForSlot != null)
+                    {
+                        if (currentUserId.HasValue && lockForSlot.LockedByUserId == currentUserId.Value)
+                            status = SlotStatus.Selected;
+                        else
+                            status = SlotStatus.InProgress;
+                    }
+                    else
+                    {
+                        status = SlotStatus.Available;
+                    }
+                }
 
                 var hours = (decimal)(slot.EndTime - slot.StartTime).TotalHours;
+                
+                // Calculate pricing based on Morning/Evening variant
+                decimal hourlyRate = slot.PricingVariant == "Evening"
+                    ? (turf.EveningPricePerHour > 0 ? turf.EveningPricePerHour : turf.PricePerHour)
+                    : (turf.MorningPricePerHour > 0 ? turf.MorningPricePerHour : turf.PricePerHour);
+
+                var startDateTime = DateTime.Today.Add(slot.StartTime);
+                var endDateTime = DateTime.Today.Add(slot.EndTime);
 
                 return new SlotAvailabilityVM
                 {
                     SlotId = slot.Id,
                     StartTime = slot.StartTime,
                     EndTime = slot.EndTime,
-                    StartTimeDisplay = slot.StartTime.ToString(@"hh\:mm"),
-                    EndTimeDisplay = slot.EndTime.ToString(@"hh\:mm"),
-                    Price = hours * turf.PricePerHour,
-                    Status = status
+                    StartTimeDisplay = startDateTime.ToString("hh:mm tt"),
+                    EndTimeDisplay = endDateTime.ToString("hh:mm tt"),
+                    Price = hours * hourlyRate,
+                    Status = status,
+                    PricingVariant = slot.PricingVariant
                 };
             }).OrderBy(s => s.StartTime).ToList();
 
             return result;
         }
+
 
         // ────────────────────────────────────────────────────────────────────────────
         // Queries

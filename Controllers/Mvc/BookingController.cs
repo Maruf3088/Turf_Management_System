@@ -55,7 +55,8 @@ namespace turf_management_system.Controllers.Mvc
                 ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
                 : DateOnly.Parse(date);
 
-            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, bookingDate);
+            int? currentUserId = User.Identity?.IsAuthenticated == true ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!) : null;
+            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, bookingDate, currentUserId);
             var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
 
             ViewBag.BookingDate = bookingDate;
@@ -72,9 +73,11 @@ namespace turf_management_system.Controllers.Mvc
             if (!DateOnly.TryParse(date, out var parsedDate))
                 return BadRequest("Invalid date format.");
 
-            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, parsedDate);
+            int? currentUserId = User.Identity?.IsAuthenticated == true ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!) : null;
+            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, parsedDate, currentUserId);
             return Json(slots);
         }
+
 
         // ── Lock Slot + Create Booking ─────────────────────────────────────────────
         [HttpPost]
@@ -102,11 +105,12 @@ namespace turf_management_system.Controllers.Mvc
             if (slot != null)
             {
                 await _hubNotifier.NotifySlotLocked(
-                    turfId.ToString(), bookingDate, slotId.ToString(), DateTime.UtcNow.AddMinutes(5));
+                    turfId.ToString(), bookingDate, slotId.ToString(), DateTime.UtcNow.AddMinutes(5), userId);
             }
 
             TempData["Success"] = message;
             return RedirectToAction("Payment", new { bookingId });
+
         }
 
         // ── Payment Page ──────────────────────────────────────────────────────────
@@ -147,15 +151,14 @@ namespace turf_management_system.Controllers.Mvc
             return View(booking);
         }
 
-        // ── Submit Payment ────────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitPayment(Guid bookingId, string transactionId,
-            PaymentMethod paymentMethod, decimal amount, PaymentType paymentType)
+            PaymentMethod paymentMethod, decimal amount, PaymentType paymentType, bool isFake = false)
         {
             var userId = GetUserId();
             var (success, message) = await _bookingService.SubmitPaymentAsync(
-                bookingId, userId, transactionId, paymentMethod, amount, paymentType);
+                bookingId, userId, transactionId, paymentMethod, amount, paymentType, isFake);
 
             if (!success)
             {
@@ -163,9 +166,21 @@ namespace turf_management_system.Controllers.Mvc
                 return RedirectToAction("Payment", new { bookingId });
             }
 
+            // Notify other users that the slot is booked
+            var booking = await _unitOfWork.Bookings.GetByIdAsync(bookingId);
+            if (booking != null)
+            {
+                await _hubNotifier.NotifySlotBooked(booking.TurfId.ToString(), booking.BookingDate.ToString("yyyy-MM-dd"), booking.SlotId.ToString());
+            }
+
             TempData["Success"] = message;
+            if (isFake)
+            {
+                return RedirectToAction("Confirmation", new { bookingId });
+            }
             return RedirectToAction("PaymentPending", new { bookingId });
         }
+
 
         // ── Payment Pending page ──────────────────────────────────────────────────
         public async Task<IActionResult> PaymentPending(Guid bookingId)
@@ -240,5 +255,83 @@ namespace turf_management_system.Controllers.Mvc
             }
             return Ok();
         }
+
+        [HttpPost("api/booking/select-slot")]
+        public async Task<IActionResult> SelectSlotAjax([FromBody] SelectSlotRequest request)
+        {
+            if (!DateOnly.TryParse(request.BookingDate, out var date))
+                return Json(new { success = false, message = "Invalid date format." });
+
+            var userId = GetUserId();
+            var (success, message, bookingId) = await _bookingService.LockSlotAndCreateBookingAsync(
+                request.TurfId, request.SlotId, date, userId, request.SpecialRequest);
+
+            if (success && bookingId.HasValue)
+            {
+                var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(bookingId.Value);
+                if (slotLock != null)
+                {
+                    // Broadcast the lock to all connected SignalR clients
+                    await _hubNotifier.NotifySlotLocked(
+                        request.TurfId.ToString(), request.BookingDate, request.SlotId.ToString(), slotLock.LockedUntil, userId);
+
+                    return Json(new { 
+                        success = true, 
+                        bookingId = bookingId.Value, 
+                        lockedUntil = slotLock.LockedUntil 
+                    });
+                }
+            }
+
+            return Json(new { success = false, message });
+        }
+
+        [HttpPost("api/booking/release-slot")]
+        public async Task<IActionResult> ReleaseSlotAjax([FromBody] ReleaseSlotRequest request)
+        {
+            var userId = GetUserId();
+            var booking = await _unitOfWork.Bookings.GetByIdAsync(request.BookingId);
+            if (booking == null || booking.UserId != userId)
+                return Json(new { success = false, message = "Booking not found or unauthorized." });
+
+            if (booking.Status == BookingStatus.PendingPayment)
+            {
+                var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(request.BookingId);
+                if (slotLock != null)
+                {
+                    slotLock.IsReleased = true;
+                    _unitOfWork.SlotLocks.Update(slotLock);
+                }
+                booking.Status = BookingStatus.Cancelled;
+                booking.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Bookings.Update(booking);
+                await _unitOfWork.CompleteAsync();
+
+                // Broadcast the release to all connected SignalR clients
+                await _hubNotifier.NotifySlotReleased(
+                    request.TurfId.ToString(), request.BookingDate, request.SlotId.ToString());
+
+                return Json(new { success = true });
+            }
+
+            return Json(new { success = false, message = "Cannot release slot in this state." });
+        }
+    }
+
+    public class SelectSlotRequest
+    {
+        public Guid TurfId { get; set; }
+        public Guid SlotId { get; set; }
+        public string BookingDate { get; set; } = string.Empty;
+        public string? SpecialRequest { get; set; }
+    }
+
+    public class ReleaseSlotRequest
+    {
+        public Guid BookingId { get; set; }
+        public Guid TurfId { get; set; }
+        public Guid SlotId { get; set; }
+        public string BookingDate { get; set; } = string.Empty;
     }
 }
+

@@ -108,6 +108,123 @@ using (var scope = app.Services.CreateScope())
         });
         context.SaveChanges();
     }
+
+    // Seed Demo Customer
+    if (!context.Users.Any(u => u.Email == "customer@turf.com"))
+    {
+        var userRole = context.Roles.First(r => r.RoleName == "User");
+        context.Users.Add(new User
+        {
+            FullName = "Maruf Customer",
+            Email = "customer@turf.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
+            RoleId = userRole.RoleId,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        });
+        context.SaveChanges();
+    }
+
+    // Seed Demo Turf Owner & Turf
+    if (!context.Users.Any(u => u.Email == "owner@turf.com"))
+    {
+        var ownerRole = context.Roles.First(r => r.RoleName == "TurfOwner");
+        var ownerUser = new User
+        {
+            FullName = "Demo Turf Owner",
+            Email = "owner@turf.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
+            RoleId = ownerRole.RoleId,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Users.Add(ownerUser);
+        context.SaveChanges();
+
+        var turfOwner = new TurfOwner
+        {
+            UserId = ownerUser.UserId,
+            BusinessName = "Greenfield Sports Center",
+            BusinessAddress = "Sector 11, Uttara, Dhaka",
+            ContactNumber = "01711223344",
+            VerificationStatus = turf_management_system.Models.Enums.VerificationStatus.Approved,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.TurfOwners.Add(turfOwner);
+        context.SaveChanges();
+
+        // Seed a premium turf for this owner
+        var turfId = Guid.NewGuid();
+        var turf = new Turf
+        {
+            Id = turfId,
+            Name = "Greenfield Arena",
+            Description = "Premium FIFA-quality turf with international standards, great amenities, and high-quality floodlights.",
+            Location = "Plot 24, Road 12, Sector 11, Uttara",
+            City = "Dhaka",
+            PricePerHour = 2000.00m,
+            MorningPricePerHour = 1500.00m,
+            EveningPricePerHour = 2500.00m,
+            SportType = "Football",
+            TurfSize = "7v7",
+            Amenities = "Floodlights, Changing Room, Washrooms, Free WiFi, Parking, Water Station",
+            IndoorOutdoor = "Outdoor",
+            ContactNumber = "01711223344",
+            IsApproved = true,
+            IsActive = true,
+            IsDraft = false,
+            OwnerId = ownerUser.UserId,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Turfs.Add(turf);
+
+        // Seed basic booking config
+        var config = new TurfBookingConfig
+        {
+            TurfId = turfId,
+            AvailableDaysMask = 127, // All days
+            OpeningTime = new TimeSpan(6, 0, 0),
+            ClosingTime = new TimeSpan(22, 0, 0),
+            SlotDurationMinutes = 60,
+            MaxAdvanceBookingDays = 30,
+            RequireFullPayment = false,
+            AdvancePaymentPercent = 50.00m,
+            AcceptBkash = true,
+            AcceptNagad = true,
+            AcceptRocket = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.TurfBookingConfigs.Add(config);
+
+        // Seed slots with morning & evening pricing variants
+        var slots = new List<TurfSlot>
+        {
+            // Morning Slots (6 AM - 12 PM)
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(6, 0, 0), EndTime = new TimeSpan(7, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(7, 0, 0), EndTime = new TimeSpan(8, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(9, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(9, 0, 0), EndTime = new TimeSpan(10, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(10, 0, 0), EndTime = new TimeSpan(11, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(11, 0, 0), EndTime = new TimeSpan(12, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            
+            // Afternoon Slots (12 PM - 4 PM - Morning Price fallback)
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(12, 0, 0), EndTime = new TimeSpan(13, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(13, 0, 0), EndTime = new TimeSpan(14, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(14, 0, 0), EndTime = new TimeSpan(15, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(15, 0, 0), EndTime = new TimeSpan(16, 0, 0), PricingVariant = "Morning", IsAvailable = true },
+
+            // Evening Slots (4 PM - 10 PM - Evening Price!)
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(16, 0, 0), EndTime = new TimeSpan(17, 0, 0), PricingVariant = "Evening", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(17, 0, 0), EndTime = new TimeSpan(18, 0, 0), PricingVariant = "Evening", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(18, 0, 0), EndTime = new TimeSpan(19, 0, 0), PricingVariant = "Evening", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(19, 0, 0), EndTime = new TimeSpan(20, 0, 0), PricingVariant = "Evening", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(20, 0, 0), EndTime = new TimeSpan(21, 0, 0), PricingVariant = "Evening", IsAvailable = true },
+            new TurfSlot { Id = Guid.NewGuid(), TurfId = turfId, StartTime = new TimeSpan(21, 0, 0), EndTime = new TimeSpan(22, 0, 0), PricingVariant = "Evening", IsAvailable = true }
+        };
+        context.TurfSlots.AddRange(slots);
+        context.SaveChanges();
+    }
+
 }
 
 // ── Middleware Pipeline ────────────────────────────────────────────────────────

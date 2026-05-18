@@ -28,6 +28,15 @@ namespace turf_management_system.Models.Domain
         public decimal PricePerHour { get; set; }
 
         [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal MorningPricePerHour { get; set; } = 0;
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal EveningPricePerHour { get; set; } = 0;
+
+
+        [Required]
         [StringLength(100)]
         public string SportType { get; set; } = string.Empty; // e.g. Football, Cricket
 

@@ -46,6 +46,30 @@ namespace turf_management_system.Controllers
             // Fetch recent bookings using the improved repository method
             var (recentBookings, _) = await _unitOfWork.Bookings.GetPagedAsync(1, 5, null, null, null, userId);
 
+            // Fetch revenue and pending/upcoming records
+            var payments = await _unitOfWork.Payments.GetAllAsync(includeProperties: "Booking,Booking.Turf,User");
+            var ownerPayments = payments.Where(p => p.Booking?.Turf?.OwnerId == userId).ToList();
+
+            var totalRevenue = ownerPayments
+                .Where(p => p.Status == PaymentVerificationStatus.Verified)
+                .Sum(p => p.Amount);
+
+            var pendingRevenue = ownerPayments
+                .Where(p => p.Status == PaymentVerificationStatus.Pending)
+                .Sum(p => p.Amount);
+
+            var pendingPayments = ownerPayments
+                .Where(p => p.Status == PaymentVerificationStatus.Pending)
+                .OrderByDescending(p => p.SubmittedAt)
+                .ToList();
+
+            var (allBookings, _) = await _unitOfWork.Bookings.GetPagedAsync(1, 100, null, null, BookingStatus.Confirmed, userId);
+            var upcomingBookings = allBookings
+                .Where(b => b.BookingDate >= todaysDate)
+                .OrderBy(b => b.BookingDate)
+                .ThenBy(b => b.StartTime)
+                .ToList();
+
             var viewModel = new TurfOwnerDashboardVM
             {
                 FullName = fullName,
@@ -54,11 +78,16 @@ namespace turf_management_system.Controllers
                 TotalBookings = totalBookingsCount,
                 IsActive = true,
                 VerificationStatus = owner?.VerificationStatus ?? VerificationStatus.Pending,
-                RecentBookings = recentBookings.ToList()
+                RecentBookings = recentBookings.ToList(),
+                TotalRevenue = totalRevenue,
+                PendingRevenue = pendingRevenue,
+                RecentPayments = pendingPayments,
+                UpcomingBookings = upcomingBookings
             };
 
             return View(viewModel);
         }
+
 
         public async Task<IActionResult> MyTurfs()
         {

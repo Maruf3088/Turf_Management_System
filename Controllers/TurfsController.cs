@@ -122,6 +122,15 @@ namespace turf_management_system.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        [HttpPut("slots/{slotId}")]
+        [Authorize(Roles = "TurfOwner")]
+        public async Task<IActionResult> UpdateSlot(Guid slotId, [FromBody] UpdateTurfSlotDto dto)
+        {
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _turfService.UpdateSlotAsync(slotId, dto, ownerId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpDelete("slots/{slotId}")]
         [Authorize(Roles = "TurfOwner")]
         public async Task<IActionResult> DeleteSlot(Guid slotId)
@@ -130,6 +139,7 @@ namespace turf_management_system.Controllers
             var result = await _turfService.DeleteSlotAsync(slotId, ownerId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
         [HttpPost("{id}/booking-config")]
         [Authorize(Roles = "TurfOwner,TurfManager")]
         public async Task<IActionResult> UpdateBookingConfig(Guid id, [FromBody] UpdateBookingConfigDto dto)

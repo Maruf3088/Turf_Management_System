@@ -9,7 +9,8 @@ namespace turf_management_system.Services.Interfaces
         Task<(bool Success, string Message, Guid? BookingId)> LockSlotAndCreateBookingAsync(Guid turfId, Guid slotId, DateOnly bookingDate, int userId, string? specialRequest);
 
         /// <summary>Step 2: Submit payment transaction ID for verification.</summary>
-        Task<(bool Success, string Message)> SubmitPaymentAsync(Guid bookingId, int userId, string transactionId, PaymentMethod paymentMethod, decimal amount, PaymentType paymentType);
+        Task<(bool Success, string Message)> SubmitPaymentAsync(Guid bookingId, int userId, string transactionId, PaymentMethod paymentMethod, decimal amount, PaymentType paymentType, bool autoVerify = false);
+
 
         /// <summary>Step 3 (Owner): Verify a submitted payment and confirm the booking.</summary>
         Task<(bool Success, string Message)> VerifyPaymentAsync(Guid paymentId, int verifierUserId);
@@ -21,7 +22,8 @@ namespace turf_management_system.Services.Interfaces
         Task<(bool Success, string Message)> CancelBookingAsync(Guid bookingId, int requesterId, string requesterRole);
 
         /// <summary>Get available slots for a turf on a specific date (respects config + existing bookings + active locks).</summary>
-        Task<IEnumerable<SlotAvailabilityVM>> GetAvailableSlotsAsync(Guid turfId, DateOnly date);
+        Task<IEnumerable<SlotAvailabilityVM>> GetAvailableSlotsAsync(Guid turfId, DateOnly date, int? currentUserId = null);
+
 
         /// <summary>Get booking details (ownership-checked).</summary>
         Task<Booking?> GetBookingWithDetailsAsync(Guid bookingId, int requesterId, string requesterRole);

@@ -21,6 +21,11 @@ namespace turf_management_system.Models.Domain
 
         public int? DayOfWeek { get; set; } // 0=Sunday to 6=Saturday; null means all days
 
+        [Required]
+        [StringLength(50)]
+        public string PricingVariant { get; set; } = "Morning"; // "Morning" or "Evening"
+
+
         // Navigation property
         [ForeignKey("TurfId")]
         public Turf Turf { get; set; } = null!;

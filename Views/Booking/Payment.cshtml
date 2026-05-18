@@ -86,7 +86,7 @@
         <div class="card-body p-4">
             <h5 class="fw-bold mb-4"><i class="fas fa-mobile-alt me-2 text-success"></i>Mobile Payment</h5>
 
-            <form asp-action="SubmitPayment" method="post">
+            <form id="paymentForm" asp-action="SubmitPayment" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="bookingId" value="@Model.Id">
                 <input type="hidden" name="paymentType" value="@(config != null && !config.RequireFullPayment ? "Partial" : "Full")">
@@ -148,22 +148,78 @@
                 <!-- Amount -->
                 <div class="mb-3">
                     <label class="form-label fw-bold">Payment Amount (৳)</label>
-                    <input type="number" name="amount" class="form-control form-control-lg" 
-                           value="@requiredAmount" min="@requiredAmount" step="0.01" required>
+                    <input type="number" id="formAmount" name="amount" class="form-control form-control-lg border-2 shadow-none" 
+                           value="@requiredAmount" min="@requiredAmount" step="0.01" required style="border-radius: 12px;">
                 </div>
 
                 <!-- Transaction ID -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">Transaction ID <span class="text-danger">*</span></label>
-                    <input type="text" name="transactionId" class="form-control form-control-lg" 
-                           placeholder="e.g. TXN8FG3K9..." required maxlength="100">
-                    <small class="text-muted">Enter the 10-digit transaction ID from your payment confirmation SMS.</small>
+                    <input type="text" id="formTxId" name="transactionId" class="form-control form-control-lg border-2 shadow-none" 
+                           placeholder="e.g. TXN8FG3K9..." required maxlength="100" style="border-radius: 12px;">
+                    <small class="text-muted">Enter the 10-digit transaction ID from your payment confirmation SMS if submitting manually.</small>
                 </div>
 
-                <button type="submit" class="btn btn-success btn-lg w-100 rounded-3 fw-bold py-3">
-                    <i class="fas fa-paper-plane me-2"></i>Submit Payment
-                </button>
+                <!-- Action Buttons -->
+                <div class="d-grid gap-3">
+                    <button type="button" class="btn btn-success btn-lg rounded-3 fw-bold py-3 shadow-sm" onclick="openSimulatedGateway()" style="border-radius: 12px; background: #059669; border: none;">
+                        <i class="fas fa-bolt me-2"></i>Pay Instantly (Simulated Wallet Gateway)
+                    </button>
+                    <button type="submit" class="btn btn-outline-secondary btn-lg rounded-3 fw-bold py-2 border-2 text-muted" style="border-radius: 12px;">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Manual verification Instead
+                    </button>
+                </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Simulated Gateway Modal -->
+<div class="modal fade" id="gatewayModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 overflow-hidden shadow-lg" id="gatewayModalContent" style="border-radius: 20px; transition: all 0.3s ease;">
+            <!-- Gateway Branding Header -->
+            <div class="p-4 text-center text-white" id="gatewayHeader" style="background: #e2136e; transition: background-color 0.3s;">
+                <h3 class="fw-extrabold mb-1" id="gatewayTitle">bKash Checkout</h3>
+                <p class="mb-0 small opacity-75" id="gatewaySubtitle">Simulated Wallet Checkout Gateway</p>
+            </div>
+            
+            <div class="modal-body p-4 bg-white">
+                <div class="text-center mb-4">
+                    <span class="text-secondary small d-block">Simulated Charge</span>
+                    <h2 class="fw-extrabold text-dark mb-0 font-monospace">৳@requiredAmount.ToString("F0")</h2>
+                </div>
+
+                <!-- Step 1: Wallet Number -->
+                <div id="stepWallet">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small mb-2">Mobile Wallet Number</label>
+                        <input type="text" id="gatewayWalletNumber" class="form-control form-control-lg border-2 shadow-none text-center fs-4 font-monospace" placeholder="01XXXXXXXXX" style="border-radius: 12px;" maxlength="11">
+                        <small class="text-muted text-center d-block mt-2">Enter any mock 11-digit mobile wallet number.</small>
+                    </div>
+                    <button class="btn btn-lg w-100 text-white fw-bold py-3 mt-3" id="gatewayWalletNextBtn" onclick="goToPinStep()" style="border-radius: 12px; background: #e2136e; border: none; font-weight: 700;">Proceed</button>
+                </div>
+
+                <!-- Step 2: PIN entry -->
+                <div id="stepPin" class="d-none">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small mb-2">Enter 5-digit PIN</label>
+                        <input type="password" id="gatewayPin" class="form-control form-control-lg border-2 shadow-none text-center fs-3 font-monospace" placeholder="•••••" style="border-radius: 12px;" maxlength="5">
+                        <small class="text-muted text-center d-block mt-2">Security Simulation: Enter any 5 digits.</small>
+                    </div>
+                    <button class="btn btn-lg w-100 text-white fw-bold py-3 mt-3" id="gatewayConfirmBtn" onclick="processSimulatedPayment()" style="border-radius: 12px; background: #e2136e; border: none; font-weight: 700;">Confirm simulated charge</button>
+                </div>
+
+                <!-- Step 3: Loading -->
+                <div id="stepLoading" class="d-none text-center py-4">
+                    <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <h5 class="fw-bold">Processing Transaction...</h5>
+                    <p class="text-muted small">Securing connections & instant verification</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-white pt-0 pb-3">
+                <button type="button" class="btn btn-link text-decoration-none text-secondary small w-100 text-center" data-bs-dismiss="modal">Cancel & Return</button>
+            </div>
         </div>
     </div>
 </div>
@@ -193,15 +249,22 @@
 
     // ── Payment Method Cards ──────────────────────────────────────────────────
     const merchantNumbers = { Bkash: '01712-345678', Nagad: '01812-345678', Rocket: '01912-345678' };
+    const brandColors = { Bkash: '#e2136e', Nagad: '#f56b00', Rocket: '#8e24aa' };
+    const brandNames = { Bkash: 'bKash Checkout', Nagad: 'Nagad Checkout', Rocket: 'Rocket Checkout' };
+    
+    let activeMethod = 'Bkash';
+
     document.querySelectorAll('.payment-radio').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
             this.parentElement.querySelector('.payment-method-card').classList.add('selected');
             document.getElementById('merchantNumber').textContent = merchantNumbers[this.value] || '01XXXXXXXXX';
+            activeMethod = this.value;
         });
         if (radio.checked) {
             radio.parentElement.querySelector('.payment-method-card').classList.add('selected');
             document.getElementById('merchantNumber').textContent = merchantNumbers[radio.value] || '01XXXXXXXXX';
+            activeMethod = radio.value;
         }
     });
 
@@ -212,5 +275,76 @@
             radio.dispatchEvent(new Event('change'));
         });
     });
+
+    // ── Simulated Checkout Gateway ───────────────────────────────────────────
+    let gatewayModal = null;
+
+    function openSimulatedGateway() {
+        // Reset Steps
+        document.getElementById('stepWallet').classList.remove('d-none');
+        document.getElementById('stepPin').classList.add('d-none');
+        document.getElementById('stepLoading').classList.add('d-none');
+        
+        // Reset input fields
+        document.getElementById('gatewayWalletNumber').value = '';
+        document.getElementById('gatewayPin').value = '';
+
+        // Configure theme based on selected method
+        const brandColor = brandColors[activeMethod] || '#e2136e';
+        const brandName = brandNames[activeMethod] || 'bKash Checkout';
+
+        document.getElementById('gatewayHeader').style.backgroundColor = brandColor;
+        document.getElementById('gatewayTitle').textContent = brandName;
+        document.getElementById('gatewayWalletNextBtn').style.backgroundColor = brandColor;
+        document.getElementById('gatewayConfirmBtn').style.backgroundColor = brandColor;
+
+        gatewayModal = new bootstrap.Modal(document.getElementById('gatewayModal'));
+        gatewayModal.show();
+    }
+
+    function goToPinStep() {
+        const wallet = document.getElementById('gatewayWalletNumber').value.trim();
+        if (wallet.length !== 11 || isNaN(wallet)) {
+            alert('Please enter a valid 11-digit mobile wallet number!');
+            return;
+        }
+        document.getElementById('stepWallet').classList.add('d-none');
+        document.getElementById('stepPin').classList.remove('d-none');
+    }
+
+    function processSimulatedPayment() {
+        const pin = document.getElementById('gatewayPin').value.trim();
+        if (pin.length < 4 || isNaN(pin)) {
+            alert('Please enter a valid PIN to confirm checkout!');
+            return;
+        }
+
+        document.getElementById('stepPin').classList.add('d-none');
+        document.getElementById('stepLoading').classList.remove('d-none');
+
+        // Simulate 2s processing delay
+        setTimeout(() => {
+            const methodPrefix = activeMethod === 'Bkash' ? 'BK' : activeMethod === 'Nagad' ? 'NG' : 'RC';
+            const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase();
+            const txId = `SIM_${methodPrefix}_${randomSuffix}`;
+
+            // Populate form and append isFake variable
+            document.getElementById('formTxId').value = txId;
+            
+            const form = document.getElementById('paymentForm');
+            
+            // Append isFake hidden input
+            const isFakeInput = document.createElement('input');
+            isFakeInput.type = 'hidden';
+            isFakeInput.name = 'isFake';
+            isFakeInput.value = 'true';
+            form.appendChild(isFakeInput);
+
+            // Close gateway and submit
+            gatewayModal.hide();
+            form.submit();
+        }, 2000);
+    }
 </script>
 }
+

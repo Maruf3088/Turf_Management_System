@@ -14,39 +14,62 @@ else
         @foreach (var slot in Model)
         {
             var statusInt = (int)slot.Status;
-            var statusClass = statusInt switch
+            var statusClass = slot.Status switch
             {
-                0 => "available",
-                1 => "locked",
-                2 => "booked",
+                SlotStatus.Available => "available",
+                SlotStatus.Selected => "selected",
+                SlotStatus.InProgress => "in-progress",
+                SlotStatus.Booked => "booked",
                 _ => "unavailable"
             };
 
-            var statusIcon = statusInt switch
+            var statusIcon = slot.Status switch
             {
-                0 => "✅ Available",
-                1 => "⏳ Locked",
-                2 => "❌ Booked",
+                SlotStatus.Available => "🟢 Available",
+                SlotStatus.Selected => "⭐ Selected",
+                SlotStatus.InProgress => "⏳ In Progress",
+                SlotStatus.Booked => "🔴 Booked",
                 _ => "🚫 Unavailable"
             };
 
-            var statusColor = statusInt switch
+            var statusColor = slot.Status switch
             {
-                0 => "text-success",
-                1 => "text-warning",
-                2 => "text-danger",
+                SlotStatus.Available => "text-success",
+                SlotStatus.Selected => "text-warning fw-bold",
+                SlotStatus.InProgress => "text-primary fw-bold",
+                SlotStatus.Booked => "text-danger",
                 _ => "text-muted"
             };
 
-            var clickable = slot.Status == SlotStatus.Available ? $"onclick=\"selectSlot('{slot.SlotId}','{slot.StartTimeDisplay}','{slot.EndTimeDisplay}',{slot.Price})\"" : "";
+            var clickable = "";
+            if (slot.Status == SlotStatus.Available)
+            {
+                clickable = $"onclick=\"handleSlotClick('{slot.SlotId}', '{slot.StartTimeDisplay}', '{slot.EndTimeDisplay}', {slot.Price}, 'Available')\" style=\"cursor: pointer; transition: all 0.2s ease;\"";
+            }
+            else if (slot.Status == SlotStatus.Selected)
+            {
+                clickable = $"onclick=\"handleSlotClick('{slot.SlotId}', '{slot.StartTimeDisplay}', '{slot.EndTimeDisplay}', {slot.Price}, 'Selected')\" style=\"cursor: pointer; border: 2px solid #d97706; background-color: #fef3c7; transition: all 0.2s ease;\"";
+            }
+            else if (slot.Status == SlotStatus.InProgress)
+            {
+                clickable = "style=\"cursor: not-allowed; opacity: 0.8; border: 2px solid #6366f1; background-color: #e0e7ff;\"";
+            }
+            else
+            {
+                clickable = "style=\"cursor: not-allowed; opacity: 0.65;\"";
+            }
 
             <div class="col">
                 <div class="slot-card @statusClass card border-0 shadow-sm rounded-3 p-3 text-center" data-slot-id="@slot.SlotId" @Html.Raw(clickable)>
-                    <div class="fw-bold">@slot.StartTimeDisplay – @slot.EndTimeDisplay</div>
-                    <div class="text-success fw-bold mt-1">৳@slot.Price.ToString("F0")</div>
+                    <div class="fw-bold fs-6 text-dark">@slot.StartTimeDisplay – @slot.EndTimeDisplay</div>
+                    <div class="text-secondary small mt-1">
+                        <span class="badge bg-light text-dark border">@slot.PricingVariant</span>
+                    </div>
+                    <div class="text-success fw-extrabold fs-5 mt-1">৳@slot.Price.ToString("F0")</div>
                     <div class="slot-status @statusColor small fw-bold mt-1">@statusIcon</div>
                 </div>
             </div>
         }
     </div>
 }
+

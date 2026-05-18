@@ -59,9 +59,17 @@
                                     <label class="form-label fw-bold">City <span class="text-danger">*</span></label>
                                     <input type="text" name="city" class="form-control" required placeholder="e.g. Dhaka" />
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Price per Hour (৳) <span class="text-danger">*</span></label>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Base Price per Hour (৳) <span class="text-danger">*</span></label>
                                     <input type="number" name="pricePerHour" class="form-control" required placeholder="1500" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Morning Price per Hour (৳) <span class="text-danger">*</span></label>
+                                    <input type="number" name="morningPricePerHour" class="form-control" required placeholder="1200" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Evening Price per Hour (৳) <span class="text-danger">*</span></label>
+                                    <input type="number" name="eveningPricePerHour" class="form-control" required placeholder="1800" />
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Turf Size <span class="text-danger">*</span></label>
@@ -406,6 +414,8 @@
                 sportType:     this.querySelector('[name="sportType"]').value,
                 city:          this.querySelector('[name="city"]').value.trim(),
                 pricePerHour:  parseFloat(this.querySelector('[name="pricePerHour"]').value) || 0,
+                morningPricePerHour: parseFloat(this.querySelector('[name="morningPricePerHour"]').value) || 0,
+                eveningPricePerHour: parseFloat(this.querySelector('[name="eveningPricePerHour"]').value) || 0,
                 turfSize:      this.querySelector('[name="turfSize"]').value.trim() || null,
                 indoorOutdoor: (this.querySelector('[name="indoorOutdoor"]:checked') || {}).value || null,
                 location:      this.querySelector('[name="location"]').value.trim(),
@@ -417,7 +427,9 @@
             if (!payload.name)         { toastr.warning('Turf name is required.');        setLoading(btn, false); return; }
             if (!payload.sportType)    { toastr.warning('Sport type is required.');       setLoading(btn, false); return; }
             if (!payload.city)         { toastr.warning('City is required.');             setLoading(btn, false); return; }
-            if (payload.pricePerHour <= 0) { toastr.warning('Enter a valid price.');     setLoading(btn, false); return; }
+            if (payload.pricePerHour <= 0) { toastr.warning('Enter a valid base price.');     setLoading(btn, false); return; }
+            if (payload.morningPricePerHour <= 0) { toastr.warning('Enter a valid morning price.'); setLoading(btn, false); return; }
+            if (payload.eveningPricePerHour <= 0) { toastr.warning('Enter a valid evening price.'); setLoading(btn, false); return; }
             if (!payload.location)     { toastr.warning('Full address is required.');    setLoading(btn, false); return; }
 
             try {
@@ -655,6 +667,8 @@
                             <div class="col-6"><p class="small text-muted mb-0">Sport</p><p class="fw-bold">${t.sportType}</p></div>
                             <div class="col-6"><p class="small text-muted mb-0">City</p><p class="fw-bold">${t.city}</p></div>
                             <div class="col-6"><p class="small text-muted mb-0">Base Rate</p><p class="fw-bold text-success">৳ ${t.pricePerHour}/hr</p></div>
+                            <div class="col-6"><p class="small text-muted mb-0">Morning Rate</p><p class="fw-bold text-success">৳ ${t.morningPricePerHour}/hr</p></div>
+                            <div class="col-6"><p class="small text-muted mb-0">Evening Rate</p><p class="fw-bold text-success">৳ ${t.eveningPricePerHour}/hr</p></div>
                             <div class="col-12"><p class="small text-muted mb-0">Location</p><p class="small">${t.location}</p></div>
                         </div>`;
 

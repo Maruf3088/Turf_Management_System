@@ -31,7 +31,8 @@ namespace turf_management_system.Controllers.Api
             if (!DateOnly.TryParse(date, out var parsedDate))
                 return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
 
-            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, parsedDate);
+            int? currentUserId = User.Identity?.IsAuthenticated == true ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!) : null;
+            var slots = await _bookingService.GetAvailableSlotsAsync(turfId, parsedDate, currentUserId);
             return Ok(new { success = true, data = slots });
         }
 

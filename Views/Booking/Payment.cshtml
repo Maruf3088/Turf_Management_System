@@ -32,36 +32,73 @@
             <h5 class="mb-0 fw-bold"><i class="fas fa-receipt me-2"></i>Booking Summary</h5>
         </div>
         <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-6">
-                    <div class="text-muted small">Turf</div>
-                    <div class="fw-bold">@Model.Turf.Name</div>
+            @if (ViewBag.Bookings != null)
+            {
+                var bookingsList = ViewBag.Bookings as List<Booking>;
+                @for (int i = 0; i < bookingsList.Count; i++)
+                {
+                    var b = bookingsList[i];
+                    <div class="row g-3 @(i > 0 ? "mt-3 pt-3 border-top" : "")">
+                        <div class="col-6">
+                            <div class="text-muted small">Turf</div>
+                            <div class="fw-bold">@b.Turf.Name</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Location</div>
+                            <div class="fw-bold">@b.Turf.City</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Date</div>
+                            <div class="fw-bold">@b.BookingDate.ToString("dd MMM yyyy")</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Time</div>
+                            <div class="fw-bold">@b.StartTime.ToString(@"hh\:mm") – @b.EndTime.ToString(@"hh\:mm")</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Duration</div>
+                            <div class="fw-bold">@b.TotalHours hrs</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Booking ID</div>
+                            <div class="fw-bold text-primary">#@b.Id.ToString()[..8].ToUpper()</div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-muted small">Turf</div>
+                        <div class="fw-bold">@Model.Turf.Name</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Location</div>
+                        <div class="fw-bold">@Model.Turf.City</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Date</div>
+                        <div class="fw-bold">@Model.BookingDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Time</div>
+                        <div class="fw-bold">@Model.StartTime.ToString(@"hh\:mm") – @Model.EndTime.ToString(@"hh\:mm")</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Duration</div>
+                        <div class="fw-bold">@Model.TotalHours hrs</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Booking ID</div>
+                        <div class="fw-bold text-primary">#@Model.Id.ToString()[..8].ToUpper()</div>
+                    </div>
                 </div>
-                <div class="col-6">
-                    <div class="text-muted small">Location</div>
-                    <div class="fw-bold">@Model.Turf.City</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-muted small">Date</div>
-                    <div class="fw-bold">@Model.BookingDate.ToString("dd MMM yyyy")</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-muted small">Time</div>
-                    <div class="fw-bold">@Model.StartTime.ToString(@"hh\:mm") – @Model.EndTime.ToString(@"hh\:mm")</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-muted small">Duration</div>
-                    <div class="fw-bold">@Model.TotalHours hrs</div>
-                </div>
-                <div class="col-6">
-                    <div class="text-muted small">Booking ID</div>
-                    <div class="fw-bold text-primary">#@Model.Id.ToString()[..8].ToUpper()</div>
-                </div>
-            </div>
+            }
             <hr>
             <div class="d-flex justify-content-between align-items-center">
                 <span class="text-muted">Total Amount</span>
-                <span class="fw-bold fs-5">৳@Model.TotalAmount.ToString("F2")</span>
+                <span class="fw-bold fs-5">৳@((ViewBag.TotalAmount as decimal? ?? Model.TotalAmount).ToString("F2"))</span>
             </div>
             @if (config != null && !config.RequireFullPayment)
             {
@@ -69,7 +106,7 @@
                     <span class="text-muted">Advance Required (@config.AdvancePaymentPercent%)</span>
                     <span class="fw-bold text-success fs-4">৳@requiredAmount.ToString("F2")</span>
                 </div>
-                <small class="text-muted">Remaining ৳@((Model.TotalAmount - requiredAmount).ToString("F2")) payable at venue.</small>
+                <small class="text-muted">Remaining ৳@(((ViewBag.TotalAmount as decimal? ?? Model.TotalAmount) - requiredAmount).ToString("F2")) payable at venue.</small>
             }
             else
             {
@@ -89,6 +126,7 @@
             <form id="paymentForm" asp-action="SubmitPayment" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="bookingId" value="@Model.Id">
+                <input type="hidden" name="bookingIds" value="@ViewBag.BookingIds">
                 <input type="hidden" name="paymentType" value="@(config != null && !config.RequireFullPayment ? "Partial" : "Full")">
 
                 <!-- Payment Method Selection -->

@@ -11,6 +11,8 @@ namespace turf_management_system.Validators
             RuleFor(x => x.Location).NotEmpty().MaximumLength(300);
             RuleFor(x => x.City).NotEmpty().MaximumLength(100);
             RuleFor(x => x.PricePerHour).GreaterThan(0);
+            RuleFor(x => x.MorningPricePerHour).GreaterThan(0);
+            RuleFor(x => x.EveningPricePerHour).GreaterThan(0);
             RuleFor(x => x.SportType).NotEmpty().MaximumLength(100);
         }
     }
@@ -23,6 +25,8 @@ namespace turf_management_system.Validators
             RuleFor(x => x.Location).MaximumLength(300).When(x => x.Location != null);
             RuleFor(x => x.City).MaximumLength(100).When(x => x.City != null);
             RuleFor(x => x.PricePerHour).GreaterThan(0).When(x => x.PricePerHour.HasValue);
+            RuleFor(x => x.MorningPricePerHour).GreaterThan(0).When(x => x.MorningPricePerHour.HasValue);
+            RuleFor(x => x.EveningPricePerHour).GreaterThan(0).When(x => x.EveningPricePerHour.HasValue);
             RuleFor(x => x.SportType).MaximumLength(100).When(x => x.SportType != null);
         }
     }

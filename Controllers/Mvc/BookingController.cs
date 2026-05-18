@@ -114,92 +114,242 @@ namespace turf_management_system.Controllers.Mvc
         }
 
         // ── Payment Page ──────────────────────────────────────────────────────────
-        public async Task<IActionResult> Payment(Guid bookingId)
+        [HttpGet("Booking/Payment/{bookingId?}")]
+        public async Task<IActionResult> Payment([FromRoute] Guid? bookingId, [FromQuery] Guid? id, [FromQuery] string? bookingIds)
         {
+            var actualBookingId = bookingId ?? id;
+            var ids = new List<Guid>();
+
+            if (!string.IsNullOrEmpty(bookingIds))
+            {
+                ids = bookingIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToList();
+            }
+            else if (actualBookingId.HasValue && actualBookingId != Guid.Empty)
+            {
+                ids.Add(actualBookingId.Value);
+            }
+
+            if (ids.Count == 0)
+            {
+                if (RouteData.Values.TryGetValue("id", out var routeIdStr) && Guid.TryParse(routeIdStr?.ToString(), out var routeId))
+                {
+                    ids.Add(routeId);
+                }
+                else
+                {
+                    return BadRequest("Booking ID is required.");
+                }
+            }
+
             var userId = GetUserId();
-            var booking = await _bookingService.GetBookingWithDetailsAsync(bookingId, userId, "User");
+            var bookings = new List<Booking>();
+            DateTime? earliestLockExpiry = null;
 
-            if (booking == null) return NotFound();
-
-            if (booking.Status != BookingStatus.PendingPayment)
+            foreach (var bid in ids)
             {
-                TempData["Error"] = booking.Status == BookingStatus.Expired
-                    ? "Your slot reservation has expired. Please book again."
-                    : "This booking is no longer awaiting payment.";
-                return RedirectToAction("MyBookings");
+                var booking = await _bookingService.GetBookingWithDetailsAsync(bid, userId, "User");
+                if (booking == null) return NotFound();
+
+                if (booking.Status != BookingStatus.PendingPayment)
+                {
+                    TempData["Error"] = "One of your selections is no longer awaiting payment.";
+                    return RedirectToAction("MyBookings");
+                }
+
+                // Check lock is still active
+                var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(bid);
+                if (slotLock == null || !slotLock.IsActive)
+                {
+                    TempData["Error"] = "Your slot reservation has expired. Please book again.";
+                    return RedirectToAction("MyBookings");
+                }
+
+                if (earliestLockExpiry == null || slotLock.LockedUntil < earliestLockExpiry)
+                {
+                    earliestLockExpiry = slotLock.LockedUntil;
+                }
+
+                bookings.Add(booking);
             }
 
-            // Check lock is still active
-            var slotLock = await _unitOfWork.SlotLocks.GetLockByBookingIdAsync(bookingId);
-            if (slotLock == null || !slotLock.IsActive)
-            {
-                TempData["Error"] = "Your slot reservation has expired. Please book again.";
-                return RedirectToAction("MyBookings");
-            }
-
-            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == booking.TurfId);
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == bookings[0].TurfId);
             ViewBag.Config = config;
-            ViewBag.LockExpiresAt = slotLock.LockedUntil;
+            ViewBag.LockExpiresAt = earliestLockExpiry ?? DateTime.UtcNow.AddMinutes(5);
+            ViewBag.Bookings = bookings;
+            ViewBag.BookingIds = string.Join(",", ids);
 
-            // Calculate required payment amount
-            decimal requiredAmount = booking.TotalAmount;
+            // Calculate total and required amount for all bookings
+            decimal totalAmount = bookings.Sum(b => b.TotalAmount);
+            decimal requiredAmount = totalAmount;
             if (config != null && !config.RequireFullPayment)
-                requiredAmount = Math.Round(booking.TotalAmount * config.AdvancePaymentPercent / 100, 2);
+                requiredAmount = Math.Round(totalAmount * config.AdvancePaymentPercent / 100, 2);
 
+            ViewBag.TotalAmount = totalAmount;
             ViewBag.RequiredAmount = requiredAmount;
 
-            return View(booking);
+            return View(bookings[0]);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitPayment(Guid bookingId, string transactionId,
+        public async Task<IActionResult> SubmitPayment(string? bookingIds, Guid? bookingId, string transactionId,
             PaymentMethod paymentMethod, decimal amount, PaymentType paymentType, bool isFake = false)
         {
             var userId = GetUserId();
-            var (success, message) = await _bookingService.SubmitPaymentAsync(
-                bookingId, userId, transactionId, paymentMethod, amount, paymentType, isFake);
+            var ids = new List<Guid>();
 
-            if (!success)
+            if (!string.IsNullOrEmpty(bookingIds))
             {
-                TempData["Error"] = message;
-                return RedirectToAction("Payment", new { bookingId });
+                ids = bookingIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToList();
+            }
+            else if (bookingId.HasValue)
+            {
+                ids.Add(bookingId.Value);
             }
 
-            // Notify other users that the slot is booked
-            var booking = await _unitOfWork.Bookings.GetByIdAsync(bookingId);
-            if (booking != null)
+            if (ids.Count == 0)
             {
-                await _hubNotifier.NotifySlotBooked(booking.TurfId.ToString(), booking.BookingDate.ToString("yyyy-MM-dd"), booking.SlotId.ToString());
+                return BadRequest("No booking ID(s) provided.");
             }
 
-            TempData["Success"] = message;
+            // Retrieve all bookings to calculate total amount
+            var bookings = new List<Booking>();
+            foreach (var bid in ids)
+            {
+                var booking = await _bookingService.GetBookingWithDetailsAsync(bid, userId, "User");
+                if (booking != null) bookings.Add(booking);
+            }
+
+            decimal totalAmountSum = bookings.Sum(b => b.TotalAmount);
+            if (totalAmountSum == 0) totalAmountSum = 1; // avoid division by zero
+
+            bool allSuccess = true;
+            string lastMessage = "";
+
+            for (int i = 0; i < bookings.Count; i++)
+            {
+                var b = bookings[i];
+                // Proportional amount for this booking
+                decimal bookingPaymentAmount = Math.Round(amount * (b.TotalAmount / totalAmountSum), 2);
+                
+                // Append suffix to subsequent bookings to avoid uniqueness constraints on TransactionId
+                string currentTxId = i == 0 ? transactionId : $"{transactionId}_{i}";
+
+                var (success, msg) = await _bookingService.SubmitPaymentAsync(
+                    b.Id, userId, currentTxId, paymentMethod, bookingPaymentAmount, paymentType, isFake);
+
+                if (!success)
+                {
+                    allSuccess = false;
+                    lastMessage = msg;
+                }
+                else
+                {
+                    // Notify other users that the slot is booked
+                    await _hubNotifier.NotifySlotBooked(b.TurfId.ToString(), b.BookingDate.ToString("yyyy-MM-dd"), b.SlotId.ToString());
+                }
+            }
+
+            if (!allSuccess)
+            {
+                TempData["Error"] = lastMessage;
+                return RedirectToAction("Payment", new { bookingIds = string.Join(",", ids) });
+            }
+
+            TempData["Success"] = "Payment submitted successfully!";
             if (isFake)
             {
-                return RedirectToAction("Confirmation", new { bookingId });
+                return RedirectToAction("Confirmation", new { bookingIds = string.Join(",", ids) });
             }
-            return RedirectToAction("PaymentPending", new { bookingId });
+            return RedirectToAction("PaymentPending", new { bookingIds = string.Join(",", ids) });
         }
 
 
         // ── Payment Pending page ──────────────────────────────────────────────────
-        public async Task<IActionResult> PaymentPending(Guid bookingId)
+        [HttpGet("Booking/PaymentPending/{bookingId?}")]
+        public async Task<IActionResult> PaymentPending([FromRoute] Guid? bookingId, [FromQuery] Guid? id, [FromQuery] string? bookingIds)
         {
+            var actualBookingId = bookingId ?? id;
+            var ids = new List<Guid>();
+
+            if (!string.IsNullOrEmpty(bookingIds))
+            {
+                ids = bookingIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToList();
+            }
+            else if (actualBookingId.HasValue && actualBookingId != Guid.Empty)
+            {
+                ids.Add(actualBookingId.Value);
+            }
+
+            if (ids.Count == 0)
+            {
+                if (RouteData.Values.TryGetValue("id", out var routeIdStr) && Guid.TryParse(routeIdStr?.ToString(), out var routeId))
+                {
+                    ids.Add(routeId);
+                }
+                else
+                {
+                    return BadRequest("Booking ID is required.");
+                }
+            }
+
             var userId = GetUserId();
-            var booking = await _bookingService.GetBookingWithDetailsAsync(bookingId, userId, "User");
-            if (booking == null) return NotFound();
-            return View(booking);
+            var bookings = new List<Booking>();
+            foreach (var bid in ids)
+            {
+                var booking = await _bookingService.GetBookingWithDetailsAsync(bid, userId, "User");
+                if (booking != null) bookings.Add(booking);
+            }
+
+            if (bookings.Count == 0) return NotFound();
+
+            ViewBag.Bookings = bookings;
+            return View(bookings[0]);
         }
 
         // ── Booking Confirmation ──────────────────────────────────────────────────
         [AllowAnonymous]
-        public async Task<IActionResult> Confirmation(Guid bookingId)
+        [HttpGet("Booking/Confirmation/{bookingId?}")]
+        public async Task<IActionResult> Confirmation([FromRoute] Guid? bookingId, [FromQuery] Guid? id, [FromQuery] string? bookingIds)
         {
+            var actualBookingId = bookingId ?? id;
+            var ids = new List<Guid>();
+
+            if (!string.IsNullOrEmpty(bookingIds))
+            {
+                ids = bookingIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToList();
+            }
+            else if (actualBookingId.HasValue && actualBookingId != Guid.Empty)
+            {
+                ids.Add(actualBookingId.Value);
+            }
+
+            if (ids.Count == 0)
+            {
+                if (RouteData.Values.TryGetValue("id", out var routeIdStr) && Guid.TryParse(routeIdStr?.ToString(), out var routeId))
+                {
+                    ids.Add(routeId);
+                }
+                else
+                {
+                    return BadRequest("Booking ID is required.");
+                }
+            }
+
             var userId = User.Identity?.IsAuthenticated == true ? (int?)GetUserId() : null;
             var role = User.FindFirstValue(ClaimTypes.Role) ?? "User";
-            var booking = await _bookingService.GetBookingWithDetailsAsync(bookingId, userId ?? 0, role);
-            if (booking == null) return NotFound();
-            return View(booking);
+
+            var bookings = new List<Booking>();
+            foreach (var bid in ids)
+            {
+                var booking = await _bookingService.GetBookingWithDetailsAsync(bid, userId ?? 0, role);
+                if (booking != null) bookings.Add(booking);
+            }
+
+            if (bookings.Count == 0) return NotFound();
+
+            ViewBag.Bookings = bookings;
+            return View(bookings[0]);
         }
 
         // ── My Bookings ───────────────────────────────────────────────────────────

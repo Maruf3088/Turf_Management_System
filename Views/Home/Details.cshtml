@@ -260,24 +260,153 @@
         .btn-day .day { font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
         .btn-day .date { font-size: 20px; font-weight: 800; }
 
-        .slot-pill {
-            background: white;
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-            padding: 15px;
+        /* Premium Slot Card Layout */
+        .slot-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
-        .slot-pill:hover:not(.disabled) { border-color: var(--color-primary); background: var(--color-bg); }
-        .slot-pill.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
-        .slot-pill.disabled { opacity: 0.4; cursor: not-allowed; background: #f5f5f5; }
-        .slot-pill .time { font-weight: bold; font-size: 14px; }
-        .slot-pill .status { font-size: 10px; text-transform: uppercase; margin-top: 4px; }
+        .slot-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: transparent;
+            transition: all 0.3s;
+        }
+
+        /* Available Style */
+        .slot-card.available {
+            border-color: #b9f6ca;
+            background: #f0fdf4;
+        }
+        .slot-card.available::before {
+            background: #00e676;
+        }
+        .slot-card.available:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px -8px rgba(0, 230, 118, 0.25);
+            border-color: #00e676;
+        }
+        .slot-card.available .slot-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        /* Selected Style (Active selection by current user) */
+        .slot-card.selected, .slot-card.active {
+            border-color: #ffb300 !important;
+            background: #fff8e1 !important;
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px -4px rgba(255, 179, 0, 0.3) !important;
+        }
+        .slot-card.selected::before, .slot-card.active::before {
+            background: #ffb300 !important;
+        }
+        .slot-card.selected .slot-badge, .slot-card.active .slot-badge {
+            background: #ffb300;
+            color: #ffffff;
+            border: 1px solid #ffb300;
+            font-weight: 700;
+        }
+
+        /* In Progress Style (Reserved/locked by another user) */
+        .slot-card.in-progress {
+            border-color: #ffe082;
+            background: #fffde7;
+            cursor: not-allowed;
+            opacity: 0.85;
+        }
+        .slot-card.in-progress::before {
+            background: #f57f17;
+        }
+        .slot-card.in-progress .slot-badge {
+            background: #fffde7;
+            color: #f57f17;
+            border: 1px solid #fff59d;
+        }
+
+        /* Booked Style */
+        .slot-card.booked {
+            border-color: #ffcdd2;
+            background: #ffebee;
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+        .slot-card.booked::before {
+            background: #d32f2f;
+        }
+        .slot-card.booked .slot-badge {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        /* Blocked (Unavailable) Style */
+        .slot-card.blocked {
+            border-color: #cfd8dc;
+            background: #eceff1;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .slot-card.blocked::before {
+            background: #37474f;
+        }
+        .slot-card.blocked .slot-badge {
+            background: #eceff1;
+            color: #37474f;
+            border: 1px solid #b0bec5;
+        }
+
+        .slot-card.disabled {
+            pointer-events: none;
+        }
+
+        /* Inner Slot Elements */
+        .slot-time {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1a202c;
+            margin-bottom: 6px;
+        }
+        .slot-shift {
+            font-size: 11px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+        .slot-price {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a3c34;
+            margin-bottom: 12px;
+        }
+        .slot-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            align-self: center;
+            width: fit-content;
+            margin: 0 auto;
+        }
 
         .sticky-sidebar { position: sticky; top: 170px; }
 
@@ -346,32 +475,42 @@
                         `;
                     } else {
                         slots.forEach(slot => {
-                            // Status mapping: 0=Available, 1=Booked, 2=Locked, 3=Unavailable
+                            // Status mapping: 0=Available, 1=Selected, 2=InProgress, 3=Booked, 4=Unavailable
                             const status = slot.status;
                             let statusText = 'Available';
-                            let cssClass = '';
-                            let clickHandler = `selectSlot(this, '${slot.slotId}', '${slot.startTimeDisplay} - ${slot.endTimeDisplay}', ${slot.price})`;
+                            let cssClass = 'available';
+                            let statusIcon = '<i class="fas fa-check-circle me-1"></i>';
+                            let clickHandler = `selectSlot(this, '${slot.slotId}', '${slot.startTimeDisplay} – ${slot.endTimeDisplay}', ${slot.price})`;
 
-                            if (status === 1) {
+                            if (status === 1) { // Selected
+                                statusText = 'Selected';
+                                cssClass = 'selected';
+                                statusIcon = '<i class="fas fa-star me-1"></i>';
+                            } else if (status === 2) { // InProgress
+                                statusText = 'In Progress';
+                                cssClass = 'disabled in-progress';
+                                statusIcon = '<i class="fas fa-spinner fa-spin me-1"></i>';
+                                clickHandler = '';
+                            } else if (status === 3) { // Booked
                                 statusText = 'Booked';
                                 cssClass = 'disabled booked';
+                                statusIcon = '<i class="fas fa-ban me-1"></i>';
                                 clickHandler = '';
-                            } else if (status === 2) {
-                                statusText = 'Reserved';
-                                cssClass = 'disabled locked';
-                                clickHandler = '';
-                            } else if (status === 3) {
-                                statusText = 'Closed';
-                                cssClass = 'disabled';
+                            } else if (status === 4) { // Unavailable
+                                statusText = 'Blocked';
+                                cssClass = 'disabled blocked';
+                                statusIcon = '<i class="fas fa-minus-circle me-1"></i>';
                                 clickHandler = '';
                             }
 
                             const col = document.createElement('div');
-                            col.className = 'col-md-3 col-6';
+                            col.className = 'col-md-3 col-sm-4 col-6';
                             col.innerHTML = `
-                                <div class="slot-pill ${cssClass}" onclick="${clickHandler}">
-                                    <div class="time">${slot.startTimeDisplay}</div>
-                                    <div class="status small fw-bold">${statusText}</div>
+                                <div class="slot-card ${cssClass}" onclick="${clickHandler}" data-slot-id="${slot.slotId}">
+                                    <div class="slot-time">${slot.startTimeDisplay} – ${slot.endTimeDisplay}</div>
+                                    <div class="slot-shift">${slot.pricingVariant}</div>
+                                    <div class="slot-price">৳${Math.round(slot.price)}</div>
+                                    <div class="slot-badge">${statusIcon} ${statusText}</div>
                                 </div>
                             `;
                             container.appendChild(col);
@@ -395,8 +534,12 @@
         }
 
         function selectSlot(el, id, timeRange, price) {
-            document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.slot-card').forEach(p => {
+                p.classList.remove('active');
+                p.classList.remove('selected');
+            });
             el.classList.add('active');
+            el.classList.add('selected');
             
             document.getElementById('selected-slot-id').value = id;
             document.getElementById('summary-time').innerText = timeRange;

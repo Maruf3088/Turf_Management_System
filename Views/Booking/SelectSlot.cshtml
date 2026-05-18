@@ -82,7 +82,7 @@
                     <h3 class="fw-extrabold text-success mb-0 fs-3" id="drawerAmount">৳0</h3>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary btn-lg rounded-3 px-3 border-2" onclick="releaseSelectedSlot()" style="border-radius: 12px; font-weight: 600;">
+                    <button class="btn btn-outline-secondary btn-lg rounded-3 px-3 border-2" onclick="releaseAllSelectedSlots()" style="border-radius: 12px; font-weight: 600;">
                         <i class="fas fa-times me-1"></i> Cancel Selection
                     </button>
                     <a id="checkoutBtn" class="btn btn-success btn-lg rounded-3 px-4 fw-bold shadow-sm" href="#" style="border-radius: 12px; background: #059669; border: none; font-weight: 700; transition: all 0.2s;">
@@ -154,8 +154,7 @@
         const currentUserId = @(User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value : "null");
 
         // UI State
-        let activeBookingId = null;
-        let activeSlotId = null;
+        let selectedSlots = {}; // slotId -> { bookingId, start, end, price, lockedUntil }
         let countdownTimer = null;
 
         // ── SignalR Connection ─────────────────────────────────────────────────
@@ -200,9 +199,10 @@
                 card.style.border = '2px solid #fecaca';
                 card.style.backgroundColor = '#fef2f2';
             }
-            if (activeSlotId === slotId) {
-                hideCheckoutDrawer();
-                alert("The slot you were selecting has been confirmed by someone else!");
+            if (selectedSlots[slotId] !== undefined) {
+                delete selectedSlots[slotId];
+                updateCheckoutDrawer();
+                alert("One of the slots you were selecting has been confirmed by someone else!");
             }
         });
 
@@ -215,9 +215,13 @@
         });
 
         // ── Date Picker change ───────────────────────────────────────────────────
-        document.getElementById('datePicker').addEventListener('change', function() {
+        document.getElementById('datePicker').addEventListener('change', async function() {
             const newDate = this.value;
             connection.invoke("LeaveTurfDateGroup", turfId, currentDate);
+            
+            // Release all active selections
+            await releaseAllSelectedSlots();
+
             currentDate = newDate;
             refreshSlots(newDate);
             connection.invoke("JoinTurfDateGroup", turfId, currentDate);
@@ -246,27 +250,33 @@
                 let statusColor = '';
                 let clickable = '';
 
-                if (slot.status === 0) { // Available
+                let status = slot.status;
+                let isAvailable = status === 0 || status === 'Available';
+                let isSelected = status === 1 || status === 'Selected' || (selectedSlots[slot.slotId] !== undefined);
+                let isInProgress = status === 2 || status === 'InProgress' || status === 'In-Progress';
+                let isBooked = status === 3 || status === 'Booked';
+
+                if (isAvailable && !isSelected) { // Available
                     statusClass = 'available';
                     statusIcon = '🟢 Available';
                     statusColor = 'text-success';
                     clickable = `onclick="handleSlotClick('${slot.slotId}','${slot.startTimeDisplay}','${slot.endTimeDisplay}',${slot.price}, 'Available')" style="cursor: pointer;"`;
-                } else if (slot.status === 1) { // Selected
+                } else if (isSelected) { // Selected
                     statusClass = 'selected';
                     statusIcon = '⭐ Selected';
                     statusColor = 'text-warning fw-bold';
                     clickable = `onclick="handleSlotClick('${slot.slotId}','${slot.startTimeDisplay}','${slot.endTimeDisplay}',${slot.price}, 'Selected')" style="cursor: pointer; border: 2px solid #d97706; background-color: #fffbeb;"`;
-                } else if (slot.status === 2) { // InProgress
+                } else if (isInProgress) { // InProgress
                     statusClass = 'in-progress';
                     statusIcon = '⏳ In Progress';
                     statusColor = 'text-primary fw-bold';
                     clickable = `style="cursor: not-allowed; opacity: 0.8; border: 2px solid #6366f1; background-color: #f5f3ff;"`;
-                } else if (slot.status === 3) { // Booked
+                } else if (isBooked) { // Booked
                     statusClass = 'booked';
                     statusIcon = '🔴 Booked';
                     statusColor = 'text-danger';
                     clickable = `style="cursor: not-allowed; opacity: 0.65; border: 2px solid #fecaca; background-color: #fef2f2;"`;
-                } else { // Unavailable
+                } else { // Unavailable / Blocked
                     statusClass = 'unavailable';
                     statusIcon = '🚫 Unavailable';
                     statusColor = 'text-muted';
@@ -296,11 +306,6 @@
             }
 
             if (currentState === 'Available') {
-                if (activeSlotId) {
-                    alert("Please release your current slot selection before locking another one!");
-                    return;
-                }
-                
                 // Call SelectSlot API
                 fetch('/api/booking/select-slot', {
                     method: 'POST',
@@ -315,54 +320,108 @@
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        activeBookingId = res.bookingId;
-                        activeSlotId = slotId;
-                        showCheckoutDrawer(start, end, price, res.lockedUntil);
+                        selectedSlots[slotId] = {
+                            bookingId: res.bookingId,
+                            start: start,
+                            end: end,
+                            price: price,
+                            lockedUntil: res.lockedUntil
+                        };
+                        updateCheckoutDrawer();
+                        refreshSlots();
                     } else {
                         alert(res.message || "Failed to reserve the slot.");
                     }
                 });
             } else if (currentState === 'Selected') {
-                releaseSelectedSlot();
+                const selection = selectedSlots[slotId];
+                if (selection) {
+                    fetch('/api/booking/release-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: selection.bookingId,
+                            turfId: turfId,
+                            slotId: slotId,
+                            bookingDate: currentDate
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            delete selectedSlots[slotId];
+                            updateCheckoutDrawer();
+                            refreshSlots();
+                        } else {
+                            alert(res.message || "Failed to release the slot.");
+                        }
+                    });
+                }
             }
         }
 
-        function releaseSelectedSlot() {
-            if (!activeBookingId) return;
+        async function releaseAllSelectedSlots() {
+            const slotIds = Object.keys(selectedSlots);
+            if (slotIds.length === 0) return;
 
-            fetch('/api/booking/release-slot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    bookingId: activeBookingId,
-                    turfId: turfId,
-                    slotId: activeSlotId,
-                    bookingDate: currentDate
-                })
-            })
-            .then(r => r.json())
-            .then(res => {
-                if (res.success) {
-                    hideCheckoutDrawer();
-                } else {
-                    alert(res.message || "Failed to release the slot.");
+            for (const slotId of slotIds) {
+                const selection = selectedSlots[slotId];
+                try {
+                    await fetch('/api/booking/release-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: selection.bookingId,
+                            turfId: turfId,
+                            slotId: slotId,
+                            bookingDate: currentDate
+                        })
+                    });
+                } catch (e) {
+                    console.error("Failed to release slot " + slotId, e);
                 }
-            });
+            }
+            selectedSlots = {};
+            hideCheckoutDrawer();
+            refreshSlots();
         }
 
         // ── Drawer Animations and State ──────────────────────────────────────────
-        function showCheckoutDrawer(start, end, price, lockedUntil) {
-            document.getElementById('drawerTime').textContent = `${start} – ${end}`;
+        function updateCheckoutDrawer() {
+            const slotIds = Object.keys(selectedSlots);
+            if (slotIds.length === 0) {
+                hideCheckoutDrawer();
+                refreshSlots();
+                return;
+            }
+
+            let totalPrice = 0;
+            let timeRanges = [];
+            let earliestExpiry = null;
+            let bookingIdsList = [];
+
+            for (const slotId in selectedSlots) {
+                const sel = selectedSlots[slotId];
+                totalPrice += sel.price;
+                timeRanges.push(`${sel.start}–${sel.end}`);
+                bookingIdsList.push(sel.bookingId);
+
+                const expiry = new Date(sel.lockedUntil).getTime();
+                if (earliestExpiry === null || expiry < earliestExpiry) {
+                    earliestExpiry = expiry;
+                }
+            }
+
+            document.getElementById('drawerTime').textContent = timeRanges.join(', ');
             document.getElementById('drawerDate').textContent = new Date(currentDate + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-            document.getElementById('drawerAmount').textContent = `৳${price.toFixed(0)}`;
-            document.getElementById('checkoutBtn').href = `/Booking/Payment?bookingId=${activeBookingId}`;
+            document.getElementById('drawerAmount').textContent = `৳${totalPrice.toFixed(0)}`;
+            document.getElementById('checkoutBtn').href = `/Booking/Payment?bookingIds=${bookingIdsList.join(',')}`;
 
             const drawer = document.getElementById('checkoutDrawer');
             drawer.style.transform = 'translateY(0)';
             drawer.style.opacity = '1';
 
-            // Start countdown timer
-            startLockCountdown(lockedUntil);
+            startLockCountdown(earliestExpiry);
         }
 
         function hideCheckoutDrawer() {
@@ -370,26 +429,21 @@
             drawer.style.transform = 'translateY(100%)';
             drawer.style.opacity = '0';
 
-            // Reset state
-            activeBookingId = null;
-            activeSlotId = null;
+            selectedSlots = {};
             if (countdownTimer) clearInterval(countdownTimer);
         }
 
-        function startLockCountdown(lockedUntilStr) {
+        function startLockCountdown(expiryTime) {
             if (countdownTimer) clearInterval(countdownTimer);
-            const expiryTime = new Date(lockedUntilStr).getTime();
 
             countdownTimer = setInterval(() => {
                 const now = new Date().getTime();
-                // SignalR/DB dates are UTC. Let's calculate difference correctly:
-                // Since JavaScript Date parsed the UTC timestamp directly, this is fully timezone safe.
                 const diff = expiryTime - now;
 
                 if (diff <= 0) {
                     clearInterval(countdownTimer);
                     hideCheckoutDrawer();
-                    alert("Your 5-minute reservation timer has expired. The slot has been released.");
+                    alert("One or more slot reservations have expired. Please reserve again.");
                     refreshSlots();
                     return;
                 }

@@ -62,6 +62,9 @@ namespace turf_management_system.Services
 
             await _unitOfWork.CompleteAsync();
 
+            // Auto-generate initial slots from default config
+            await GenerateSlotsFromConfigAsync(turf.Id, defaultConfig);
+
             return ApiResponse<TurfResponseDto>.SuccessResponse(MapToResponseDto(turf), "Turf created successfully. Awaiting admin approval.");
         }
 
@@ -310,6 +313,15 @@ namespace turf_management_system.Services
             var turf = await _unitOfWork.Turfs.GetByIdAsync(slot.TurfId);
             if (turf?.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
 
+            // Check if slot has active or pending bookings
+            var bookingCount = await _unitOfWork.Bookings.GetCountAsync(b => 
+                b.SlotId == slotId && 
+                (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.Confirmed));
+            if (bookingCount > 0)
+            {
+                return ApiResponse<bool>.FailureResponse("This slot has active or pending bookings and cannot be deleted.");
+            }
+
             _unitOfWork.TurfSlots.Delete(slot);
             await _unitOfWork.CompleteAsync();
 
@@ -323,6 +335,15 @@ namespace turf_management_system.Services
 
             var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(slot.TurfId);
             if (turf == null || turf.OwnerId != ownerId) return ApiResponse<TurfSlotDto>.FailureResponse("Unauthorized.");
+
+            // Check if slot has active or pending bookings
+            var bookingCount = await _unitOfWork.Bookings.GetCountAsync(b => 
+                b.SlotId == slotId && 
+                (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.Confirmed));
+            if (bookingCount > 0)
+            {
+                return ApiResponse<TurfSlotDto>.FailureResponse("This slot has active or pending bookings and cannot be modified.");
+            }
 
             // Overlap validation (excluding the current slot itself)
             var overlappingSlots = turf.Slots.Where(s => 
@@ -471,6 +492,7 @@ namespace turf_management_system.Services
             while (current + duration <= config.ClosingTime)
             {
                 var endTime = current + duration;
+                string pricingVariant = current.Hours >= 16 ? "Evening" : "Morning";
                 await _unitOfWork.TurfSlots.AddAsync(new TurfSlot
                 {
                     Id = Guid.NewGuid(),
@@ -478,7 +500,8 @@ namespace turf_management_system.Services
                     StartTime = current,
                     EndTime = endTime,
                     DayOfWeek = null, // null = applies to ALL days
-                    IsAvailable = true
+                    IsAvailable = true,
+                    PricingVariant = pricingVariant
                 });
                 current = endTime;
             }

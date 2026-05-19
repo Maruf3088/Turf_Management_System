@@ -11,6 +11,10 @@ namespace turf_management_system.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_Payment_TransactionId_Unique",
+                table: "Payments");
+
             migrationBuilder.AddColumn<DateOnly>(
                 name: "EffectiveFromDate",
                 table: "TurfSlots",
@@ -22,6 +26,11 @@ namespace turf_management_system.Data.Migrations
                 table: "TurfSlots",
                 type: "date",
                 nullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payment_TransactionId",
+                table: "Payments",
+                column: "TransactionId");
         }
 
         /// <inheritdoc />

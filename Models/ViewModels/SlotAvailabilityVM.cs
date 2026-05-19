@@ -10,6 +10,8 @@ namespace turf_management_system.Models.ViewModels
         public decimal Price { get; set; }
         public SlotStatus Status { get; set; }
         public string PricingVariant { get; set; } = "Morning";
+        public Guid? BookingId { get; set; }
+        public DateTime? LockedUntil { get; set; }
     }
 
     public enum SlotStatus

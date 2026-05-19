@@ -24,10 +24,7 @@ namespace turf_management_system.Models.Domain
         [Required]
         [StringLength(50)]
         public string PricingVariant { get; set; } = "Morning"; // "Morning" or "Evening"
-        
-        public DateOnly? EffectiveFromDate { get; set; }
-        
-        public DateOnly? EffectiveToDate { get; set; }
+
 
         // Navigation property
         [ForeignKey("TurfId")]

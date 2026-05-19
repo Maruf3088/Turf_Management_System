@@ -272,16 +272,12 @@ namespace turf_management_system.Services
             if (turf == null) return ApiResponse<TurfSlotDto>.FailureResponse("Turf not found.");
             if (turf.OwnerId != ownerId) return ApiResponse<TurfSlotDto>.FailureResponse("Unauthorized.");
 
-            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
-            int maxDays = config?.MaxAdvanceBookingDays ?? 7;
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var effectiveFrom = today.AddDays(maxDays);
-
-            // Overlap validation: only check slots that will be active when this slot starts
+            // Overlap validation
+            // If new slot is Every Day (null), check against ALL existing slots
+            // If new slot is for a specific day, check against slots for that day AND Every Day slots
             var overlappingSlots = turf.Slots.Where(s => 
                 (dto.DayOfWeek == null || s.DayOfWeek == null || s.DayOfWeek == dto.DayOfWeek) &&
-                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime) &&
-                (s.EffectiveToDate == null || s.EffectiveToDate > effectiveFrom)
+                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime)
             );
 
             if (overlappingSlots.Any())
@@ -297,8 +293,7 @@ namespace turf_management_system.Services
                 EndTime = dto.EndTime,
                 DayOfWeek = dto.DayOfWeek,
                 IsAvailable = true,
-                PricingVariant = dto.PricingVariant ?? "Morning",
-                EffectiveFromDate = effectiveFrom
+                PricingVariant = dto.PricingVariant ?? "Morning"
             };
 
             await _unitOfWork.TurfSlots.AddAsync(turfSlot);
@@ -312,7 +307,8 @@ namespace turf_management_system.Services
                 DayOfWeek = turfSlot.DayOfWeek,
                 IsAvailable = turfSlot.IsAvailable,
                 PricingVariant = turfSlot.PricingVariant
-            }, $"Slot added successfully. It will be active in {maxDays} days.");
+            }, "Slot added successfully.");
+
         }
 
         public async Task<ApiResponse<bool>> DeleteSlotAsync(Guid slotId, int ownerId)
@@ -323,35 +319,19 @@ namespace turf_management_system.Services
             var turf = await _unitOfWork.Turfs.GetByIdAsync(slot.TurfId);
             if (turf?.OwnerId != ownerId) return ApiResponse<bool>.FailureResponse("Unauthorized.");
 
-            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == slot.TurfId);
-            int maxDays = config?.MaxAdvanceBookingDays ?? 7;
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var effectiveTo = today.AddDays(maxDays);
-
-            // If the slot is in the future and hasn't become active yet, delete it immediately
-            if (slot.EffectiveFromDate.HasValue && slot.EffectiveFromDate > today)
-            {
-                _unitOfWork.TurfSlots.Delete(slot);
-                await _unitOfWork.CompleteAsync();
-                return ApiResponse<bool>.SuccessResponse(true, "Slot deleted successfully.");
-            }
-
-            // Check if slot has active or pending bookings beyond the new expiration date
+            // Check if slot has active or pending bookings
             var bookingCount = await _unitOfWork.Bookings.GetCountAsync(b => 
                 b.SlotId == slotId && 
-                b.BookingDate > effectiveTo &&
                 (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.Confirmed));
             if (bookingCount > 0)
             {
-                return ApiResponse<bool>.FailureResponse("This slot has bookings beyond the advance booking window and cannot be deleted.");
+                return ApiResponse<bool>.FailureResponse("This slot has active or pending bookings and cannot be deleted.");
             }
 
-            // Soft delete by setting EffectiveToDate
-            slot.EffectiveToDate = effectiveTo;
-            _unitOfWork.TurfSlots.Update(slot);
+            _unitOfWork.TurfSlots.Delete(slot);
             await _unitOfWork.CompleteAsync();
 
-            return ApiResponse<bool>.SuccessResponse(true, $"Slot scheduled for removal. It will be removed in {maxDays} days.");
+            return ApiResponse<bool>.SuccessResponse(true, "Slot deleted successfully.");
         }
 
         public async Task<ApiResponse<TurfSlotDto>> UpdateSlotAsync(Guid slotId, UpdateTurfSlotDto dto, int ownerId)
@@ -362,88 +342,45 @@ namespace turf_management_system.Services
             var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(slot.TurfId);
             if (turf == null || turf.OwnerId != ownerId) return ApiResponse<TurfSlotDto>.FailureResponse("Unauthorized.");
 
-            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == slot.TurfId);
-            int maxDays = config?.MaxAdvanceBookingDays ?? 7;
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var effectiveDate = today.AddDays(maxDays);
-
-            // If the slot is in the future and hasn't become active yet, we can modify it directly
-            if (slot.EffectiveFromDate.HasValue && slot.EffectiveFromDate > today)
+            // Check if slot has active or pending bookings
+            var bookingCount = await _unitOfWork.Bookings.GetCountAsync(b => 
+                b.SlotId == slotId && 
+                (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.Confirmed));
+            if (bookingCount > 0)
             {
-                var overlappingSlots = turf.Slots.Where(s => 
-                    s.Id != slotId &&
-                    (dto.DayOfWeek == null || s.DayOfWeek == null || s.DayOfWeek == dto.DayOfWeek) &&
-                    (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime) &&
-                    (s.EffectiveToDate == null || s.EffectiveToDate > slot.EffectiveFromDate)
-                );
-
-                if (overlappingSlots.Any())
-                {
-                    return ApiResponse<TurfSlotDto>.FailureResponse("Slot overlaps with an existing slot on this day.");
-                }
-
-                slot.StartTime = dto.StartTime;
-                slot.EndTime = dto.EndTime;
-                slot.DayOfWeek = dto.DayOfWeek;
-                slot.IsAvailable = dto.IsAvailable;
-                slot.PricingVariant = dto.PricingVariant;
-
-                _unitOfWork.TurfSlots.Update(slot);
-                await _unitOfWork.CompleteAsync();
-
-                return ApiResponse<TurfSlotDto>.SuccessResponse(new TurfSlotDto
-                {
-                    Id = slot.Id,
-                    StartTime = slot.StartTime,
-                    EndTime = slot.EndTime,
-                    DayOfWeek = slot.DayOfWeek,
-                    IsAvailable = slot.IsAvailable,
-                    PricingVariant = slot.PricingVariant
-                }, "Pending slot updated successfully.");
+                return ApiResponse<TurfSlotDto>.FailureResponse("This slot has active or pending bookings and cannot be modified.");
             }
 
-            // Otherwise, we expire the current slot and create a new one to take effect in maxDays
-            var overlaps = turf.Slots.Where(s => 
+            // Overlap validation (excluding the current slot itself)
+            var overlappingSlots = turf.Slots.Where(s => 
                 s.Id != slotId &&
                 (dto.DayOfWeek == null || s.DayOfWeek == null || s.DayOfWeek == dto.DayOfWeek) &&
-                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime) &&
-                (s.EffectiveToDate == null || s.EffectiveToDate > effectiveDate)
+                (dto.StartTime < s.EndTime && dto.EndTime > s.StartTime)
             );
 
-            if (overlaps.Any())
+            if (overlappingSlots.Any())
             {
-                return ApiResponse<TurfSlotDto>.FailureResponse("Updated slot overlaps with an existing slot on this day.");
+                return ApiResponse<TurfSlotDto>.FailureResponse("Slot overlaps with an existing slot on this day.");
             }
 
-            // Expire old slot
-            slot.EffectiveToDate = effectiveDate;
+            slot.StartTime = dto.StartTime;
+            slot.EndTime = dto.EndTime;
+            slot.DayOfWeek = dto.DayOfWeek;
+            slot.IsAvailable = dto.IsAvailable;
+            slot.PricingVariant = dto.PricingVariant;
+
             _unitOfWork.TurfSlots.Update(slot);
-
-            // Create new slot
-            var newSlot = new TurfSlot
-            {
-                Id = Guid.NewGuid(),
-                TurfId = slot.TurfId,
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
-                DayOfWeek = dto.DayOfWeek,
-                IsAvailable = dto.IsAvailable,
-                PricingVariant = dto.PricingVariant,
-                EffectiveFromDate = effectiveDate
-            };
-
-            await _unitOfWork.TurfSlots.AddAsync(newSlot);
             await _unitOfWork.CompleteAsync();
 
             return ApiResponse<TurfSlotDto>.SuccessResponse(new TurfSlotDto
             {
-                Id = newSlot.Id,
-                StartTime = newSlot.StartTime,
-                EndTime = newSlot.EndTime,
-                DayOfWeek = newSlot.DayOfWeek,
-                IsAvailable = newSlot.IsAvailable,
-                PricingVariant = newSlot.PricingVariant
-            }, $"Slot scheduled for update. Changes will take effect in {maxDays} days.");
+                Id = slot.Id,
+                StartTime = slot.StartTime,
+                EndTime = slot.EndTime,
+                DayOfWeek = slot.DayOfWeek,
+                IsAvailable = slot.IsAvailable,
+                PricingVariant = slot.PricingVariant
+            }, "Slot updated successfully.");
         }
 
         private TurfResponseDto MapToResponseDto(Turf turf)
@@ -471,17 +408,7 @@ namespace turf_management_system.Services
                 CreatedAt = turf.CreatedAt,
                 MainImageUrl = turf.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? turf.Images.FirstOrDefault()?.ImageUrl,
                 Images = turf.Images.Select(i => new TurfImageDto { Id = i.Id, ImageUrl = i.ImageUrl, IsMain = i.IsMain }).ToList(),
-                Slots = turf.Slots
-                    .Where(s => s.EffectiveToDate == null)
-                    .Select(s => new TurfSlotDto 
-                    { 
-                        Id = s.Id, 
-                        StartTime = s.StartTime, 
-                        EndTime = s.EndTime, 
-                        IsAvailable = s.IsAvailable, 
-                        DayOfWeek = s.DayOfWeek, 
-                        PricingVariant = s.PricingVariant 
-                    }).ToList()
+                Slots = turf.Slots.Select(s => new TurfSlotDto { Id = s.Id, StartTime = s.StartTime, EndTime = s.EndTime, IsAvailable = s.IsAvailable, DayOfWeek = s.DayOfWeek, PricingVariant = s.PricingVariant }).ToList()
 
             };
         }
@@ -510,13 +437,6 @@ namespace turf_management_system.Services
                 await _unitOfWork.BookingConfigs.AddAsync(config);
             }
 
-            // Check if any slot-defining fields changed
-            bool hoursOrDurationChanged = 
-                config.OpeningTime != dto.OpeningTime ||
-                config.ClosingTime != dto.ClosingTime ||
-                config.SlotDurationMinutes != dto.SlotDurationMinutes ||
-                config.AvailableDaysMask != dto.AvailableDaysMask;
-
             config.OpeningTime = dto.OpeningTime;
             config.ClosingTime = dto.ClosingTime;
             config.SlotDurationMinutes = dto.SlotDurationMinutes;
@@ -530,39 +450,21 @@ namespace turf_management_system.Services
 
             await _unitOfWork.CompleteAsync();
 
-            // Auto-generate time slots from config ONLY if operating hours/duration/days mask changed
-            if (hoursOrDurationChanged)
-            {
-                await GenerateSlotsFromConfigAsync(turfId, config, isInitial: false);
-            }
+            // Auto-generate time slots from config
+            await GenerateSlotsFromConfigAsync(turfId, config);
 
             return ApiResponse<bool>.SuccessResponse(true, "Booking configuration updated.");
         }
 
         /// <summary>
         /// Regenerates TurfSlot records from the booking config's operating hours.
-        /// Deletes/expires slots and recreates them based on the new config.
+        /// Deletes slots with no active bookings and recreates them based on the new config.
         /// </summary>
-        private async Task GenerateSlotsFromConfigAsync(Guid turfId, TurfBookingConfig config, bool isInitial = false)
+        private async Task GenerateSlotsFromConfigAsync(Guid turfId, TurfBookingConfig config)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var effectiveDate = isInitial ? today : today.AddDays(config.MaxAdvanceBookingDays);
-
-            // Fetch all current slots for the turf
-            int page = 1;
-            var currentSlots = new List<TurfSlot>();
-            while (true)
-            {
-                var slotResult = await _unitOfWork.TurfSlots.GetPagedAsync(page, 100, s => s.TurfId == turfId);
-                if (!slotResult.Items.Any()) break;
-                currentSlots.AddRange(slotResult.Items);
-                if (slotResult.Items.Count() < 100) break;
-                page++;
-            }
-
             // Collect booked slot IDs (Confirmed or PendingPayment) — must NOT be deleted
             var bookedSlotIds = new HashSet<Guid>();
-            page = 1;
+            int page = 1;
             while (true)
             {
                 var bookingResult = await _unitOfWork.Bookings.GetPagedAsync(page, 200, null, turfId, null);
@@ -575,32 +477,21 @@ namespace turf_management_system.Services
                 page++;
             }
 
-            // Process existing slots
-            foreach (var slot in currentSlots)
+            // Delete existing unbooked slots for this turf via GetPagedAsync
+            bool moreSlots = true;
+            while (moreSlots)
             {
-                // Future slot that hasn't become active yet can be deleted directly
-                if (slot.EffectiveFromDate.HasValue && slot.EffectiveFromDate > today)
-                {
+                var slotResult = await _unitOfWork.TurfSlots.GetPagedAsync(1, 100,
+                    s => s.TurfId == turfId && !bookedSlotIds.Contains(s.Id));
+                
+                if (!slotResult.Items.Any()) break;
+                
+                foreach (var slot in slotResult.Items)
                     _unitOfWork.TurfSlots.Delete(slot);
-                }
-                else
-                {
-                    // For active/past slots, if they are not already expired, set their expiration
-                    if (slot.EffectiveToDate == null || slot.EffectiveToDate > effectiveDate)
-                    {
-                        if (!bookedSlotIds.Contains(slot.Id) && isInitial)
-                        {
-                            _unitOfWork.TurfSlots.Delete(slot);
-                        }
-                        else
-                        {
-                            slot.EffectiveToDate = effectiveDate;
-                            _unitOfWork.TurfSlots.Update(slot);
-                        }
-                    }
-                }
+                
+                await _unitOfWork.CompleteAsync();
+                moreSlots = slotResult.Items.Count() >= 100;
             }
-            await _unitOfWork.CompleteAsync();
 
             // Generate new slots from OpeningTime → ClosingTime using SlotDurationMinutes
             var current = config.OpeningTime;
@@ -618,8 +509,7 @@ namespace turf_management_system.Services
                     EndTime = endTime,
                     DayOfWeek = null, // null = applies to ALL days
                     IsAvailable = true,
-                    PricingVariant = pricingVariant,
-                    EffectiveFromDate = isInitial ? null : effectiveDate
+                    PricingVariant = pricingVariant
                 });
                 current = endTime;
             }

@@ -11,13 +11,11 @@ namespace turf_management_system.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly AppDbContext _context; // for transactions
-        private readonly IExternalNotificationService _externalNotificationService;
 
-        public BookingService(IUnitOfWork unitOfWork, AppDbContext context, IExternalNotificationService externalNotificationService)
+        public BookingService(IUnitOfWork unitOfWork, AppDbContext context)
         {
             _unitOfWork = unitOfWork;
             _context = context;
-            _externalNotificationService = externalNotificationService;
         }
 
         // ────────────────────────────────────────────────────────────────────────────
@@ -38,12 +36,6 @@ namespace turf_management_system.Services
             var slot = await _unitOfWork.TurfSlots.GetByIdAsync(slotId);
             if (slot == null || slot.TurfId != turfId || !slot.IsAvailable)
                 return (false, "Selected slot is not valid.", null);
-
-            if (slot.EffectiveFromDate.HasValue && slot.EffectiveFromDate > bookingDate)
-                return (false, "Selected slot is not active yet.", null);
-
-            if (slot.EffectiveToDate.HasValue && slot.EffectiveToDate <= bookingDate)
-                return (false, "Selected slot has expired.", null);
 
             // ── Validate Booking Config Rules ─────────────────────────────────────
             var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
@@ -523,9 +515,7 @@ namespace turf_management_system.Services
 
             var dayOfWeek = (int)date.DayOfWeek;
             var allSlots = turf.Slots
-                .Where(s => (s.DayOfWeek == null || s.DayOfWeek == dayOfWeek) &&
-                            (s.EffectiveFromDate == null || s.EffectiveFromDate <= date) &&
-                            (s.EffectiveToDate == null || s.EffectiveToDate > date))
+                .Where(s => s.DayOfWeek == null || s.DayOfWeek == dayOfWeek)
                 .ToList();
 
             // Get existing confirmed/pending bookings on this date
@@ -540,6 +530,9 @@ namespace turf_management_system.Services
             var result = allSlots.Select(slot =>
             {
                 SlotStatus status;
+                Guid? bookingId = null;
+                DateTime? lockedUntil = null;
+
                 if (!slot.IsAvailable)
                     status = SlotStatus.Unavailable;
                 else if (bookedSlotIds.Contains(slot.Id))
@@ -550,9 +543,15 @@ namespace turf_management_system.Services
                     if (lockForSlot != null)
                     {
                         if (currentUserId.HasValue && lockForSlot.LockedByUserId == currentUserId.Value)
+                        {
                             status = SlotStatus.Selected;
+                            bookingId = lockForSlot.BookingId;
+                            lockedUntil = lockForSlot.LockedUntil;
+                        }
                         else
+                        {
                             status = SlotStatus.InProgress;
+                        }
                     }
                     else
                     {
@@ -579,7 +578,9 @@ namespace turf_management_system.Services
                     EndTimeDisplay = endDateTime.ToString("hh:mm tt"),
                     Price = hours * hourlyRate,
                     Status = status,
-                    PricingVariant = slot.PricingVariant
+                    PricingVariant = slot.PricingVariant,
+                    BookingId = bookingId,
+                    LockedUntil = lockedUntil
                 };
             }).OrderBy(s => s.StartTime).ToList();
 
@@ -661,15 +662,6 @@ namespace turf_management_system.Services
             };
             await _unitOfWork.Notifications.AddAsync(notification);
             await _unitOfWork.CompleteAsync();
-
-            try
-            {
-                await _externalNotificationService.DispatchNotificationAsync(userId, title, message, type);
-            }
-            catch
-            {
-                // Swallow to prevent failing the core database operations if dispatch fails
-            }
         }
     }
 }

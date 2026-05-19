@@ -153,8 +153,25 @@
         let currentDate = '@bookingDate.ToString("yyyy-MM-dd")';
         const currentUserId = @(User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value : "null");
 
-        // UI State
-        let selectedSlot = null; // { bookingId, slotId, start, end, price, lockedUntil }
+        // UI State (Multiple Slots Selection)
+        let selectedSlots = {};
+        @foreach (var slot in Model.Slots)
+        {
+            if (slot.Status == SlotStatus.Selected && slot.BookingId.HasValue && slot.LockedUntil.HasValue)
+            {
+                <text>
+                selectedSlots['@slot.SlotId'] = {
+                    bookingId: '@slot.BookingId.Value',
+                    slotId: '@slot.SlotId',
+                    start: '@slot.StartTimeDisplay',
+                    end: '@slot.EndTimeDisplay',
+                    price: @slot.Price,
+                    lockedUntil: '@slot.LockedUntil.Value.ToString("o")'
+                };
+                </text>
+            }
+        }
+
         let countdownTimer = null;
 
         // ── SignalR Connection ─────────────────────────────────────────────────
@@ -164,49 +181,25 @@
             .build();
 
         connection.on("SlotLocked", (slotId, lockedUntil, lockedByUserId) => {
-            const card = document.querySelector(`[data-slot-id="${slotId}"]`);
-            if (card) {
-                if (lockedByUserId === currentUserId) {
-                    card.className = 'slot-card selected card border-0 shadow-sm rounded-3 p-3 text-center';
-                    card.querySelector('.slot-status').textContent = '⭐ Selected';
-                    card.querySelector('.slot-status').className = 'slot-status text-warning small fw-bold';
-                    card.setAttribute('onclick', `handleSlotClick('${slotId}', '', '', 0, 'Selected')`);
-                    card.style.cursor = 'pointer';
-                    card.style.border = '2px solid #d97706';
-                    card.style.backgroundColor = '#fffbeb';
-                } else {
-                    card.className = 'slot-card in-progress card border-0 shadow-sm rounded-3 p-3 text-center';
-                    card.querySelector('.slot-status').textContent = '⏳ In Progress';
-                    card.querySelector('.slot-status').className = 'slot-status text-primary small fw-bold';
-                    card.onclick = null;
-                    card.style.cursor = 'not-allowed';
-                    card.style.opacity = '0.8';
-                    card.style.border = '2px solid #6366f1';
-                    card.style.backgroundColor = '#f5f3ff';
-                }
+            if (lockedByUserId !== currentUserId) {
+                refreshSlots();
             }
         });
 
         connection.on("SlotBooked", (slotId) => {
-            const card = document.querySelector(`[data-slot-id="${slotId}"]`);
-            if (card) {
-                card.className = 'slot-card booked card border-0 shadow-sm rounded-3 p-3 text-center';
-                card.querySelector('.slot-status').textContent = '🔴 Booked';
-                card.querySelector('.slot-status').className = 'slot-status text-danger small fw-bold';
-                card.onclick = null;
-                card.style.cursor = 'not-allowed';
-                card.style.opacity = '0.65';
-                card.style.border = '2px solid #fecaca';
-                card.style.backgroundColor = '#fef2f2';
-            }
-            if (selectedSlot && selectedSlot.slotId === slotId) {
-                selectedSlot = null;
+            if (selectedSlots[slotId]) {
+                delete selectedSlots[slotId];
                 updateCheckoutDrawer();
-                alert("The slot you selected has been booked by someone else!");
+                alert("One of the slots you selected has been booked by someone else!");
             }
+            refreshSlots();
         });
 
         connection.on("SlotReleased", (slotId) => {
+            if (selectedSlots[slotId]) {
+                delete selectedSlots[slotId];
+                updateCheckoutDrawer();
+            }
             refreshSlots();
         });
 
@@ -233,7 +226,26 @@
             fetch(`/api/booking/slots/${turfId}?date=${d}`)
                 .then(r => r.json())
                 .then(slots => {
+                    // Sync selectedSlots from server to keep countdown/bookingId fresh
+                    slots.forEach(slot => {
+                        let status = slot.status;
+                        let isSelected = status === 1 || status === 'Selected';
+                        if (isSelected && slot.bookingId && slot.lockedUntil) {
+                            if (!selectedSlots[slot.slotId]) {
+                                selectedSlots[slot.slotId] = {
+                                    bookingId: slot.bookingId,
+                                    slotId: slot.slotId,
+                                    start: slot.startTimeDisplay,
+                                    end: slot.endTimeDisplay,
+                                    price: slot.price,
+                                    lockedUntil: slot.lockedUntil
+                                };
+                            }
+                        }
+                    });
+
                     renderSlots(slots);
+                    updateCheckoutDrawer();
                 });
         }
 
@@ -252,7 +264,7 @@
 
                 let status = slot.status;
                 let isAvailable = status === 0 || status === 'Available';
-                let isSelected = status === 1 || status === 'Selected' || (selectedSlot && selectedSlot.slotId === slot.slotId);
+                let isSelected = status === 1 || status === 'Selected' || !!selectedSlots[slot.slotId];
                 let isInProgress = status === 2 || status === 'InProgress' || status === 'In-Progress';
                 let isBooked = status === 3 || status === 'Booked';
 
@@ -307,12 +319,13 @@
             if (currentState === 'Available') {
                 selectNewSlot(slotId, start, end, price);
             } else if (currentState === 'Selected') {
-                if (selectedSlot && selectedSlot.slotId === slotId) {
+                const sel = selectedSlots[slotId];
+                if (sel) {
                     fetch('/api/booking/release-slot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            bookingId: selectedSlot.bookingId,
+                            bookingId: sel.bookingId,
                             turfId: turfId,
                             slotId: slotId,
                             bookingDate: currentDate
@@ -321,7 +334,7 @@
                     .then(r => r.json())
                     .then(res => {
                         if (res.success) {
-                            selectedSlot = null;
+                            delete selectedSlots[slotId];
                             updateCheckoutDrawer();
                             refreshSlots();
                         } else {
@@ -333,82 +346,58 @@
         }
 
         function selectNewSlot(slotId, start, end, price) {
-            // If there is an existing selection, release it first
-            const attemptSelect = () => {
-                fetch('/api/booking/select-slot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        turfId: turfId,
-                        slotId: slotId,
-                        bookingDate: currentDate,
-                        specialRequest: ""
-                    })
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        selectedSlot = {
-                            bookingId: res.bookingId,
-                            slotId: slotId,
-                            start: start,
-                            end: end,
-                            price: price,
-                            lockedUntil: res.lockedUntil
-                        };
-                        updateCheckoutDrawer();
-                        refreshSlots();
-                    } else {
-                        alert(res.message || "Failed to reserve the slot.");
-                    }
-                });
-            };
-
-            if (selectedSlot) {
-                // release existing selection
-                awaitReleaseAndThen(selectedSlot.bookingId, attemptSelect);
-            } else {
-                attemptSelect();
-            }
-        }
-
-        function awaitReleaseAndThen(bookingIdToRelease, callback) {
-            fetch('/api/booking/release-slot', {
+            fetch('/api/booking/select-slot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    bookingId: bookingIdToRelease,
                     turfId: turfId,
-                    slotId: bookingIdToRelease, // slotId isn't strictly required by server for release check
-                    bookingDate: currentDate
+                    slotId: slotId,
+                    bookingDate: currentDate,
+                    specialRequest: ""
                 })
             })
             .then(r => r.json())
             .then(res => {
-                // ignore failure, proceed to attempt select
-                selectedSlot = null;
-                callback();
-            })
-            .catch(() => { selectedSlot = null; callback(); });
+                if (res.success) {
+                    selectedSlots[slotId] = {
+                        bookingId: res.bookingId,
+                        slotId: slotId,
+                        start: start,
+                        end: end,
+                        price: price,
+                        lockedUntil: res.lockedUntil
+                    };
+                    updateCheckoutDrawer();
+                    refreshSlots();
+                } else {
+                    alert(res.message || "Failed to reserve the slot. " + (res.message || ""));
+                }
+            });
         }
 
         async function releaseAllSelectedSlots() {
-            if (!selectedSlot) return;
-            try {
-                await fetch('/api/booking/release-slot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        bookingId: selectedSlot.bookingId,
-                        turfId: turfId,
-                        slotId: selectedSlot.slotId,
-                        bookingDate: currentDate
+            const promises = [];
+            for (const slotId in selectedSlots) {
+                const sel = selectedSlots[slotId];
+                promises.push(
+                    fetch('/api/booking/release-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: sel.bookingId,
+                            turfId: turfId,
+                            slotId: slotId,
+                            bookingDate: currentDate
+                        })
                     })
-                });
-            } catch (e) {
-                console.error("Failed to release slot " + selectedSlot.slotId, e);
+                );
             }
-            selectedSlot = null;
+            try {
+                await Promise.all(promises);
+            } catch (e) {
+                console.error("Failed to release some slots", e);
+            }
+            selectedSlots = {};
             hideCheckoutDrawer();
             refreshSlots();
         }
@@ -418,7 +407,6 @@
             const slotIds = Object.keys(selectedSlots);
             if (slotIds.length === 0) {
                 hideCheckoutDrawer();
-                refreshSlots();
                 return;
             }
 
@@ -445,18 +433,20 @@
             document.getElementById('checkoutBtn').href = `/Booking/Payment?bookingIds=${bookingIdsList.join(',')}`;
 
             const drawer = document.getElementById('checkoutDrawer');
-            drawer.style.transform = 'translateY(0)';
-            drawer.style.opacity = '1';
+            if (drawer) {
+                drawer.style.transform = 'translateY(0)';
+                drawer.style.opacity = '1';
+            }
 
             startLockCountdown(earliestExpiry);
         }
 
         function hideCheckoutDrawer() {
             const drawer = document.getElementById('checkoutDrawer');
-            drawer.style.transform = 'translateY(100%)';
-            drawer.style.opacity = '0';
-
-            selectedSlots = {};
+            if (drawer) {
+                drawer.style.transform = 'translateY(100%)';
+                drawer.style.opacity = '0';
+            }
             if (countdownTimer) clearInterval(countdownTimer);
         }
 
@@ -469,6 +459,7 @@
 
                 if (diff <= 0) {
                     clearInterval(countdownTimer);
+                    selectedSlots = {};
                     hideCheckoutDrawer();
                     alert("One or more slot reservations have expired. Please reserve again.");
                     refreshSlots();
@@ -481,6 +472,11 @@
                     `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }, 1000);
         }
+
+        // Init on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCheckoutDrawer();
+        });
     </script>
 }
 

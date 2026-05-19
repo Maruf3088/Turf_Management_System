@@ -1,0 +1,142 @@
+@model turf_management_system.Models.ViewModels.UserListVM
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Platform Admin Management";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-success"><i class="fas fa-user-shield me-2"></i>Platform Admin Management</h2>
+        <p class="text-muted mb-0">Create and manage platform administrative roles (Admins, Support, Finance, and Operations).</p>
+    </div>
+    <div>
+        <a asp-action="CreateAdmin" class="btn btn-success px-4 py-2 shadow-sm">
+            <i class="fas fa-user-plus me-2"></i>Create New Admin
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <!-- Search Bar -->
+    <form class="d-flex gap-2 mb-4" method="get">
+        <div class="input-group">
+            <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Search admins by name or email...">
+            <button class="btn btn-success" type="submit"><i class="fas fa-search me-1"></i>Search</button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a asp-action="Admins" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+            }
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>#</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.PagedUsers.Items.Any())
+                {
+                    foreach (var user in Model.PagedUsers.Items)
+                    {
+                        <tr>
+                            <td>@user.UserId</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-2 me-2 text-success">
+                                        <i class="fas fa-user-shield"></i>
+                                    </div>
+                                    <strong>@user.FullName</strong>
+                                </div>
+                            </td>
+                            <td>@user.Email</td>
+                            <td>@(string.IsNullOrEmpty(user.PhoneNumber) ? "N/A" : user.PhoneNumber)</td>
+                            <td>
+                                <span class="badge bg-warning text-dark px-3 py-2">
+                                    @user.Role.RoleName
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(user.IsActive ? "badge-active" : "badge-inactive") px-3 py-2">
+                                    @(user.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <!-- Toggle Status -->
+                                    <form asp-action="ToggleStatus" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-warning" : "btn-outline-success")" 
+                                                title="@(user.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="fas @(user.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
+                                        </button>
+                                    </form>
+
+                                    <!-- View Details -->
+                                    <a asp-action="UserDetails" asp-route-id="@user.UserId" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <!-- Delete Permanently -->
+                                    <form asp-action="DeleteUser" method="post" onsubmit="return confirm('CRITICAL: Are you sure you want to PERMANENTLY DELETE this Admin? This action is irreversible.')" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Permanently">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>No admins found matching your criteria.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    @if (Model.PagedUsers.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.PagedUsers.PageNumber == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Admins" 
+                       asp-route-pageNumber="@(Model.PagedUsers.PageNumber - 1)" 
+                       asp-route-searchTerm="@Model.SearchTerm">Previous</a>
+                </li>
+                
+                @for (int i = 1; i <= Model.PagedUsers.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PagedUsers.PageNumber ? "active" : "")">
+                        <a class="page-link @(i == Model.PagedUsers.PageNumber ? "bg-success border-success" : "")" 
+                           asp-action="Admins" asp-route-pageNumber="@i" 
+                           asp-route-searchTerm="@Model.SearchTerm">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.PagedUsers.PageNumber == Model.PagedUsers.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Admins" 
+                       asp-route-pageNumber="@(Model.PagedUsers.PageNumber + 1)" 
+                       asp-route-searchTerm="@Model.SearchTerm">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

@@ -154,7 +154,7 @@
         const currentUserId = @(User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value : "null");
 
         // UI State
-        let selectedSlots = {}; // slotId -> { bookingId, start, end, price, lockedUntil }
+        let selectedSlot = null; // { bookingId, slotId, start, end, price, lockedUntil }
         let countdownTimer = null;
 
         // ── SignalR Connection ─────────────────────────────────────────────────
@@ -199,10 +199,10 @@
                 card.style.border = '2px solid #fecaca';
                 card.style.backgroundColor = '#fef2f2';
             }
-            if (selectedSlots[slotId] !== undefined) {
-                delete selectedSlots[slotId];
+            if (selectedSlot && selectedSlot.slotId === slotId) {
+                selectedSlot = null;
                 updateCheckoutDrawer();
-                alert("One of the slots you were selecting has been confirmed by someone else!");
+                alert("The slot you selected has been booked by someone else!");
             }
         });
 
@@ -252,7 +252,7 @@
 
                 let status = slot.status;
                 let isAvailable = status === 0 || status === 'Available';
-                let isSelected = status === 1 || status === 'Selected' || (selectedSlots[slot.slotId] !== undefined);
+                let isSelected = status === 1 || status === 'Selected' || (selectedSlot && selectedSlot.slotId === slot.slotId);
                 let isInProgress = status === 2 || status === 'InProgress' || status === 'In-Progress';
                 let isBooked = status === 3 || status === 'Booked';
 
@@ -304,9 +304,37 @@
                 window.location.href = '/Account/Login?ReturnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
-
             if (currentState === 'Available') {
-                // Call SelectSlot API
+                selectNewSlot(slotId, start, end, price);
+            } else if (currentState === 'Selected') {
+                if (selectedSlot && selectedSlot.slotId === slotId) {
+                    fetch('/api/booking/release-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            bookingId: selectedSlot.bookingId,
+                            turfId: turfId,
+                            slotId: slotId,
+                            bookingDate: currentDate
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            selectedSlot = null;
+                            updateCheckoutDrawer();
+                            refreshSlots();
+                        } else {
+                            alert(res.message || "Failed to release the slot.");
+                        }
+                    });
+                }
+            }
+        }
+
+        function selectNewSlot(slotId, start, end, price) {
+            // If there is an existing selection, release it first
+            const attemptSelect = () => {
                 fetch('/api/booking/select-slot', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -320,8 +348,9 @@
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        selectedSlots[slotId] = {
+                        selectedSlot = {
                             bookingId: res.bookingId,
+                            slotId: slotId,
                             start: start,
                             end: end,
                             price: price,
@@ -333,55 +362,53 @@
                         alert(res.message || "Failed to reserve the slot.");
                     }
                 });
-            } else if (currentState === 'Selected') {
-                const selection = selectedSlots[slotId];
-                if (selection) {
-                    fetch('/api/booking/release-slot', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            bookingId: selection.bookingId,
-                            turfId: turfId,
-                            slotId: slotId,
-                            bookingDate: currentDate
-                        })
-                    })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            delete selectedSlots[slotId];
-                            updateCheckoutDrawer();
-                            refreshSlots();
-                        } else {
-                            alert(res.message || "Failed to release the slot.");
-                        }
-                    });
-                }
+            };
+
+            if (selectedSlot) {
+                // release existing selection
+                awaitReleaseAndThen(selectedSlot.bookingId, attemptSelect);
+            } else {
+                attemptSelect();
             }
         }
 
-        async function releaseAllSelectedSlots() {
-            const slotIds = Object.keys(selectedSlots);
-            if (slotIds.length === 0) return;
+        function awaitReleaseAndThen(bookingIdToRelease, callback) {
+            fetch('/api/booking/release-slot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookingId: bookingIdToRelease,
+                    turfId: turfId,
+                    slotId: bookingIdToRelease, // slotId isn't strictly required by server for release check
+                    bookingDate: currentDate
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                // ignore failure, proceed to attempt select
+                selectedSlot = null;
+                callback();
+            })
+            .catch(() => { selectedSlot = null; callback(); });
+        }
 
-            for (const slotId of slotIds) {
-                const selection = selectedSlots[slotId];
-                try {
-                    await fetch('/api/booking/release-slot', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            bookingId: selection.bookingId,
-                            turfId: turfId,
-                            slotId: slotId,
-                            bookingDate: currentDate
-                        })
-                    });
-                } catch (e) {
-                    console.error("Failed to release slot " + slotId, e);
-                }
+        async function releaseAllSelectedSlots() {
+            if (!selectedSlot) return;
+            try {
+                await fetch('/api/booking/release-slot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bookingId: selectedSlot.bookingId,
+                        turfId: turfId,
+                        slotId: selectedSlot.slotId,
+                        bookingDate: currentDate
+                    })
+                });
+            } catch (e) {
+                console.error("Failed to release slot " + selectedSlot.slotId, e);
             }
-            selectedSlots = {};
+            selectedSlot = null;
             hideCheckoutDrawer();
             refreshSlots();
         }

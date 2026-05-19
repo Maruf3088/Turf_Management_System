@@ -1,0 +1,294 @@
+@model turf_management_system.Models.Domain.User
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "User Details - " + Model.FullName;
+    var ownerProfile = ViewBag.OwnerProfile as turf_management_system.Models.Domain.TurfOwner;
+    var turfs = ViewBag.Turfs as List<turf_management_system.Models.Domain.Turf>;
+    var bookings = ViewBag.Bookings as List<turf_management_system.Models.Domain.Booking>;
+    var staffProfile = ViewBag.StaffProfile as turf_management_system.Models.Domain.StaffProfile;
+}
+
+<div class="mb-4">
+    <a asp-action="Users" class="btn btn-outline-success btn-sm mb-3"><i class="fas fa-arrow-left me-2"></i>Back to Users</a>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold">@Model.FullName's Profile</h2>
+            <p class="text-muted mb-0">Role: <span class="badge bg-success">@(Model.Role?.RoleName ?? "No Role")</span> | Status: <span class="badge @(Model.IsActive ? "badge-active" : "badge-inactive")">@(Model.IsActive ? "Active" : "Inactive")</span></p>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- Toggle Status -->
+            <form asp-action="ToggleStatus" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <button type="submit" class="btn @(Model.IsActive ? "btn-warning" : "btn-success") px-4 shadow-sm">
+                    <i class="fas @(Model.IsActive ? "fa-user-slash" : "fa-user-check") me-2"></i>
+                    @(Model.IsActive ? "Deactivate Account" : "Activate Account")
+                </button>
+            </form>
+            
+            <!-- Delete -->
+            <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('CRITICAL: Are you sure you want to permanently delete this user? This cannot be undone.')">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <button type="submit" class="btn btn-danger px-4 shadow-sm">
+                    <i class="fas fa-trash-alt me-2"></i>Delete User
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Core Info -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="text-center mb-4">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle p-4 d-inline-block mb-3">
+                    <i class="fas fa-user-circle fa-4x"></i>
+                </div>
+                <h4 class="fw-bold mb-1">@Model.FullName</h4>
+                <p class="text-muted small">Registered on @Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</p>
+            </div>
+            
+            <hr class="text-muted">
+
+            <div class="mt-4">
+                <h6 class="fw-bold text-success mb-3"><i class="fas fa-info-circle me-2"></i>Account Details</h6>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">User ID</small>
+                    <strong class="text-dark">#@Model.UserId</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Email Address</small>
+                    <strong class="text-dark">@Model.Email</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Phone Number</small>
+                    <strong class="text-dark">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "N/A" : Model.PhoneNumber)</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Last Updated</small>
+                    <strong class="text-dark">@(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm") : "Never")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Role-Specific Details -->
+    <div class="col-lg-8">
+        <!-- Case 1: Turf Owner Profile & Turfs -->
+        @if (Model.Role?.RoleName == "TurfOwner" && ownerProfile != null)
+        {
+            <div class="card border-0 shadow-sm p-4 mb-4">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-briefcase me-2"></i>Business & KYC Information</h4>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Business Name</small>
+                        <strong class="text-dark fs-5">@ownerProfile.BusinessName</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Contact Number</small>
+                        <strong class="text-dark fs-5">@(string.IsNullOrEmpty(ownerProfile.ContactNumber) ? "N/A" : ownerProfile.ContactNumber)</strong>
+                    </div>
+                    <div class="col-md-12">
+                        <small class="text-muted d-block">Business Address</small>
+                        <strong class="text-dark">@(string.IsNullOrEmpty(ownerProfile.BusinessAddress) ? "N/A" : ownerProfile.BusinessAddress)</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">National ID (NID) Number</small>
+                        <strong class="text-dark">@(string.IsNullOrEmpty(ownerProfile.NationalIdNumber) ? "N/A" : ownerProfile.NationalIdNumber)</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">KYC Verification Status</small>
+                        <span class="badge @(ownerProfile.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Approved ? "bg-success" : ownerProfile.VerificationStatus == turf_management_system.Models.Enums.VerificationStatus.Pending ? "bg-warning text-dark" : "bg-danger") px-3 py-2">
+                            @ownerProfile.VerificationStatus
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(ownerProfile.AdminComments))
+                    {
+                        <div class="col-md-12 bg-light p-3 rounded mt-3">
+                            <small class="text-danger fw-bold d-block">Admin Comments</small>
+                            <span class="text-dark">@ownerProfile.AdminComments</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- KYC Document Embeds -->
+                <div class="mt-4">
+                    <h6 class="fw-bold text-muted mb-3"><i class="fas fa-file-invoice me-2"></i>Submitted Documents</h6>
+                    <div class="row g-2">
+                        @if (!string.IsNullOrEmpty(ownerProfile.NidFrontImagePath))
+                        {
+                            <div class="col-md-3 text-center">
+                                <a href="@ownerProfile.NidFrontImagePath" target="_blank" class="d-block border p-2 rounded text-decoration-none">
+                                    <i class="fas fa-id-card fa-2x text-muted mb-1"></i>
+                                    <small class="d-block text-truncate text-success">NID Front</small>
+                                </a>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(ownerProfile.NidBackImagePath))
+                        {
+                            <div class="col-md-3 text-center">
+                                <a href="@ownerProfile.NidBackImagePath" target="_blank" class="d-block border p-2 rounded text-decoration-none">
+                                    <i class="fas fa-id-card fa-2x text-muted mb-1"></i>
+                                    <small class="d-block text-truncate text-success">NID Back</small>
+                                </a>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(ownerProfile.TradeLicenseImagePath))
+                        {
+                            <div class="col-md-3 text-center">
+                                <a href="@ownerProfile.TradeLicenseImagePath" target="_blank" class="d-block border p-2 rounded text-decoration-none">
+                                    <i class="fas fa-file-contract fa-2x text-muted mb-1"></i>
+                                    <small class="d-block text-truncate text-success">Trade License</small>
+                                </a>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(ownerProfile.UtilityBillImagePath))
+                        {
+                            <div class="col-md-3 text-center">
+                                <a href="@ownerProfile.UtilityBillImagePath" target="_blank" class="d-block border p-2 rounded text-decoration-none">
+                                    <i class="fas fa-file-invoice-dollar fa-2x text-muted mb-1"></i>
+                                    <small class="d-block text-truncate text-success">Utility Bill</small>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-4">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-futbol me-2"></i>Managed Turfs (@(turfs?.Count ?? 0))</h4>
+                
+                @if (turfs != null && turfs.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Turf Name</th>
+                                    <th>Sport Type</th>
+                                    <th>City</th>
+                                    <th>Price / Hour</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var turf in turfs)
+                                {
+                                    <tr>
+                                        <td><strong>@turf.Name</strong></td>
+                                        <td>@turf.SportType</td>
+                                        <td>@turf.City</td>
+                                        <td>Tk. @turf.PricePerHour</td>
+                                        <td>
+                                            <span class="badge @(turf.IsApproved ? "bg-success" : "bg-warning text-dark")">
+                                                @(turf.IsApproved ? "Approved" : "Pending Approval")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3"><i class="fas fa-info-circle me-1"></i>No turfs found for this owner.</p>
+                }
+            </div>
+        }
+        
+        <!-- Case 2: Customer Bookings -->
+        else if (Model.Role?.RoleName == "User")
+        {
+            <div class="card border-0 shadow-sm p-4 h-100">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-calendar-check me-2"></i>Booking History</h4>
+                
+                @if (bookings != null && bookings.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Booking Ref</th>
+                                    <th>Turf Name</th>
+                                    <th>Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var booking in bookings)
+                                {
+                                    <tr>
+                                        <td><code class="text-success fw-bold">#@(booking.Id.ToString().Substring(0, 8).ToUpper())</code></td>
+                                        <td>@(booking.Turf?.Name ?? "N/A")</td>
+                                        <td>@(booking.BookingDate.ToString("yyyy-MM-dd"))</td>
+                                        <td>Tk. @(booking.TotalAmount)</td>
+                                        <td>
+                                            <span class="badge @(booking.Status.ToString() == "Confirmed" ? "bg-success" : booking.Status.ToString() == "PendingPayment" ? "bg-warning text-dark" : "bg-danger")">
+                                                @(booking.Status.ToString())
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-5"><i class="fas fa-history me-1"></i>No booking transaction history exists for this customer.</p>
+                }
+            </div>
+        }
+        
+        <!-- Case 3: Staff details -->
+        else if (staffProfile != null)
+        {
+            <div class="card border-0 shadow-sm p-4 h-100">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-id-badge me-2"></i>Staff Assignment Details</h4>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Assigned Turf Name</small>
+                        <strong class="text-dark fs-5">@(staffProfile.Turf?.Name ?? "No Assigned Turf")</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Location</small>
+                        <strong class="text-dark">@(staffProfile.Turf?.Location ?? "N/A"), @(staffProfile.Turf?.City ?? "N/A")</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Hiring Date</small>
+                        <strong class="text-dark">@staffProfile.HiredAt.ToString("yyyy-MM-dd")</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Employment Status</small>
+                        <span class="badge @(staffProfile.IsActive ? "badge-active" : "badge-inactive")">
+                            @(staffProfile.IsActive ? "Active Employment" : "Inactive / Terminated")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm p-4 h-100">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-user-shield me-2"></i>System Administrative Activity</h4>
+                <p class="text-muted">This account has system level administrative rights. Actions performed by this administrator are stored in system logs.</p>
+                
+                <div class="bg-light p-3 rounded">
+                    <h6 class="fw-bold text-dark"><i class="fas fa-lock me-2 text-warning"></i>Security Note</h6>
+                    <small class="text-muted">Ensure proper MFA or strict password policies are followed for all accounts under administrative roles.</small>
+                </div>
+            </div>
+        }
+    </div>
+</div>

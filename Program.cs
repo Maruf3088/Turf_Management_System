@@ -75,6 +75,7 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
 
     // Dynamic Database Index Upgrade: Drop unique constraint on TransactionId to support shared payment transaction IDs
     try

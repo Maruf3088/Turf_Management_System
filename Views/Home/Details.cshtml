@@ -76,7 +76,7 @@
                 <strong class="fs-5 text-gold-accent">৳@Model.PricePerHour<small class="text-muted small">/hr</small></strong>
             </div>
         </div>
-        <a href="#booking-section" class="btn btn-gold rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size:0.85rem;">Select Slot</a>
+        <a asp-controller="Booking" asp-action="SelectSlot" asp-route-turfId="@Model.Id" class="btn btn-gold rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size:0.85rem;">Select Slot</a>
     </div>
 </div>
 

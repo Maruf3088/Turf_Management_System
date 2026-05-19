@@ -76,7 +76,9 @@
                                     </button>
                                 </form>
 
-                                <button class="btn btn-sm btn-outline-primary" title="View Details"><i class="fas fa-eye"></i></button>
+                                <a asp-action="UserDetails" asp-route-id="@user.UserId" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
 
                                 <form asp-action="DeleteUser" method="post" onsubmit="return confirm('CRITICAL: Are you sure you want to PERMANENTLY DELETE this user? This will also remove their profile and associations. This action is irreversible.')" style="display:inline;">
                                     @Html.AntiForgeryToken()

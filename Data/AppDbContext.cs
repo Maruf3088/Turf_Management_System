@@ -20,6 +20,8 @@ namespace turf_management_system.Data
         public DbSet<TurfSlot> TurfSlots { get; set; }
         public DbSet<TurfBookingConfig> TurfBookingConfigs { get; set; }
 
+
+
         // Booking & Payment
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<SlotLock> SlotLocks { get; set; }

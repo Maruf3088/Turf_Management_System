@@ -80,6 +80,7 @@
     </div>
 </div>
 
+
 <div class="container py-2">
     <div class="row g-4">
         <!-- Left Content Column -->
@@ -497,22 +498,22 @@
                             let clickHandler = `selectSlot(this, '${slot.slotId}', '${slot.startTimeDisplay} – ${slot.endTimeDisplay}', ${slot.price})`;
 
                             // Integer and string resilience
-                            if (status === 1 || status === 'Locked' || status === 'SlotLocked') {
+                            if (status === 1 || status === 'Selected' || status === 'Locked' || status === 'SlotLocked') {
                                 statusText = 'Selected';
                                 cssClass = 'selected';
                                 statusIcon = '<i class="fas fa-circle-check me-1"></i>';
-                            } else if (status === 2 || status === 'PendingPayment') {
+                            } else if (status === 2 || status === 'InProgress' || status === 'PendingPayment') {
                                 statusText = 'In Progress';
                                 cssClass = 'disabled in-progress';
                                 statusIcon = '<i class="fas fa-spinner fa-spin me-1"></i>';
                                 clickHandler = '';
-                            } else if (status === 3 || status === 'Confirmed' || status === 'Booked') {
+                            } else if (status === 3 || status === 'Booked' || status === 'Confirmed') {
                                 statusText = 'Booked';
                                 cssClass = 'disabled booked';
                                 statusIcon = '<i class="fas fa-ban me-1"></i>';
                                 clickHandler = '';
-                            } else if (status === 4 || status === 'Cancelled' || status === 'Expired' || status === 'Blocked') {
-                                statusText = 'Blocked';
+                            } else if (status === 4 || status === 'Unavailable' || status === 'Cancelled' || status === 'Expired' || status === 'Blocked') {
+                                statusText = 'Unavailable';
                                 cssClass = 'disabled blocked';
                                 statusIcon = '<i class="fas fa-circle-minus me-1"></i>';
                                 clickHandler = '';

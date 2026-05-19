@@ -174,6 +174,9 @@ namespace turf_management_system.Controllers
             var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             if (result.Data!.OwnerId != ownerId) return Forbid();
 
+            var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == id);
+            ViewBag.BookingConfig = config;
+
             return View(result.Data);
         }
 

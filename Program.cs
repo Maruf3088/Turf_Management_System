@@ -8,6 +8,7 @@ using turf_management_system.Models.Domain;
 using turf_management_system.Repositories.Implementations;
 using turf_management_system.Repositories.Interfaces;
 using turf_management_system.Services.Interfaces;
+using turf_management_system.Services.Implementations;
 using turf_management_system.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<ITurfService, TurfService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IExternalNotificationService, ExternalNotificationService>();
 
 // ── SignalR ───────────────────────────────────────────────────────────────────
 builder.Services.AddSignalR();

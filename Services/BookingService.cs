@@ -11,11 +11,13 @@ namespace turf_management_system.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly AppDbContext _context; // for transactions
+        private readonly IExternalNotificationService _externalNotificationService;
 
-        public BookingService(IUnitOfWork unitOfWork, AppDbContext context)
+        public BookingService(IUnitOfWork unitOfWork, AppDbContext context, IExternalNotificationService externalNotificationService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
+            _externalNotificationService = externalNotificationService;
         }
 
         // ────────────────────────────────────────────────────────────────────────────
@@ -36,6 +38,12 @@ namespace turf_management_system.Services
             var slot = await _unitOfWork.TurfSlots.GetByIdAsync(slotId);
             if (slot == null || slot.TurfId != turfId || !slot.IsAvailable)
                 return (false, "Selected slot is not valid.", null);
+
+            if (slot.EffectiveFromDate.HasValue && slot.EffectiveFromDate > bookingDate)
+                return (false, "Selected slot is not active yet.", null);
+
+            if (slot.EffectiveToDate.HasValue && slot.EffectiveToDate <= bookingDate)
+                return (false, "Selected slot has expired.", null);
 
             // ── Validate Booking Config Rules ─────────────────────────────────────
             var config = await _unitOfWork.BookingConfigs.FindAsync(c => c.TurfId == turfId);
@@ -515,7 +523,9 @@ namespace turf_management_system.Services
 
             var dayOfWeek = (int)date.DayOfWeek;
             var allSlots = turf.Slots
-                .Where(s => s.DayOfWeek == null || s.DayOfWeek == dayOfWeek)
+                .Where(s => (s.DayOfWeek == null || s.DayOfWeek == dayOfWeek) &&
+                            (s.EffectiveFromDate == null || s.EffectiveFromDate <= date) &&
+                            (s.EffectiveToDate == null || s.EffectiveToDate > date))
                 .ToList();
 
             // Get existing confirmed/pending bookings on this date
@@ -651,6 +661,15 @@ namespace turf_management_system.Services
             };
             await _unitOfWork.Notifications.AddAsync(notification);
             await _unitOfWork.CompleteAsync();
+
+            try
+            {
+                await _externalNotificationService.DispatchNotificationAsync(userId, title, message, type);
+            }
+            catch
+            {
+                // Swallow to prevent failing the core database operations if dispatch fails
+            }
         }
     }
 }

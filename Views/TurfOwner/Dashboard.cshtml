@@ -273,55 +273,94 @@
             </div>
         </div>
 
-        <!-- Right Column: Upcoming Booking Slots / Calendar details -->
+        <!-- Right Column: Premium Upcoming Timeline -->
         <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                <div class="card-header bg-dark py-3 border-0 text-white">
-                    <h5 class="fw-bold mb-0 d-flex align-items-center">
-                        <i class="fas fa-calendar-check text-success me-2"></i>Upcoming Bookings
-                    </h5>
+            <div class="card border-0 rounded-4 overflow-hidden h-100 upcoming-widget" style="background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+                <!-- Header -->
+                <div class="px-4 pt-4 pb-3 border-0 d-flex justify-content-between align-items-center relative z-1">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-slate-800" style="font-family: 'Inter', sans-serif; letter-spacing: -0.5px;">Upcoming Matches</h5>
+                        <p class="text-secondary small mb-0 fw-semibold">Next 7 Days Schedule</p>
+                    </div>
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
                 </div>
-                <div class="card-body p-4 bg-light">
+
+                <div class="card-body p-4 d-flex flex-column position-relative z-1">
                     @if (Model.UpcomingBookings == null || !Model.UpcomingBookings.Any())
                     {
-                        <div class="p-5 text-center text-muted h-100 d-flex flex-column align-items-center justify-content-center">
-                            <div class="bg-white shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                <i class="far fa-calendar-times fa-lg text-secondary"></i>
+                        <div class="text-center text-muted h-100 d-flex flex-column align-items-center justify-content-center py-5">
+                            <div class="empty-state-icon bg-slate-100 rounded-circle d-flex align-items-center justify-content-center mb-3 text-slate-400" style="width: 70px; height: 70px;">
+                                <i class="far fa-calendar-times fa-2x"></i>
                             </div>
-                            <h6 class="fw-bold text-dark">No Bookings Booked</h6>
-                            <p class="small mb-0 text-secondary">There are no confirmed upcoming matches scheduled.</p>
+                            <h6 class="fw-bold text-slate-700">No Upcoming Matches</h6>
+                            <p class="small text-slate-500 mb-0">The pitch is currently free.</p>
                         </div>
                     }
                     else
                     {
-                        <div class="d-flex flex-column gap-3">
-                            @foreach (var booking in Model.UpcomingBookings)
+                        <div class="timeline-container position-relative flex-grow-1 ps-2" id="upcoming-list">
+                            <!-- Vertical Line -->
+                            <div class="timeline-line position-absolute top-0 bottom-0 bg-slate-200" style="left: 15px; width: 2px;"></div>
+
+                            @for (int i = 0; i < Model.UpcomingBookings.Count; i++)
                             {
-                                <div class="upcoming-item bg-white p-3 rounded-4 shadow-sm border-0 d-flex flex-column position-relative overflow-hidden" style="border-left: 4px solid #10b981 !important;">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span class="badge bg-success bg-opacity-10 text-success fw-bold">Match Day</span>
-                                        <small class="text-secondary fw-bold font-monospace">#@booking.Id.ToString()[..8].ToUpper()</small>
-                                    </div>
-                                    <h6 class="fw-bold mb-1 text-dark">@booking.Turf?.Name</h6>
-                                    <p class="text-secondary small mb-2 d-flex align-items-center">
-                                        <i class="far fa-calendar-alt text-primary me-2"></i>
-                                        <span>@booking.BookingDate.ToString("dd MMMM, yyyy")</span>
-                                    </p>
-                                    <p class="text-secondary small mb-2 d-flex align-items-center">
-                                        <i class="far fa-clock text-primary me-2"></i>
-                                        <strong>@booking.StartTime.ToString(@"hh\:mm") – @booking.EndTime.ToString(@"hh\:mm")</strong>
-                                    </p>
-                                    <div class="d-flex align-items-center mt-2 border-top pt-2 gap-2">
-                                        <div class="avatar bg-secondary rounded-circle text-white d-flex align-items-center justify-content-center font-bold" style="width: 28px; height: 28px; font-size: 0.8rem; background-color: #64748b !important;">
-                                            @booking.User?.FullName[0]
+                                var booking = Model.UpcomingBookings[i];
+                                
+                                <div class="timeline-item position-relative mb-4 animate__animated animate__fadeInUp" data-index="@i" style="display: none;">
+                                    <!-- Timeline Node -->
+                                    <div class="timeline-node position-absolute bg-white border border-2 border-primary rounded-circle" style="width: 14px; height: 14px; left: -2px; top: 24px; z-index: 2; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);"></div>
+                                    
+                                    <!-- Booking Card -->
+                                    <div class="ms-4 ps-3">
+                                        <p class="text-primary small fw-bold mb-2 text-uppercase tracking-wider" style="letter-spacing: 1px;">
+                                            @booking.BookingDate.ToString("MMM dd") • @booking.StartTime.ToString(@"hh\:mm")
+                                        </p>
+                                        
+                                        <div class="timeline-card bg-white p-3 rounded-4 shadow-sm border border-slate-100 position-relative transition-all" style="cursor: pointer;">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="fw-bold text-slate-800 mb-0">@booking.Turf?.Name</h6>
+                                                <span class="badge bg-success bg-opacity-10 text-success fw-bold rounded-pill px-2 py-1" style="font-size: 0.65rem;">Confirmed</span>
+                                            </div>
+                                            
+                                            <div class="d-flex align-items-center mt-3 pt-3 border-top border-slate-100">
+                                                <div class="avatar bg-slate-800 text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-2 shadow-sm" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                    @booking.User?.FullName[0]
+                                                </div>
+                                                <div class="d-flex flex-column">
+                                                    <span class="small fw-bold text-slate-700 lh-1 mb-1">@booking.User?.FullName</span>
+                                                    <span class="text-slate-400 font-monospace lh-1" style="font-size: 0.7rem;">#@booking.Id.ToString()[..6].ToUpper()</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Hover Highlight -->
+                                            <div class="hover-indicator position-absolute top-0 bottom-0 start-0 bg-primary rounded-start-4" style="width: 4px; opacity: 0; transition: opacity 0.2s;"></div>
                                         </div>
-                                        <span class="small fw-bold text-dark">@booking.User?.FullName</span>
                                     </div>
                                 </div>
                             }
                         </div>
+                        
+                        <!-- Sleek Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-3 border-top border-slate-100">
+                            <button id="prevUpcoming" class="btn btn-sm btn-light text-slate-600 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; transition: all 0.2s;" onclick="changeUpcomingPage(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            
+                            <div class="d-flex gap-1" id="paginationDots">
+                                <!-- Dots generated by JS -->
+                            </div>
+                            
+                            <button id="nextUpcoming" class="btn btn-sm btn-light text-slate-600 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; transition: all 0.2s;" onclick="changeUpcomingPage(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     }
                 </div>
+                
+                <!-- Background Decoration -->
+                <div class="position-absolute top-0 end-0 opacity-10" style="width: 200px; height: 200px; background: radial-gradient(circle, #3b82f6 0%, transparent 70%); border-radius: 50%; transform: translate(30%, -30%); pointer-events: none;"></div>
             </div>
         </div>
     </div>
@@ -346,16 +385,113 @@
         .fw-extrabold { font-weight: 800; }
         .ls-1 { letter-spacing: 1px; }
 
-        .upcoming-item {
-            transition: all 0.2s ease-in-out;
+        .upcoming-widget {
+            transition: all 0.3s ease;
         }
-        .upcoming-item:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05) !important;
+        
+        .timeline-card {
+            transition: all 0.2s ease;
         }
+        
+        .timeline-card:hover {
+            transform: translateX(5px);
+            border-color: #3b82f6 !important;
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        .timeline-card:hover .hover-indicator {
+            opacity: 1 !important;
+        }
+        
+        .pagination-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .pagination-dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background-color: #3b82f6;
+        }
+        
+        /* Tailwind-like colors for custom widget */
+        .bg-slate-100 { background-color: #f1f5f9; }
+        .bg-slate-200 { background-color: #e2e8f0; }
+        .bg-slate-800 { background-color: #1e293b; }
+        .text-slate-400 { color: #94a3b8; }
+        .text-slate-500 { color: #64748b; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-700 { color: #334155; }
+        .text-slate-800 { color: #1e293b; }
+        .border-slate-100 { border-color: #f1f5f9; }
+        
+        .tracking-wider { letter-spacing: 0.05em; }
         
         .z-index-1 { z-index: 1; }
     </style>
+}
+
+@section Scripts {
+    <script>
+        // Pagination logic for Upcoming Bookings (Premium Timeline)
+        const upcomingItems = document.querySelectorAll('.timeline-item');
+        const itemsPerPage = 3;
+        let currentPage = 1;
+        const totalPages = Math.ceil(upcomingItems.length / itemsPerPage);
+        const dotsContainer = document.getElementById('paginationDots');
+
+        function renderUpcomingPage() {
+            if (upcomingItems.length === 0) return;
+
+            // Hide all
+            upcomingItems.forEach(item => {
+                item.style.display = 'none';
+                item.classList.remove('animate__animated', 'animate__fadeInUp');
+            });
+
+            // Show current page items
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            
+            for (let i = startIdx; i < endIdx && i < upcomingItems.length; i++) {
+                upcomingItems[i].style.display = 'block';
+                // Trigger reflow for animation
+                void upcomingItems[i].offsetWidth;
+                upcomingItems[i].classList.add('animate__animated', 'animate__fadeInUp');
+            }
+
+            // Update UI controls
+            document.getElementById('prevUpcoming').disabled = currentPage === 1;
+            document.getElementById('nextUpcoming').disabled = currentPage === totalPages;
+            
+            // Render Dots
+            if (dotsContainer) {
+                dotsContainer.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = `pagination-dot ${i === currentPage ? 'active' : ''}`;
+                    dot.onclick = () => { currentPage = i; renderUpcomingPage(); };
+                    dotsContainer.appendChild(dot);
+                }
+            }
+        }
+
+        function changeUpcomingPage(dir) {
+            currentPage += dir;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderUpcomingPage();
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUpcomingPage();
+        });
+    </script>
 }
 
 

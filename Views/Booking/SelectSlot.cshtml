@@ -306,33 +306,7 @@
             }
 
             if (currentState === 'Available') {
-                // Call SelectSlot API
-                fetch('/api/booking/select-slot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        turfId: turfId,
-                        slotId: slotId,
-                        bookingDate: currentDate,
-                        specialRequest: ""
-                    })
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        selectedSlots[slotId] = {
-                            bookingId: res.bookingId,
-                            start: start,
-                            end: end,
-                            price: price,
-                            lockedUntil: res.lockedUntil
-                        };
-                        updateCheckoutDrawer();
-                        refreshSlots();
-                    } else {
-                        alert(res.message || "Failed to reserve the slot.");
-                    }
-                });
+                selectNewSlot(slotId, start, end, price);
             } else if (currentState === 'Selected') {
                 const selection = selectedSlots[slotId];
                 if (selection) {
@@ -358,6 +332,35 @@
                     });
                 }
             }
+        }
+
+        function selectNewSlot(slotId, start, end, price) {
+            fetch('/api/booking/select-slot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    turfId: turfId,
+                    slotId: slotId,
+                    bookingDate: currentDate,
+                    specialRequest: ""
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    selectedSlots[slotId] = {
+                        bookingId: res.bookingId,
+                        start: start,
+                        end: end,
+                        price: price,
+                        lockedUntil: res.lockedUntil
+                    };
+                    updateCheckoutDrawer();
+                    refreshSlots();
+                } else {
+                    alert(res.message || "Failed to reserve the slot.");
+                }
+            });
         }
 
         async function releaseAllSelectedSlots() {

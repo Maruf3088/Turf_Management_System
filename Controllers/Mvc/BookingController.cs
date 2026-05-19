@@ -235,7 +235,7 @@ namespace turf_management_system.Controllers.Mvc
                 string currentTxId = transactionId;
 
                 var (success, msg) = await _bookingService.SubmitPaymentAsync(
-                    b.Id, userId, currentTxId, paymentMethod, bookingPaymentAmount, paymentType, isFake);
+                    b.Id, userId, currentTxId, paymentMethod, bookingPaymentAmount, paymentType, isFake, true);
 
                 if (!success)
                 {

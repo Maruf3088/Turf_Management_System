@@ -109,11 +109,80 @@ namespace turf_management_system.Controllers
                 return RedirectToAction(nameof(Users));
             }
 
+            // Real-life DB integrity check
+            bool hasBookings = await _unitOfWork.Bookings.GetCountAsync(b => b.UserId == userId) > 0;
+            bool hasPayments = await _unitOfWork.Payments.GetCountAsync(p => p.Booking.UserId == userId) > 0;
+            bool hasTurfs = await _unitOfWork.Turfs.GetCountAsync(t => t.OwnerId == userId) > 0;
+            bool hasStaff = await _unitOfWork.StaffProfiles.GetCountAsync(s => s.UserId == userId) > 0;
+            bool hasTurfOwner = await _unitOfWork.TurfOwners.GetCountAsync(o => o.UserId == userId) > 0;
+
+            if (hasBookings || hasPayments || hasTurfs || hasStaff || hasTurfOwner)
+            {
+                // Soft delete by deactivating the account to prevent DB foreign key violations and preserve history
+                user.IsActive = false;
+                user.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Users.Update(user);
+
+                // If Turf Owner, also deactivate all their turfs
+                if (user.Role?.RoleName == "TurfOwner")
+                {
+                    var turfs = await _unitOfWork.Turfs.GetAllAsync();
+                    var ownerTurfs = turfs.Where(t => t.OwnerId == userId).ToList();
+                    foreach (var turf in ownerTurfs)
+                    {
+                        turf.IsActive = false;
+                        turf.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.Turfs.Update(turf);
+                    }
+                }
+
+                await _unitOfWork.CompleteAsync();
+                TempData["Success"] = $"User '{user.FullName}' has associated transactions or records. To maintain database integrity, the account has been deactivated instead of permanently deleted.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            // Safe to permanently delete
+            var owner = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == userId);
+            if (owner != null)
+            {
+                _unitOfWork.TurfOwners.Delete(owner);
+            }
             _unitOfWork.Users.Delete(user);
             await _unitOfWork.CompleteAsync();
             
             TempData["Success"] = "User deleted successfully.";
             return RedirectToAction(nameof(Users));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UserDetails(int id)
+        {
+            var user = await _unitOfWork.Users.FindAsync(u => u.UserId == id, includeProperties: "Role");
+            if (user == null) return NotFound();
+
+            // Load associated data based on Role
+            if (user.Role?.RoleName == "TurfOwner")
+            {
+                var ownerProfile = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == id);
+                ViewBag.OwnerProfile = ownerProfile;
+                
+                var turfs = await _unitOfWork.Turfs.GetAllAsync();
+                var ownerTurfs = turfs.Where(t => t.OwnerId == id).ToList();
+                ViewBag.Turfs = ownerTurfs;
+            }
+            else if (user.Role?.RoleName == "User")
+            {
+                var bookings = await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf");
+                var userBookings = bookings.Where(b => b.UserId == id).OrderByDescending(b => b.CreatedAt).ToList();
+                ViewBag.Bookings = userBookings;
+            }
+            else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(user.Role?.RoleName))
+            {
+                var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == id, includeProperties: "Turf");
+                ViewBag.StaffProfile = staffProfile;
+            }
+
+            return View(user);
         }
 
         [Authorize(Policy = "SuperAdminOnly")]
@@ -398,23 +467,50 @@ namespace turf_management_system.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteTurfOwner(int id)
         {
-            var owner = await _unitOfWork.TurfOwners.GetByIdAsync(id);
-            if (owner != null)
+            var owner = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == id, includeProperties: "User");
+            if (owner == null) return NotFound();
+
+            var user = owner.User ?? await _unitOfWork.Users.FindAsync(u => u.UserId == id);
+            
+            // Check if owner has any turfs
+            bool hasTurfs = await _unitOfWork.Turfs.GetCountAsync(t => t.OwnerId == id) > 0;
+            if (hasTurfs)
             {
-                // Soft delete user and remove owner profile?
-                var user = await _unitOfWork.Users.GetByIdAsync(id);
+                // Soft delete by deactivating
                 if (user != null)
                 {
                     user.IsActive = false;
+                    user.UpdatedAt = DateTime.UtcNow;
                     _unitOfWork.Users.Update(user);
                 }
-                
-                _unitOfWork.TurfOwners.Delete(owner);
+
+                // Deactivate all their turfs
+                var turfs = await _unitOfWork.Turfs.GetAllAsync();
+                var ownerTurfs = turfs.Where(t => t.OwnerId == id).ToList();
+                foreach (var turf in ownerTurfs)
+                {
+                    turf.IsActive = false;
+                    turf.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.Turfs.Update(turf);
+                }
+
                 await _unitOfWork.CompleteAsync();
-                TempData["Success"] = "Turf Owner removed successfully.";
+                TempData["Success"] = $"Turf Owner '{user?.FullName ?? owner.BusinessName}' has active turfs. The account has been deactivated and all listings disabled to preserve database integrity.";
+                return RedirectToAction(nameof(TurfOwners));
             }
+
+            // If no turfs, we can delete the TurfOwner profile and the User account
+            _unitOfWork.TurfOwners.Delete(owner);
+            if (user != null)
+            {
+                _unitOfWork.Users.Delete(user);
+            }
+            
+            await _unitOfWork.CompleteAsync();
+            TempData["Success"] = "Turf Owner and user account deleted successfully.";
             return RedirectToAction(nameof(TurfOwners));
         }
 

@@ -10,51 +10,134 @@
 }
 
 <div class="row animate__animated animate__fadeInUp">
+    <!-- Breadcrumb & Title Section -->
     <div class="col-md-12 mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1">
-                        <li class="breadcrumb-item"><a asp-action="MyTurfs">My Turfs</a></li>
-                        <li class="breadcrumb-item active">Slots</li>
+                        <li class="breadcrumb-item"><a asp-action="MyTurfs" class="text-success text-decoration-none">My Turfs</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Visual Slot Manager</li>
                     </ol>
                 </nav>
-                <h2 class="display-font fw-bold">@Model.Name - <span class="text-muted">Visual Slot Manager</span></h2>
-                <p class="text-secondary small mb-0">Click any box to instantly create or delete a time slot.</p>
+                <h2 class="display-font fw-bold text-dark m-0">@Model.Name - <span class="text-muted">Visual Slot Manager</span></h2>
+                <p class="text-secondary small mb-0">Design your weekly operating schedule. Click boxes to toggle individual slots or use the control center for bulk operations.</p>
             </div>
-            <a asp-action="MyTurfs" class="btn btn-outline-secondary rounded-pill px-4 fw-bold shadow-sm"><i class="fas fa-arrow-left me-2"></i>Back</a>
+            <a asp-action="MyTurfs" class="btn btn-outline-secondary rounded-pill px-4 fw-bold shadow-sm transition-all"><i class="fas fa-arrow-left me-2"></i>Back to My Turfs</a>
         </div>
     </div>
 
-    <!-- Visual Grid -->
+    <!-- Quick Stats Cards Section -->
     <div class="col-12 mb-4">
-        <div class="card overflow-hidden border-0 shadow-sm rounded-4 bg-white">
-            <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
-                <h4 class="display-font mb-0 fw-bold text-dark"><i class="fas fa-calendar-alt text-primary me-2"></i>Weekly Slot Matrix</h4>
-                <div class="d-flex gap-3 align-items-center">
-                    <div class="d-flex align-items-center gap-1 small fw-bold"><span class="badge" style="background:#22c55e; width:16px; height:16px;">&nbsp;</span> Available</div>
-                    <div class="d-flex align-items-center gap-1 small fw-bold"><span class="badge" style="background:#ef4444; width:16px; height:16px;">&nbsp;</span> Booked/Locked</div>
-                    <div class="d-flex align-items-center gap-1 small fw-bold"><span class="badge" style="background:#f1f5f9; width:16px; height:16px; border:1px solid #cbd5e1;">&nbsp;</span> Not Created</div>
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-3">
+                    <div class="rounded-4 bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="fas fa-calendar-check fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold d-block">Active Slots</span>
+                        <h4 class="fw-extrabold text-dark mb-0" id="stat-total-slots">0</h4>
+                    </div>
                 </div>
             </div>
-            
-            <div class="card-body p-0">
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-3">
+                    <div class="rounded-4 bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="fas fa-sync fa-lg animate-spin-hover"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold d-block">Shared (All Days)</span>
+                        <h4 class="fw-extrabold text-dark mb-0" id="stat-shared-slots">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-3">
+                    <div class="rounded-4 bg-info bg-opacity-10 p-3 text-info d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="fas fa-thumbtack fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold d-block">Day-Specific</span>
+                        <h4 class="fw-extrabold text-dark mb-0" id="stat-specific-slots">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stat-card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-3">
+                    <div class="rounded-4 bg-warning bg-opacity-10 p-3 text-warning d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="fas fa-clock fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold d-block">Operating Hours</span>
+                        <h5 class="fw-bold text-dark mb-0">@openingTime - @closingTime</h5>
+                        <span class="text-secondary" style="font-size: 0.65rem;">@slotDuration-min intervals</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info & Tip Banner -->
+    <div class="col-12 mb-4">
+        <div class="alert alert-info border-0 shadow-sm rounded-4 p-3 d-flex align-items-start gap-3">
+            <span class="fs-4 text-info"><i class="fas fa-info-circle"></i></span>
+            <div>
+                <h6 class="fw-bold mb-1">Understanding Slot Types</h6>
+                <p class="mb-0 small text-secondary-emphasis">
+                    <strong class="text-success"><i class="fas fa-sync me-1"></i>Shared Slots (Green)</strong> apply automatically to all days. Toggling them removes them from all days. 
+                    <strong class="text-info"><i class="fas fa-thumbtack mx-1"></i>Day-Specific Slots (Blue)</strong> are configured for one day only. Click an empty (white) box to add a slot only for that specific day.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Scheduler Matrix Card -->
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <!-- Card Header Control Panel -->
+            <div class="card-header bg-white p-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-calendar-alt text-success fs-4"></i>
+                    <h4 class="display-font mb-0 fw-bold text-dark">Weekly Slot Grid</h4>
+                </div>
+                
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Bulk Actions -->
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold transition-all" data-bs-toggle="modal" data-bs-target="#bulkAddModal">
+                        <i class="fas fa-magic me-1"></i> Bulk Add Slots
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold transition-all" id="btn-reset-default" onclick="resetToDefaultTemplate()">
+                        <i class="fas fa-sync me-1"></i> Reset to Defaults
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold transition-all" id="btn-clear-all" onclick="clearAllSlots()">
+                        <i class="fas fa-trash-alt me-1"></i> Clear All Slots
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card Body Table Grid -->
+            <div class="card-body p-4 bg-light bg-opacity-50">
                 <div class="table-responsive">
-                    <table class="table table-bordered slot-matrix mb-0">
+                    <table class="table slot-matrix mb-0">
                         <thead>
                             <tr>
-                                <th class="time-col bg-light text-center align-middle"><i class="far fa-clock"></i> Time</th>
-                                @if ((availableDaysMask & 2) != 0) { <th class="text-center align-middle py-3">Monday</th> }
-                                @if ((availableDaysMask & 4) != 0) { <th class="text-center align-middle py-3">Tuesday</th> }
-                                @if ((availableDaysMask & 8) != 0) { <th class="text-center align-middle py-3">Wednesday</th> }
-                                @if ((availableDaysMask & 16) != 0) { <th class="text-center align-middle py-3">Thursday</th> }
-                                @if ((availableDaysMask & 32) != 0) { <th class="text-center align-middle py-3">Friday</th> }
-                                @if ((availableDaysMask & 64) != 0) { <th class="text-center align-middle py-3">Saturday</th> }
-                                @if ((availableDaysMask & 1) != 0) { <th class="text-center align-middle py-3">Sunday</th> }
+                                <th class="time-col text-center align-middle"><i class="far fa-clock me-1"></i> Time</th>
+                                @if ((availableDaysMask & 2) != 0) { <th class="text-center align-middle py-3">Mon</th> }
+                                @if ((availableDaysMask & 4) != 0) { <th class="text-center align-middle py-3">Tue</th> }
+                                @if ((availableDaysMask & 8) != 0) { <th class="text-center align-middle py-3">Wed</th> }
+                                @if ((availableDaysMask & 16) != 0) { <th class="text-center align-middle py-3">Thu</th> }
+                                @if ((availableDaysMask & 32) != 0) { <th class="text-center align-middle py-3">Fri</th> }
+                                @if ((availableDaysMask & 64) != 0) { <th class="text-center align-middle py-3">Sat</th> }
+                                @if ((availableDaysMask & 1) != 0) { <th class="text-center align-middle py-3">Sun</th> }
                             </tr>
                         </thead>
                         <tbody id="matrix-tbody">
-                            <tr><td colspan="@(Convert.ToString(availableDaysMask, 2).ToCharArray().Count(c => c == '1') + 1)" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
+                            <tr>
+                                <td colspan="@(Convert.ToString(availableDaysMask, 2).ToCharArray().Count(c => c == '1') + 1)" class="text-center py-5">
+                                    <div class="spinner-border text-success"></div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -63,67 +146,333 @@
     </div>
 </div>
 
+<!-- Bulk Add Slots Modal -->
+<div class="modal fade" id="bulkAddModal" tabindex="-1" aria-labelledby="bulkAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white p-4">
+                <h5 class="modal-title display-font fw-bold" id="bulkAddModalLabel"><i class="fas fa-magic me-2 text-warning"></i>Bulk Create Time Slots</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Progress Indicator -->
+                <div id="bulk-progress-container" class="d-none mb-3 bg-light p-3 rounded-3 border">
+                    <label class="fw-bold small mb-2 d-block" id="bulk-progress-label">Processing requests...</label>
+                    <div class="progress" style="height: 10px; border-radius: 5px;">
+                        <div id="bulk-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <form id="bulkAddForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small text-uppercase">1. Choose Days of the Week</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-1" value="1">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-1">Mon</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-2" value="2">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-2">Tue</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-3" value="3">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-3">Wed</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-4" value="4">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-4">Thu</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-5" value="5">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-5">Fri</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-6" value="6">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-6">Sat</label>
+                            </div>
+                            <div class="form-check-inline-btn">
+                                <input class="form-check-input d-none" type="checkbox" id="bulk-day-0" value="0">
+                                <label class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" for="bulk-day-0">Sun</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-secondary small text-uppercase" for="bulk-start-time">2. Start Hour</label>
+                            <select class="form-select border-0 bg-light p-3 rounded-3" id="bulk-start-time">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-secondary small text-uppercase" for="bulk-end-time">3. End Hour</label>
+                            <select class="form-select border-0 bg-light p-3 rounded-3" id="bulk-end-time">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-secondary small text-uppercase" for="bulk-pricing-variant">4. Pricing Overrides</label>
+                        <select class="form-select border-0 bg-light p-3 rounded-3" id="bulk-pricing-variant">
+                            <option value="auto">Auto-detect Pricing (Morning before 4 PM, Evening after)</option>
+                            <option value="Morning">Force Morning Pricing</option>
+                            <option value="Evening">Force Evening Pricing</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light p-3 border-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal" id="btn-close-bulk">Cancel</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" onclick="submitBulkAdd()"><i class="fas fa-plus me-1"></i>Generate Slots</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Shared Slot Modal -->
+<div class="modal fade" id="deleteSharedModal" tabindex="-1" aria-labelledby="deleteSharedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white p-4">
+                <h5 class="modal-title display-font fw-bold" id="deleteSharedModalLabel"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Delete Shared Slot</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="mb-3 text-secondary">This slot is a shared template that currently appears on <strong>all days of the week</strong>.</p>
+                <p class="mb-0 text-dark fw-semibold">How would you like to delete this slot?</p>
+            </div>
+            <div class="modal-footer bg-light p-3 border-0 d-flex justify-content-between flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning text-dark rounded-pill px-3 fw-bold" id="btn-delete-this-day-only">
+                        <i class="fas fa-thumbtack me-1"></i>Remove from <span id="delete-shared-day-name">This Day</span> only
+                    </button>
+                    <button type="button" class="btn btn-danger rounded-pill px-3 fw-bold" id="btn-delete-all-days">
+                        <i class="fas fa-trash-alt me-1"></i>Remove from ALL Days
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Styles {
     <style>
+        .slot-matrix {
+            border-collapse: separate;
+            border-spacing: 10px;
+            background-color: transparent;
+        }
         .slot-matrix th {
             text-transform: uppercase;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #475569;
-            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 0.08em;
+            padding: 12px 6px !important;
+            border: none !important;
         }
         .time-col {
-            width: 140px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #334155;
+            width: 130px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748b;
             white-space: nowrap;
+            background: transparent !important;
+            border: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 75px;
         }
         .matrix-cell {
             padding: 0 !important;
-            height: 48px;
+            height: 75px;
+            width: 14%;
             vertical-align: middle;
+            border: none !important;
         }
         .slot-box {
             width: 100%;
             height: 100%;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff; /* Not created */
+            color: #94a3b8;
+            border: 1px dashed #cbd5e1;
+            padding: 8px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .slot-box:hover {
+            border-color: var(--color-accent);
+            background: rgba(201, 168, 76, 0.05);
+            color: var(--color-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(201, 168, 76, 0.1);
+        }
+        .slot-box:hover i.fa-plus {
+            color: var(--color-accent) !important;
+            opacity: 1 !important;
+            transform: scale(1.1);
+        }
+        
+        /* Available - Shared Slot (all days) */
+        .slot-box.available-shared {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid #22c55e;
+            box-shadow: 0 2px 4px rgba(34, 197, 94, 0.05);
+        }
+        .slot-box.available-shared:hover {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #86efac;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(34, 197, 94, 0.12);
+        }
+
+        /* Available - Day Specific Slot */
+        .slot-box.available-day {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: #075985;
+            border: 1px solid #bae6fd;
+            border-left: 5px solid #0284c7;
+            box-shadow: 0 2px 4px rgba(2, 132, 199, 0.05);
+        }
+        .slot-box.available-day:hover {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-color: #7dd3fc;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12);
+        }
+        
+        /* Deactivated - Historical Bookings Slot */
+        .slot-box.deactivated {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid #94a3b8;
+            box-shadow: none;
+        }
+        .slot-box.deactivated:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            color: var(--color-primary-light);
+        }
+
+        /* Loading state */
+        .slot-box.loading {
+            opacity: 0.7;
+            pointer-events: none;
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        /* Pricing Variant Badge styles inside slot */
+        .slot-badge {
+            font-size: 0.625rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .badge-morning {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #ea580c;
+        }
+        .badge-evening {
+            background-color: rgba(99, 102, 241, 0.1);
+            color: #4f46e5;
+        }
+        
+        .slot-price {
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+        
+        .slot-type-indicator {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-top: 1px;
+            font-weight: 600;
+        }
+        
+        /* Floating delete icon on hover */
+        .delete-slot-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            background: #f8fafc; /* Not created */
-            color: #94a3b8;
-            font-size: 0.75rem;
-            font-weight: bold;
+            font-size: 0.65rem;
+            opacity: 0;
+            transition: all 0.2s ease;
+            border: none;
         }
-        .slot-box:hover {
-            filter: brightness(0.95);
+        .slot-box:hover .delete-slot-btn {
+            opacity: 1;
+        }
+        .delete-slot-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.1);
         }
         
-        /* Available / Created */
-        .slot-box.available {
-            background: #dcfce7;
-            color: #166534;
-            border: 2px solid #22c55e;
+        /* Stat card styles */
+        .stat-card {
+            border: 1px solid var(--color-border);
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .slot-box.available:hover {
-            background: #bbf7d0;
-            color: #15803d;
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03) !important;
+        }
+        
+        /* Transition utility class */
+        .transition-all {
+            transition: all 0.25s ease-in-out;
         }
 
-        /* Booked / Red */
-        .slot-box.booked {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 2px solid #ef4444;
-            cursor: not-allowed;
+        /* Checkbox stylized buttons for Modal */
+        .form-check-inline-btn input:checked + label {
+            background-color: #198754 !important;
+            border-color: #198754 !important;
+            color: white !important;
+            box-shadow: 0 4px 10px rgba(25, 135, 84, 0.2);
+        }
+        .form-check-inline-btn label {
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         
-        .slot-box.loading {
-            opacity: 0.5;
-            pointer-events: none;
+        /* Spin on hover animate.css trigger helper */
+        .animate-spin-hover:hover {
+            transform: rotate(180deg);
+            transition: transform 0.4s ease;
         }
     </style>
 }
@@ -136,8 +485,23 @@
         const slotDuration = @slotDuration;
         const availableDaysMask = @availableDaysMask;
         
+        // Price values from database
+        const pricePerHour = @Model.PricePerHour;
+        const morningPrice = @Model.MorningPricePerHour;
+        const eveningPrice = @Model.EveningPricePerHour;
+        
         let currentSlots = [];
-        let bookedSlotIds = new Set(); // We will try to prevent deletion if booked
+        
+        let activeSharedDeleteInfo = null;
+        const dayNames = {
+            1: 'Monday',
+            2: 'Tuesday',
+            3: 'Wednesday',
+            4: 'Thursday',
+            5: 'Friday',
+            6: 'Saturday',
+            0: 'Sunday'
+        };
 
         // Days mapping: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun
         let daysOrder = [];
@@ -184,6 +548,16 @@
         function getPricingVariant(startTimeMins) {
             return startTimeMins >= (16 * 60) ? 'Evening' : 'Morning'; // After 4 PM is Evening
         }
+        
+        function getPriceForSlot(pricingVariant) {
+            if (pricingVariant === 'Morning') return morningPrice;
+            if (pricingVariant === 'Evening') return eveningPrice;
+            return pricePerHour;
+        }
+        
+        function formatCurrency(amount) {
+            return '৳' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
 
         function renderMatrix() {
             const tbody = document.getElementById('matrix-tbody');
@@ -193,6 +567,15 @@
             const endMins = parseTime(clTimeStr);
             
             let currentMins = startMins;
+            
+            // Calculate stats
+            let totalSlotsCount = currentSlots.length;
+            let sharedSlotsCount = currentSlots.filter(s => (s.dayOfWeek === null || s.DayOfWeek === null)).length;
+            let specificSlotsCount = totalSlotsCount - sharedSlotsCount;
+            
+            document.getElementById('stat-total-slots').innerText = totalSlotsCount;
+            document.getElementById('stat-shared-slots').innerText = sharedSlotsCount;
+            document.getElementById('stat-specific-slots').innerText = specificSlotsCount;
 
             while (currentMins + slotDuration <= endMins) {
                 const tr = document.createElement('tr');
@@ -204,7 +587,7 @@
                 // Time column
                 const tdTime = document.createElement('td');
                 tdTime.className = 'time-col bg-light text-center align-middle';
-                tdTime.innerHTML = `${formatAmPm(startStr)} - ${formatAmPm(endStr)}`;
+                tdTime.innerHTML = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 rounded-pill p-2 fw-semibold">${formatAmPm(startStr)} - ${formatAmPm(endStr)}</span>`;
                 tr.appendChild(tdTime);
 
                 // Day columns
@@ -229,12 +612,44 @@
                     
                     if (existingSlot) {
                         const slotId = existingSlot.id || existingSlot.Id;
-                        box.className = 'slot-box available';
-                        box.innerHTML = '<i class="fas fa-check-circle"></i>';
-                        box.onclick = () => toggleSlot(box, slotId, null, null, null);
+                        const isShared = (existingSlot.dayOfWeek === null || existingSlot.DayOfWeek === null);
+                        const isAvailable = (existingSlot.isAvailable !== undefined ? existingSlot.isAvailable : existingSlot.IsAvailable);
+                        const variant = existingSlot.pricingVariant || existingSlot.PricingVariant || 'Morning';
+                        const price = getPriceForSlot(variant);
+                        
+                        if (!isAvailable) {
+                            // Deactivated state (historical bookings)
+                            box.className = 'slot-box deactivated';
+                            box.title = 'Click to activate this slot for bookings';
+                            box.innerHTML = `
+                                <span class="slot-badge bg-secondary text-white"><i class="fas fa-ban me-1"></i>Inactive</span>
+                                <span class="slot-price text-muted">${formatCurrency(price)}</span>
+                                <span class="slot-type-indicator text-secondary">
+                                    <i class="fas fa-eye-slash text-secondary"></i> Hidden
+                                </span>
+                            `;
+                        } else {
+                            box.className = isShared ? 'slot-box available-shared' : 'slot-box available-day';
+                            
+                            // Icon based on pricing variant
+                            const iconHtml = variant === 'Morning' ? '<i class="fas fa-sun text-warning me-1"></i>' : '<i class="fas fa-moon text-primary me-1"></i>';
+                            
+                            box.innerHTML = `
+                                <span class="slot-badge ${variant === 'Morning' ? 'badge-morning' : 'badge-evening'}">${iconHtml}${variant}</span>
+                                <span class="slot-price text-dark">${formatCurrency(price)}</span>
+                                <span class="slot-type-indicator">
+                                    ${isShared ? '<i class="fas fa-sync text-success"></i> Shared' : '<i class="fas fa-thumbtack text-info"></i> Day-only'}
+                                </span>
+                                <button type="button" class="delete-slot-btn shadow-sm" title="Delete Slot"><i class="fas fa-times"></i></button>
+                            `;
+                            // Stop delete-btn click from double-triggering the box click
+                            box.querySelector('.delete-slot-btn').addEventListener('click', (e) => e.stopPropagation());
+                        }
+                        
+                        box.onclick = () => toggleSlot(box, slotId, dayNum, startStr, endStr);
                     } else {
                         box.className = 'slot-box';
-                        box.innerHTML = '<i class="fas fa-plus text-muted" style="opacity:0.3"></i>';
+                        box.innerHTML = '<i class="fas fa-plus text-muted" style="opacity:0.3"></i> <span class="small text-secondary" style="font-size:0.6rem; opacity:0.6;">Add Slot</span>';
                         box.onclick = () => toggleSlot(box, null, dayNum, startStr, endStr);
                     }
                     
@@ -247,64 +662,430 @@
             }
         }
 
+        async function performDeleteSlot(slotId, boxElement) {
+            try {
+                const response = await fetch(`/api/turfs/slots/${slotId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    if (result.message && result.message.includes("deactivated")) {
+                        showToast('info', 'Slot Deactivated', result.message);
+                    }
+                } else {
+                    showToast('danger', 'Error', result.message || "Failed to delete slot.");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('danger', 'Network Error', 'Could not connect to the server. Please try again.');
+            }
+            await loadSlots();
+        }
+
         async function toggleSlot(boxElement, slotId, dayNum, startStr, endStr) {
-            // Visual loading state
-            boxElement.classList.add('loading');
-            boxElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            let slot = null;
 
             if (slotId) {
-                // DELETE SLOT
-                try {
-                    const response = await fetch(`/api/turfs/slots/${slotId}`, { method: 'DELETE' });
-                    const result = await response.json();
-                    if (result.success) {
-                        // Success, reload all slots to reflect change immediately
-                        await loadSlots();
-                    } else {
-                        alert(result.message || "Failed to delete slot. It might be booked.");
-                        boxElement.classList.remove('loading');
-                        boxElement.innerHTML = '<i class="fas fa-check-circle"></i>'; // restore
+                slot = currentSlots.find(s => (s.id || s.Id) === slotId);
+                const isAvailable = slot ? (slot.isAvailable !== undefined ? slot.isAvailable : slot.IsAvailable) : true;
+                const isShared = slot ? (slot.dayOfWeek === null && slot.DayOfWeek === null) : false;
+
+                if (!isAvailable) {
+                    // --- ACTIVATE a deactivated slot ---
+                    boxElement.classList.add('loading');
+                    boxElement.innerHTML = '<i class="fas fa-spinner fa-spin my-3 text-success"></i>';
+                    const sStart = slot.startTime || slot.StartTime;
+                    const sEnd   = slot.endTime   || slot.EndTime;
+                    const sDay   = slot.dayOfWeek !== undefined ? slot.dayOfWeek : slot.DayOfWeek;
+                    const sVariant = slot.pricingVariant || slot.PricingVariant || 'Morning';
+                    try {
+                        const resp = await fetch(`/api/turfs/slots/${slotId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ StartTime: sStart, EndTime: sEnd, DayOfWeek: sDay, IsAvailable: true, PricingVariant: sVariant })
+                        });
+                        const result = await resp.json();
+                        if (!result.success) showToast('danger', 'Error', result.message || 'Failed to activate slot.');
+                    } catch (e) {
+                        showToast('danger', 'Network Error', 'Could not connect to the server.');
                     }
-                } catch (e) {
-                    console.error(e);
-                    alert("Network error.");
                     await loadSlots();
+                    return;
                 }
+
+                if (isShared) {
+                    // --- Show shared slot modal (affects all days) ---
+                    activeSharedDeleteInfo = { boxElement, slotId, dayNum, slot };
+                    document.getElementById('delete-shared-day-name').textContent = dayNames[dayNum] ?? 'This Day';
+                    const modal = new bootstrap.Modal(document.getElementById('deleteSharedModal'));
+                    modal.show();
+                    return;
+                }
+
+                // --- Regular day-specific slot: confirm then delete ---
+                if (!confirm("Are you sure you want to delete this time slot?\nSlots with active bookings cannot be deleted.")) return;
+
+                boxElement.classList.add('loading');
+                boxElement.innerHTML = '<i class="fas fa-spinner fa-spin my-3 text-success"></i>';
+                await performDeleteSlot(slotId, boxElement);
+
             } else {
-                // CREATE SLOT
+                // --- CREATE a new slot for this specific day ---
+                boxElement.classList.add('loading');
+                boxElement.innerHTML = '<i class="fas fa-spinner fa-spin my-3 text-success"></i>';
+
                 const startMins = parseTime(startStr);
                 const pricing = getPricingVariant(startMins);
-                
                 const data = {
-                    StartTime: startStr + ":00",
-                    EndTime: endStr + ":00",
+                    StartTime: startStr + ':00',
+                    EndTime:   endStr   + ':00',
                     DayOfWeek: dayNum,
                     PricingVariant: pricing
                 };
-
                 try {
-                    const response = await fetch(`/api/turfs/${turfId}/slots`, {
+                    const resp = await fetch(`/api/turfs/${turfId}/slots`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-                    const result = await response.json();
-                    if (result.success) {
-                        await loadSlots();
-                    } else {
-                        alert(result.message || "Failed to create slot.");
-                        boxElement.classList.remove('loading');
-                        boxElement.innerHTML = '<i class="fas fa-plus text-muted" style="opacity:0.3"></i>';
-                    }
+                    const result = await resp.json();
+                    if (!result.success) showToast('danger', 'Error', result.message || 'Failed to create slot. It may overlap.');
                 } catch (e) {
-                    console.error(e);
-                    alert("Network error.");
-                    await loadSlots();
+                    showToast('danger', 'Network Error', 'Could not connect to the server.');
                 }
+                await loadSlots();
             }
         }
 
-        // Init
-        loadSlots();
+        // ── Toast helper (replaces alert() calls) ────────────────────────────────
+        function showToast(type, title, message) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(container);
+            }
+            const colors = { success: '#22c55e', danger: '#ef4444', info: '#0284c7', warning: '#f59e0b' };
+            const icons  = { success: 'fa-check-circle', danger: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+            const toast = document.createElement('div');
+            toast.style.cssText = `background:white;border-radius:12px;padding:14px 18px;box-shadow:0 8px 30px rgba(0,0,0,0.12);border-left:4px solid ${colors[type]||'#64748b'};display:flex;align-items:flex-start;gap:12px;min-width:280px;max-width:360px;animation:slideInRight 0.3s ease;`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type]||'fa-bell'} mt-1" style="color:${colors[type]};flex-shrink:0"></i>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:0.85rem;color:#1e293b">${title}</div>
+                    <div style="font-size:0.8rem;color:#64748b;margin-top:2px">${message}</div>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem;padding:0;flex-shrink:0">&times;</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(()=>toast.remove(),400); }, 4000);
+        }
+
+        // Bulk creation helper
+        const configData = {
+            OpeningTime: '@openingTime' + ':00',
+            ClosingTime: '@closingTime' + ':00',
+            SlotDurationMinutes: @slotDuration,
+            MaxAdvanceBookingDays: @(config?.MaxAdvanceBookingDays ?? 30),
+            RequireFullPayment: @((config?.RequireFullPayment ?? false) ? "true" : "false"),
+            AcceptBkash: @((config?.AcceptBkash ?? true) ? "true" : "false"),
+            AcceptNagad: @((config?.AcceptNagad ?? true) ? "true" : "false"),
+            AcceptRocket: @((config?.AcceptRocket ?? true) ? "true" : "false"),
+            AvailableDaysMask: @availableDaysMask
+        };
+
+        async function resetToDefaultTemplate() {
+            if (!confirm("This will clear all custom slots and regenerate the default slot template for all days based on operating hours (@openingTime - @closingTime). Continue?")) {
+                return;
+            }
+            
+            const btn = document.getElementById('btn-reset-default');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Resetting...';
+            
+            try {
+                const response = await fetch(`/api/turfs/${turfId}/booking-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("Default slot template has been regenerated successfully.");
+                    await loadSlots();
+                } else {
+                    alert(result.message || "Failed to reset slots.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        async function clearAllSlots() {
+            if (!confirm("Are you sure you want to delete ALL slots? Active or pending bookings will not be deleted, but all empty slots will be removed.")) {
+                return;
+            }
+            
+            const btn = document.getElementById('btn-clear-all');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Clearing...';
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (const slot of currentSlots) {
+                const slotId = slot.id || slot.Id;
+                try {
+                    const response = await fetch(`/api/turfs/slots/${slotId}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (e) {
+                    failCount++;
+                    console.error("Error deleting slot:", slotId, e);
+                }
+            }
+            
+            alert(`Cleared ${successCount} slots. ${failCount} slots couldn't be deleted as they have active/pending bookings.`);
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            await loadSlots();
+        }
+
+        function populateBulkDropdowns() {
+            const startSelect = document.getElementById('bulk-start-time');
+            const endSelect = document.getElementById('bulk-end-time');
+            startSelect.innerHTML = '';
+            endSelect.innerHTML = '';
+
+            const startMins = parseTime(opTimeStr);
+            const endMins = parseTime(clTimeStr);
+            let currentMins = startMins;
+
+            while (currentMins < endMins) {
+                const timeStr = formatTimeSpan(currentMins);
+                const opt = document.createElement('option');
+                opt.value = timeStr;
+                opt.innerText = formatAmPm(timeStr);
+                startSelect.appendChild(opt);
+                currentMins += slotDuration;
+            }
+
+            currentMins = startMins + slotDuration;
+            while (currentMins <= endMins) {
+                const timeStr = formatTimeSpan(currentMins);
+                const opt = document.createElement('option');
+                opt.value = timeStr;
+                opt.innerText = formatAmPm(timeStr);
+                endSelect.appendChild(opt);
+                currentMins += slotDuration;
+            }
+        }
+
+        async function submitBulkAdd() {
+            const selectedDays = [];
+            for (let i = 0; i <= 6; i++) {
+                const chk = document.getElementById(`bulk-day-${i}`);
+                if (chk && chk.checked) {
+                    selectedDays.push(parseInt(chk.value));
+                }
+            }
+            
+            if (selectedDays.length === 0) {
+                alert("Please select at least one day of the week.");
+                return;
+            }
+            
+            const startTimeStr = document.getElementById('bulk-start-time').value;
+            const endTimeStr = document.getElementById('bulk-end-time').value;
+            const pricingMode = document.getElementById('bulk-pricing-variant').value;
+            
+            const startMins = parseTime(startTimeStr);
+            const endMins = parseTime(endTimeStr);
+            
+            if (startMins >= endMins) {
+                alert("Start hour must be earlier than the end hour.");
+                return;
+            }
+            
+            // Calculate slots to generate
+            const slotsToCreate = [];
+            let currentMins = startMins;
+            while (currentMins + slotDuration <= endMins) {
+                const sStr = formatTimeSpan(currentMins);
+                const eStr = formatTimeSpan(currentMins + slotDuration);
+                
+                let pricing = pricingMode;
+                if (pricing === 'auto') {
+                    pricing = getPricingVariant(currentMins);
+                }
+                
+                for (const day of selectedDays) {
+                    slotsToCreate.push({
+                        DayOfWeek: day,
+                        StartTime: sStr + ":00",
+                        EndTime: eStr + ":00",
+                        PricingVariant: pricing
+                    });
+                }
+                currentMins += slotDuration;
+            }
+            
+            if (slotsToCreate.length === 0) {
+                alert("No slots can be created in the selected range.");
+                return;
+            }
+            
+            // Show progress overlay
+            const progressContainer = document.getElementById('bulk-progress-container');
+            const progressBar = document.getElementById('bulk-progress-bar');
+            const progressLabel = document.getElementById('bulk-progress-label');
+            
+            progressContainer.classList.remove('d-none');
+            progressBar.style.width = '0%';
+            
+            // Disable modal buttons and selects during batch operations
+            const formInputs = document.querySelectorAll('#bulkAddModal select, #bulkAddModal checkbox, #bulkAddModal button');
+            formInputs.forEach(el => el.disabled = true);
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (let i = 0; i < slotsToCreate.length; i++) {
+                const slot = slotsToCreate[i];
+                progressLabel.innerText = `Generating slot ${i + 1} of ${slotsToCreate.length}...`;
+                progressBar.style.width = `${Math.round(((i) / slotsToCreate.length) * 100)}%`;
+                
+                try {
+                    const response = await fetch(`/api/turfs/${turfId}/slots`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(slot)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (e) {
+                    failCount++;
+                    console.error("Bulk add fetch error:", e);
+                }
+            }
+            
+            progressBar.style.width = '100%';
+            progressLabel.innerText = `Complete! ${successCount} slots added. ${failCount} skipped/failed.`;
+            
+            setTimeout(async () => {
+                formInputs.forEach(el => el.disabled = false);
+                progressContainer.classList.add('d-none');
+                
+                // Hide modal
+                const modalEl = document.getElementById('bulkAddModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
+                // Reload data
+                await loadSlots();
+            }, 1200);
+        }
+
+        // ── Shared-slot modal button handlers ────────────────────────────────────
+        async function handleDeleteThisDayOnly() {
+            if (!activeSharedDeleteInfo) return;
+            const { boxElement, slotId, dayNum, slot } = activeSharedDeleteInfo;
+            activeSharedDeleteInfo = null;
+
+            // Dismiss modal
+            bootstrap.Modal.getInstance(document.getElementById('deleteSharedModal'))?.hide();
+
+            boxElement.classList.add('loading');
+            boxElement.innerHTML = '<i class="fas fa-spinner fa-spin my-3 text-success"></i>';
+
+            const sStart   = (slot.startTime   || slot.StartTime   || '');
+            const sEnd     = (slot.endTime     || slot.EndTime     || '');
+            const sVariant = slot.pricingVariant || slot.PricingVariant || 'Morning';
+
+            // Step 1: Create day-specific slots for every OTHER enabled day
+            const otherDays = daysOrder.filter(d => d !== dayNum);
+            for (const otherDay of otherDays) {
+                // Skip if a day-specific slot already exists for this time on that day
+                const alreadyExists = currentSlots.find(s => {
+                    const sD = s.dayOfWeek !== undefined ? s.dayOfWeek : s.DayOfWeek;
+                    const sS = (s.startTime || s.StartTime || '').substring(0, 5);
+                    return sD === otherDay && sS === sStart.substring(0, 5);
+                });
+                if (alreadyExists) continue;
+
+                try {
+                    await fetch(`/api/turfs/${turfId}/slots`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            StartTime: sStart,
+                            EndTime: sEnd,
+                            DayOfWeek: otherDay,
+                            PricingVariant: sVariant
+                        })
+                    });
+                } catch (e) {
+                    console.error('Error creating day-specific slot for day', otherDay, e);
+                }
+            }
+
+            // Step 2: Delete (or deactivate) the shared slot itself
+            await performDeleteSlot(slotId, boxElement);
+            showToast('success', 'Done', `Slot removed from ${dayNames[dayNum] ?? 'this day'} only. Other days are unchanged.`);
+        }
+
+        async function handleDeleteAllDays() {
+            if (!activeSharedDeleteInfo) return;
+            const { boxElement, slotId } = activeSharedDeleteInfo;
+            activeSharedDeleteInfo = null;
+
+            bootstrap.Modal.getInstance(document.getElementById('deleteSharedModal'))?.hide();
+
+            boxElement.classList.add('loading');
+            boxElement.innerHTML = '<i class="fas fa-spinner fa-spin my-3 text-success"></i>';
+
+            await performDeleteSlot(slotId, boxElement);
+            showToast('success', 'Done', 'Slot removed from all days.');
+        }
+
+        // Add keyframe for toast animation
+        const toastStyle = document.createElement('style');
+        toastStyle.textContent = `@@keyframes slideInRight { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }`;
+        document.head.appendChild(toastStyle);
+
+        // Initialize elements
+        document.addEventListener('DOMContentLoaded', () => {
+            populateBulkDropdowns();
+            
+            const startTimeInput = document.getElementById('bulk-start-time');
+            if (startTimeInput) {
+                startTimeInput.addEventListener('change', (e) => {
+                    const startVal = e.target.value;
+                    const startMins = parseTime(startVal);
+                    const endSelect = document.getElementById('bulk-end-time');
+                    const defaultEndMins = startMins + slotDuration;
+                    endSelect.value = formatTimeSpan(defaultEndMins);
+                });
+            }
+
+            // Wire up modal buttons
+            document.getElementById('btn-delete-this-day-only').addEventListener('click', handleDeleteThisDayOnly);
+            document.getElementById('btn-delete-all-days').addEventListener('click', handleDeleteAllDays);
+            
+            loadSlots();
+        });
     </script>
 }

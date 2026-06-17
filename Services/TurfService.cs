@@ -328,6 +328,16 @@ namespace turf_management_system.Services
                 return ApiResponse<bool>.FailureResponse("This slot has active or pending bookings and cannot be deleted.");
             }
 
+            // Check if slot has any historical bookings (to avoid SQL foreign key violation)
+            var hasBookings = await _unitOfWork.Bookings.GetCountAsync(b => b.SlotId == slotId) > 0;
+            if (hasBookings)
+            {
+                slot.IsAvailable = false;
+                _unitOfWork.TurfSlots.Update(slot);
+                await _unitOfWork.CompleteAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Slot has historical bookings and cannot be physically deleted. It has been deactivated and hidden from customers instead.");
+            }
+
             _unitOfWork.TurfSlots.Delete(slot);
             await _unitOfWork.CompleteAsync();
 

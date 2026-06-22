@@ -5,48 +5,76 @@
     var selectedStatus = ViewBag.SelectedStatus as BookingStatus?;
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">My Bookings</h2>
-        <a asp-action="Browse" class="btn btn-success rounded-3">
-            <i class="fas fa-plus me-2"></i>New Booking
-        </a>
+<!-- Hero Section Breakout Container -->
+<div class="full-width-breakout hero-wrapper position-relative overflow-hidden mb-5">
+    <div class="stadium-lights-backdrop"></div>
+    <div class="hero-dark-overlay"></div>
+    
+    <div class="container position-relative h-100 z-3 text-white">
+        <div class="row align-items-center py-5">
+            <div class="col-lg-8 animate-up">
+                <span class="badge bg-gold text-dark px-3 py-2 mb-3 fw-bold text-uppercase tracking-wider rounded-pill shadow-sm">
+                    Player Dashboard
+                </span>
+                <h1 class="display-4 fw-extrabold mb-3 tracking-tight display-font text-white">
+                    My Bookings
+                </h1>
+                <p class="fs-5 text-light-gray mb-4 fw-light">
+                    Manage your upcoming matches, review past games, and track your payment status.
+                </p>
+                <a asp-action="Browse" class="btn btn-gold btn-lg rounded-pill px-4 shadow-md fw-bold">
+                    <i class="fas fa-plus me-2"></i>Book Another Turf
+                </a>
+            </div>
+        </div>
     </div>
+</div>
 
+<div class="container mb-5" style="margin-top: -60px; position: relative; z-index: 10;">
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success rounded-3"><i class="fas fa-check me-2"></i>@TempData["Success"]</div>
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center animate-up">
+            <i class="fas fa-check-circle fa-lg me-3"></i>@TempData["Success"]
+        </div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger rounded-3"><i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]</div>
+        <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center animate-up">
+            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>@TempData["Error"]
+        </div>
     }
 
     <!-- Status Filter -->
-    <div class="d-flex gap-2 mb-4 flex-wrap">
-        <a asp-action="MyBookings" class="btn btn-sm @(selectedStatus == null ? "btn-dark" : "btn-outline-secondary") rounded-pill">All</a>
-        @foreach (var status in Enum.GetValues<BookingStatus>())
-        {
-            <a asp-action="MyBookings" asp-route-status="@((int)status)"
-               class="btn btn-sm @(selectedStatus == status ? "btn-dark" : "btn-outline-secondary") rounded-pill">
-                @status
-            </a>
-        }
+    <div class="card border-0 shadow-sm rounded-pill p-2 mb-4 bg-white animate-up" style="animation-delay: 0.1s;">
+        <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
+            <a asp-action="MyBookings" class="btn @(selectedStatus == null ? "btn-dark" : "btn-outline-light text-dark") rounded-pill px-4 fw-bold border-0">All Bookings</a>
+            @foreach (var status in Enum.GetValues<BookingStatus>())
+            {
+                <a asp-action="MyBookings" asp-route-status="@((int)status)"
+                   class="btn @(selectedStatus == status ? "btn-dark" : "btn-outline-light text-dark") rounded-pill px-4 fw-bold border-0">
+                    @status
+                </a>
+            }
+        </div>
     </div>
 
     @if (!Model.Any())
     {
-        <div class="text-center py-5">
-            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-            <h5 class="text-muted">No bookings found.</h5>
-            <a asp-action="Browse" class="btn btn-success mt-3">Browse Turfs</a>
+        <div class="text-center py-5 card border-0 shadow-sm rounded-4 bg-white animate-up" style="animation-delay: 0.2s;">
+            <div class="p-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-4 opacity-50"></i>
+                <h4 class="fw-bold mb-3">No Bookings Found</h4>
+                <p class="text-muted mb-4">You haven't made any bookings matching this status yet.</p>
+                <a asp-action="Browse" class="btn btn-dark rounded-pill px-4 py-2 fw-bold">Explore Premium Arenas</a>
+            </div>
         </div>
     }
     else
     {
-        <div class="row g-3">
-            @foreach (var booking in Model)
+        <div class="row g-4">
+            @for (int i = 0; i < Model.Count(); i++)
             {
+                var booking = Model.ElementAt(i);
                 var statusColor = booking.Status switch
                 {
                     BookingStatus.Confirmed => "success",
@@ -57,49 +85,75 @@
                     BookingStatus.Refunded => "info",
                     _ => "secondary"
                 };
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h5 class="fw-bold mb-0 me-3">@booking.Turf?.Name</h5>
-                                        <span class="badge bg-@statusColor">@booking.Status</span>
+                
+                <div class="col-12 animate-up" style="animation-delay: @(0.1 + (i * 0.05))s;">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden turf-premium-card">
+                        <div class="row g-0">
+                            <!-- Left Status Accent -->
+                            <div class="col-auto bg-@statusColor" style="width: 6px;"></div>
+                            
+                            <div class="col p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8 mb-3 mb-md-0">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-@statusColor text-@(booking.Status == BookingStatus.PendingPayment ? "dark" : "white") px-3 py-2 rounded-pill fw-bold text-uppercase ls-1" style="font-size: 0.75rem;">
+                                                <i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> @booking.Status
+                                            </span>
+                                            <span class="ms-3 text-muted font-monospace small">#@booking.Id.ToString()[..8].ToUpper()</span>
+                                        </div>
+                                        
+                                        <h4 class="fw-bold mb-2 display-font">@booking.Turf?.Name</h4>
+                                        
+                                        <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
+                                            <div class="d-flex align-items-center bg-light px-3 py-2 rounded-pill">
+                                                <i class="fas fa-calendar-alt text-gold me-2"></i>
+                                                <span class="fw-bold text-dark">@booking.BookingDate.ToString("dd MMM yyyy")</span>
+                                            </div>
+                                            <div class="d-flex align-items-center bg-light px-3 py-2 rounded-pill">
+                                                <i class="fas fa-clock text-gold me-2"></i>
+                                                <span class="fw-bold text-dark">@booking.StartTime.ToString(@"hh\:mm") – @booking.EndTime.ToString(@"hh\:mm")</span>
+                                            </div>
+                                            <div class="d-flex align-items-center bg-light px-3 py-2 rounded-pill">
+                                                <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                                <span class="fw-bold text-dark">@booking.Turf?.City</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="text-muted mb-1">
-                                        <i class="fas fa-calendar me-1"></i>@booking.BookingDate.ToString("dd MMM yyyy")
-                                        &nbsp;
-                                        <i class="fas fa-clock ms-2 me-1"></i>@booking.StartTime.ToString(@"hh\:mm") – @booking.EndTime.ToString(@"hh\:mm")
-                                    </p>
-                                    <p class="text-muted mb-0">
-                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>@booking.Turf?.City
-                                        &nbsp;·&nbsp;
-                                        <span class="text-success fw-bold">৳@booking.TotalAmount.ToString("F2")</span>
-                                    </p>
-                                </div>
-                                <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                    @if (booking.Status == BookingStatus.PendingPayment)
-                                    {
-                                        <a asp-action="Payment" asp-route-bookingId="@booking.Id"
-                                           class="btn btn-warning btn-sm rounded-3 me-2">
-                                            <i class="fas fa-credit-card me-1"></i>Pay Now
-                                        </a>
-                                    }
-                                    <a asp-action="Confirmation" asp-route-bookingId="@booking.Id"
-                                       class="btn btn-outline-secondary btn-sm rounded-3 me-2">
-                                        <i class="fas fa-eye me-1"></i>View
-                                    </a>
-                                    @if (booking.Status == BookingStatus.Confirmed || booking.Status == BookingStatus.PendingPayment)
-                                    {
-                                        <form asp-action="Cancel" method="post" style="display:inline;"
-                                              onsubmit="return confirm('Are you sure you want to cancel this booking?')">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="bookingId" value="@booking.Id">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-3">
-                                                <i class="fas fa-times me-1"></i>Cancel
-                                            </button>
-                                        </form>
-                                    }
+                                    
+                                    <div class="col-md-4 d-flex flex-column align-items-md-end justify-content-between h-100 border-start-md ps-md-4">
+                                        <div class="text-md-end mb-3">
+                                            <span class="d-block text-muted small text-uppercase ls-1 fw-bold">Total Amount</span>
+                                            <span class="fs-4 fw-bold text-success">৳@booking.TotalAmount.ToString("F2")</span>
+                                        </div>
+                                        
+                                        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                                            @if (booking.Status == BookingStatus.PendingPayment)
+                                            {
+                                                <a asp-action="Payment" asp-route-bookingId="@booking.Id" class="btn btn-warning rounded-pill fw-bold shadow-sm px-3">
+                                                    <i class="fas fa-credit-card me-1"></i>Pay
+                                                </a>
+                                            }
+                                            @if (booking.Status == BookingStatus.Confirmed)
+                                            {
+                                                <a asp-action="DownloadSlip" asp-route-bookingId="@booking.Id" class="btn btn-outline-dark rounded-pill fw-bold px-3" target="_blank">
+                                                    <i class="fas fa-download me-1"></i>Slip
+                                                </a>
+                                            }
+                                            <a asp-action="Confirmation" asp-route-bookingId="@booking.Id" class="btn btn-light border rounded-pill fw-bold px-3">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </a>
+                                            @if (booking.Status == BookingStatus.Confirmed || booking.Status == BookingStatus.PendingPayment)
+                                            {
+                                                <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this booking? This action cannot be undone.')">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="bookingId" value="@booking.Id">
+                                                    <button type="submit" class="btn btn-outline-danger rounded-pill fw-bold px-3">
+                                                        <i class="fas fa-times me-1"></i>Cancel
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -109,3 +163,93 @@
         </div>
     }
 </div>
+
+@section Styles {
+    <style>
+        /* Breakout CSS */
+        .full-width-breakout {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        .hero-wrapper {
+            background: #0f1c18;
+            padding: 60px 0 120px;
+        }
+
+        .stadium-lights-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26,60,52,0.95), rgba(15,28,24,0.98)), 
+                        url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.9;
+        }
+
+        .hero-dark-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(201,168,76,0.15), transparent 70%);
+            pointer-events: none;
+        }
+
+        .text-gold {
+            color: #C9A84C;
+        }
+        
+        .bg-gold {
+            background-color: #C9A84C !important;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+            border: none;
+            color: #0f1c18 !important;
+            transition: all 0.3s;
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #F0CC5F, #B8952F);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201,168,76,0.4) !important;
+        }
+
+        .turf-premium-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(0,0,0,0.05) !important;
+        }
+
+        .turf-premium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(26,60,52,0.1) !important;
+        }
+
+        .ls-1 {
+            letter-spacing: 1px;
+        }
+        
+        .animate-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        @@keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media (min-width: 768px) {
+            .border-start-md {
+                border-left: 1px dashed rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+}

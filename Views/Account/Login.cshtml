@@ -3,67 +3,174 @@
     ViewData["Title"] = "Login";
 }
 
-<div class="row justify-content-center align-items-center min-vh-100 animate-up">
-    <div class="col-md-5">
-        <div class="card p-5 shadow-2xl border-0">
-            <div class="text-center mb-5">
-                <div class="icon-circle bg-primary text-white mx-auto mb-4" style="width: 80px; height: 80px; font-size: 32px;">
-                    <i class="fas fa-shield-alt"></i>
+<!-- Hero Section Breakout Container -->
+<div class="full-width-breakout hero-wrapper position-relative overflow-hidden min-vh-100 d-flex align-items-center">
+    <div class="stadium-lights-backdrop"></div>
+    <div class="hero-dark-overlay"></div>
+    
+    <div class="container position-relative z-3 text-white">
+        <div class="row justify-content-center align-items-center">
+            <div class="col-md-6 col-lg-5 animate-up">
+                <div class="card border-0 shadow-2xl rounded-4 bg-dark bg-opacity-75 backdrop-blur-md overflow-hidden">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-5">
+                            <div class="mx-auto mb-4 bg-gold-gradient rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 80px; height: 80px;">
+                                <i class="fas fa-shield-alt fa-2x text-dark"></i>
+                            </div>
+                            <h2 class="display-font fw-extrabold tracking-tight mb-2 text-white">Welcome Back</h2>
+                            <p class="text-light-gray fw-light">Login to manage your turf sessions</p>
+                        </div>
+
+                        <form asp-action="Login" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-4 p-3 bg-danger bg-opacity-10 rounded-3 border border-danger border-opacity-25"></div>
+
+                            <div class="mb-4">
+                                <label asp-for="Email" class="form-label fw-bold small text-uppercase ls-1 text-gold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white bg-opacity-10 border-0 text-white-50"><i class="fas fa-envelope"></i></span>
+                                    <input asp-for="Email" class="form-control bg-white bg-opacity-10 border-0 text-white shadow-none px-3 py-3" placeholder="name@example.com" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Password" class="form-label fw-bold small text-uppercase ls-1 text-gold">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white bg-opacity-10 border-0 text-white-50"><i class="fas fa-key"></i></span>
+                                    <input asp-for="Password" type="password" class="form-control bg-white bg-opacity-10 border-0 text-white shadow-none px-3 py-3" placeholder="••••••••" />
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <div class="mb-5 d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input asp-for="RememberMe" class="form-check-input bg-dark border-secondary shadow-none" />
+                                    <label asp-for="RememberMe" class="form-check-label text-light-gray small">Remember me</label>
+                                </div>
+                                <a href="#" class="text-gold text-decoration-none small fw-bold custom-link">Forgot Password?</a>
+                            </div>
+
+                            <div class="d-grid mb-4">
+                                <button type="submit" class="btn btn-gold btn-lg py-3 fw-bold rounded-pill shadow-md text-dark">
+                                    Sign In <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="text-light-gray mb-0 small">New here? <a asp-action="Register" class="text-white fw-bold text-decoration-none border-bottom border-2 border-gold pb-1 custom-link">Create an account</a></p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <h2 class="display-font">Welcome Back</h2>
-                <p class="text-muted">Login to manage your turf sessions</p>
             </div>
-
-            <form asp-action="Login" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger small mb-4 p-3 bg-danger-subtle rounded-3 border-0"></div>
-
-                <div class="mb-4">
-                    <label asp-for="Email" class="form-label fw-bold small text-uppercase ls-1">Email Address</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-muted"></i></span>
-                        <input asp-for="Email" class="form-control border-0 bg-light p-3" placeholder="name@example.com" />
-                    </div>
-                    <span asp-validation-for="Email" class="text-danger small"></span>
-                </div>
-
-                <div class="mb-4">
-                    <label asp-for="Password" class="form-label fw-bold small text-uppercase ls-1">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0"><i class="fas fa-key text-muted"></i></span>
-                        <input asp-for="Password" type="password" class="form-control border-0 bg-light p-3" placeholder="••••••••" />
-                    </div>
-                    <span asp-validation-for="Password" class="text-danger small"></span>
-                </div>
-
-                <div class="mb-4 d-flex justify-content-between align-items-center">
-                    <div class="form-check">
-                        <input asp-for="RememberMe" class="form-check-input" />
-                        <label asp-for="RememberMe" class="form-check-label text-muted">Remember me</label>
-                    </div>
-                    <a href="#" class="text-primary text-decoration-none small fw-bold">Forgot?</a>
-                </div>
-
-                <div class="d-grid mb-5">
-                    <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold">
-                        Sign In <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
-
-                <div class="text-center">
-                    <p class="text-muted mb-0">New here? <a asp-action="Register" class="text-primary fw-bold text-decoration-none border-bottom border-2 border-primary border-opacity-25">Create an account</a></p>
-                </div>
-            </form>
         </div>
     </div>
 </div>
 
 @section Styles {
     <style>
-        .ls-1 { letter-spacing: 0.1em; }
-        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(26,60,52,0.15); }
-        .icon-circle {
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+        /* Breakout CSS */
+        .full-width-breakout {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        .hero-wrapper {
+            background: #0f1c18;
+            padding: 0;
+            margin-top: -80px; /* Offset for navbar */
+        }
+
+        .stadium-lights-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26,60,52,0.90), rgba(15,28,24,0.95)), 
+                        url('https://images.unsplash.com/photo-1518605368461-1ee712c9b4e6?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-dark-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(201,168,76,0.1), transparent 60%);
+            pointer-events: none;
+        }
+
+        .backdrop-blur-md {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+
+        .text-gold { color: #C9A84C !important; }
+        .border-gold { border-color: #C9A84C !important; }
+        .text-light-gray { color: #cbd5e1; }
+        
+        .bg-gold-gradient {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #E5BA44, #C9A84C);
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #F0CC5F, #B8952F);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201,168,76,0.3) !important;
+        }
+
+        .custom-link {
+            transition: all 0.3s ease;
+        }
+        
+        .custom-link:hover {
+            color: #F0CC5F !important;
+            opacity: 0.8;
+        }
+
+        .shadow-2xl {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .ls-1 { letter-spacing: 1px; }
+        
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        
+        .form-control:focus {
+            background-color: rgba(255,255,255,0.15) !important;
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 0 0 0.25rem rgba(201,168,76,0.25);
+        }
+
+        .input-group-text {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+        
+        .form-control {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .animate-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        @@keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 }

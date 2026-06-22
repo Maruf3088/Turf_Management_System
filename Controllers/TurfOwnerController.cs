@@ -236,6 +236,24 @@ namespace turf_management_system.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> VerifySlip(Guid? bookingId)
+        {
+            if (!bookingId.HasValue) return View();
+
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var booking = (await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf,User"))
+                          .FirstOrDefault(b => b.Id == bookingId && b.Turf.OwnerId == ownerId);
+
+            if (booking == null)
+            {
+                ViewBag.Error = "Booking not found or it does not belong to any of your turfs.";
+                return View();
+            }
+
+            return View(booking);
+        }
+
         private async Task<string> SaveFileAsync(IFormFile file, string folder)
         {
             if (file == null || file.Length == 0) return string.Empty;

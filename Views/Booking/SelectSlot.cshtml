@@ -36,12 +36,11 @@
         <div class="row align-items-center g-3">
             <div class="col-md-auto">
                 <label class="fw-bold mb-1 d-block text-secondary small text-uppercase tracking-wider">Select Date</label>
-                <input type="date" id="datePicker"
-                       class="form-control form-control-lg border-2 shadow-none"
+                <input type="text" id="datePicker"
+                       class="form-control form-control-lg border-2 shadow-none px-4"
                        value="@bookingDate.ToString("yyyy-MM-dd")"
-                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
-                       max="@DateTime.Today.AddDays(maxDays).ToString("yyyy-MM-dd")"
-                       style="border-radius: 12px; border-color: #e2e8f0; font-weight: 600;">
+                       placeholder="Select a date..."
+                       style="border-radius: 12px; border-color: #e2e8f0; font-weight: 600; cursor: pointer; background-color: #fff;">
             </div>
             <div class="col-md-auto ms-md-4">
                 <label class="fw-bold mb-1 d-block text-secondary small text-uppercase tracking-wider">Status Legends</label>
@@ -147,6 +146,11 @@
 </style>
 
 @section Scripts {
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.7/signalr.min.js"></script>
     <script>
         const turfId = '@Model.Turf.Id';
@@ -207,18 +211,29 @@
             connection.invoke("JoinTurfDateGroup", turfId, currentDate);
         });
 
-        // ── Date Picker change ───────────────────────────────────────────────────
-        document.getElementById('datePicker').addEventListener('change', async function() {
-            const newDate = this.value;
-            connection.invoke("LeaveTurfDateGroup", turfId, currentDate);
-            
-            // Release all active selections
-            await releaseAllSelectedSlots();
+        // ── Premium Flatpickr Initialization ─────────────────────────────────────
+        flatpickr("#datePicker", {
+            minDate: '@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")',
+            maxDate: '@DateTime.Today.AddDays(maxDays).ToString("yyyy-MM-dd")',
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "F j, Y",
+            disableMobile: "true",
+            defaultDate: currentDate,
+            onChange: async function(selectedDates, dateStr, instance) {
+                if (dateStr !== currentDate) {
+                    const newDate = dateStr;
+                    connection.invoke("LeaveTurfDateGroup", turfId, currentDate);
+                    
+                    // Release all active selections
+                    await releaseAllSelectedSlots();
 
-            currentDate = newDate;
-            refreshSlots(newDate);
-            connection.invoke("JoinTurfDateGroup", turfId, currentDate);
-            hideCheckoutDrawer();
+                    currentDate = newDate;
+                    refreshSlots(newDate);
+                    connection.invoke("JoinTurfDateGroup", turfId, currentDate);
+                    hideCheckoutDrawer();
+                }
+            }
         });
 
         function refreshSlots(date) {

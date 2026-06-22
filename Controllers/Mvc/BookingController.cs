@@ -351,6 +351,20 @@ namespace turf_management_system.Controllers.Mvc
             return View(bookings[0]);
         }
 
+        // ── Download Slip ─────────────────────────────────────────────────────────
+        [AllowAnonymous]
+        [HttpGet("Booking/DownloadSlip/{bookingId}")]
+        public async Task<IActionResult> DownloadSlip(Guid bookingId)
+        {
+            var userId = User.Identity?.IsAuthenticated == true ? (int?)GetUserId() : null;
+            var role = User.FindFirstValue(ClaimTypes.Role) ?? "User";
+
+            var booking = await _bookingService.GetBookingWithDetailsAsync(bookingId, userId ?? 0, role);
+            if (booking == null) return NotFound();
+
+            return View(booking);
+        }
+
         // ── My Bookings ───────────────────────────────────────────────────────────
         public async Task<IActionResult> MyBookings(int pageNumber = 1, BookingStatus? status = null)
         {

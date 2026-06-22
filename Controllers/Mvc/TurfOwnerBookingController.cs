@@ -136,6 +136,40 @@ namespace turf_management_system.Controllers.Mvc
             return RedirectToAction("PendingPayments");
         }
 
+        // ── Verify Slip ─────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> VerifySlip(Guid? bookingId)
+        {
+            if (!bookingId.HasValue) return View();
+
+            var ownerId = GetUserId();
+            var role = User.FindFirstValue(ClaimTypes.Role);
+
+            IEnumerable<Booking> allBookings = await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf,User");
+            
+            Booking? booking = null;
+            if (role == "TurfOwner")
+            {
+                booking = allBookings.FirstOrDefault(b => b.Id == bookingId && b.Turf.OwnerId == ownerId);
+            }
+            else // TurfManager
+            {
+                var turfIdStr = User.FindFirstValue("TurfId");
+                if (Guid.TryParse(turfIdStr, out var turfId))
+                {
+                    booking = allBookings.FirstOrDefault(b => b.Id == bookingId && b.TurfId == turfId);
+                }
+            }
+
+            if (booking == null)
+            {
+                ViewBag.Error = "Booking not found or it does not belong to your turf(s).";
+                return View();
+            }
+
+            return View(booking);
+        }
+
         // ── Cancel Booking (by Owner) ─────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]

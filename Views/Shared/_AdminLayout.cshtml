@@ -140,9 +140,15 @@
                 <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "KycQueue" ? "active" : "")">
                     <a asp-controller="Admin" asp-action="KycQueue"><i class="fas fa-shield-alt"></i> KYC Queue <span class="badge bg-danger ms-2">New</span></a>
                 </li>
-                <li>
-                    <a href="#"><i class="fas fa-calendar-alt"></i> Bookings</a>
+                <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Bookings" ? "active" : "")">
+                    <a asp-controller="TurfOwnerBooking" asp-action="Bookings"><i class="fas fa-calendar-alt"></i> Bookings</a>
                 </li>
+                @if (User.IsInRole("TurfOwner") || User.IsInRole("TurfManager") || User.IsInRole("Staff"))
+                {
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "VerifySlip" ? "active" : "")">
+                        <a asp-controller="TurfOwnerBooking" asp-action="VerifySlip"><i class="fas fa-qrcode"></i> Verify Slip</a>
+                    </li>
+                }
                 <li>
                     <a href="#"><i class="fas fa-cog"></i> Settings</a>
                 </li>

@@ -49,10 +49,41 @@
         }
 
         .navbar {
-            background-color: var(--color-bg-card) !important;
-            height: 70px;
-            border-bottom: 1px solid var(--color-border);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            background-color: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            height: 75px;
+            border-bottom: 1px solid rgba(229, 224, 216, 0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 12px;
+            animation: dropdownFade 0.2s ease forwards;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--color-bg);
+            color: var(--color-primary);
+            transform: translateX(4px);
+        }
+
+        @@keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .navbar-brand {
@@ -207,7 +238,7 @@
                                     </div>
                                     <span class="d-none d-sm-inline">@User.Identity.Name</span>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2">
+                                <ul class="dropdown-menu dropdown-menu-end mt-3 border-0">
                                     <li class="px-3 py-2 border-bottom mb-2">
                                         <span class="d-block small text-muted text-uppercase fw-bold ls-1">Account</span>
                                         <span class="fw-bold">@User.Identity.Name</span>

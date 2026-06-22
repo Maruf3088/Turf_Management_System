@@ -560,5 +560,55 @@
         .animate-pulse {
             animation: pulseSlow 4s infinite alternate;
         }
+
+        /* Select2 Dark Theme Custom Styling for Index */
+        .select2-container .select2-selection--single {
+            height: calc(3.5rem + 2px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #fff !important;
+            font-size: 0.95rem;
+            line-height: inherit;
+            padding-left: 1rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+            right: 10px;
+        }
+        .select2-dropdown {
+            background-color: #0f1c18;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .select2-container--default .select2-results__option {
+            color: #fff;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #C9A84C;
+            color: #0f1c18;
+        }
     </style>
+}
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('select[name="city"]').select2({
+                placeholder: "All Cities",
+                allowClear: true,
+                width: '100%'
+            });
+            $('select[name="sportType"]').select2({
+                placeholder: "All Sports",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
 }

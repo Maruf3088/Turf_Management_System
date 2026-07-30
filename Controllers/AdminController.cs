@@ -160,8 +160,15 @@ namespace turf_management_system.Controllers
             var user = await _unitOfWork.Users.FindAsync(u => u.UserId == id, includeProperties: "Role");
             if (user == null) return NotFound();
 
+            if (user.Role == null && user.RoleId > 0)
+            {
+                user.Role = await _unitOfWork.Roles.GetByIdAsync(user.RoleId) ?? new Role { RoleName = "User" };
+            }
+
+            var roleName = user.Role?.RoleName ?? "";
+
             // Load associated data based on Role
-            if (user.Role?.RoleName == "TurfOwner")
+            if (roleName.Equals("TurfOwner", StringComparison.OrdinalIgnoreCase))
             {
                 var ownerProfile = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == id);
                 ViewBag.OwnerProfile = ownerProfile;
@@ -170,13 +177,13 @@ namespace turf_management_system.Controllers
                 var ownerTurfs = turfs.Where(t => t.OwnerId == id).ToList();
                 ViewBag.Turfs = ownerTurfs;
             }
-            else if (user.Role?.RoleName == "User")
+            else if (roleName.Equals("User", StringComparison.OrdinalIgnoreCase) || roleName.Equals("Customer", StringComparison.OrdinalIgnoreCase))
             {
                 var bookings = await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf");
                 var userBookings = bookings.Where(b => b.UserId == id).OrderByDescending(b => b.CreatedAt).ToList();
                 ViewBag.Bookings = userBookings;
             }
-            else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Contains(user.Role?.RoleName))
+            else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Any(r => r.Equals(roleName, StringComparison.OrdinalIgnoreCase)))
             {
                 var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == id, includeProperties: "Turf");
                 ViewBag.StaffProfile = staffProfile;

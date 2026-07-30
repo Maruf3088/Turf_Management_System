@@ -74,9 +74,9 @@
                                     <label asp-for="RoleId" class="form-label fw-bold small text-uppercase ls-1 text-gold">I am a...</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-white bg-opacity-10 border-0 text-white-50"><i class="fas fa-user-tag"></i></span>
-                                        <select asp-for="RoleId" class="form-select bg-white bg-opacity-10 border-0 text-white shadow-none px-3 py-3 custom-select" id="roleSelect"
-                                                asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
-                                            <option value="" class="text-dark">-- Select Purpose --</option>
+                                        <select asp-for="RoleId" class="form-select bg-transparent border-0 text-white shadow-none px-3 py-3 custom-select" id="roleSelect"
+                                                asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))" style="background-color: transparent;">
+                                            <option value="" class="text-white-50">-- Select Purpose --</option>
                                         </select>
                                     </div>
                                     <span asp-validation-for="RoleId" class="text-danger small mt-1 d-block"></span>

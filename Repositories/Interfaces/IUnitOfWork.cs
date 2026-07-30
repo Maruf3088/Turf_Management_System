@@ -17,6 +17,7 @@ namespace turf_management_system.Repositories.Interfaces
         IGenericRepository<TurfBookingConfig> BookingConfigs { get; }
         IGenericRepository<AuditLog> AuditLogs { get; }
         IGenericRepository<Notification> Notifications { get; }
+        IPasswordResetTokenRepository PasswordResetTokens { get; }
         Task<int> CompleteAsync();
     }
 }

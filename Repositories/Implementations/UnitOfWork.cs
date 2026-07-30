@@ -21,6 +21,7 @@ namespace turf_management_system.Repositories.Implementations
         public IGenericRepository<TurfBookingConfig> BookingConfigs { get; private set; }
         public IGenericRepository<AuditLog> AuditLogs { get; private set; }
         public IGenericRepository<Notification> Notifications { get; private set; }
+        public IPasswordResetTokenRepository PasswordResetTokens { get; private set; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -38,6 +39,7 @@ namespace turf_management_system.Repositories.Implementations
             BookingConfigs = new GenericRepository<TurfBookingConfig>(_context);
             AuditLogs = new GenericRepository<AuditLog>(_context);
             Notifications = new GenericRepository<Notification>(_context);
+            PasswordResetTokens = new PasswordResetTokenRepository(_context);
         }
 
         public async Task<int> CompleteAsync()

@@ -12,10 +12,12 @@ namespace turf_management_system.Controllers
     public class AccountController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly turf_management_system.Services.Interfaces.IEmailService _emailService;
 
-        public AccountController(IUnitOfWork unitOfWork)
+        public AccountController(IUnitOfWork unitOfWork, turf_management_system.Services.Interfaces.IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -270,6 +272,177 @@ namespace turf_management_system.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _unitOfWork.Users.GetByEmailAsync(model.Email);
+                if (user != null)
+                {
+                    await _unitOfWork.PasswordResetTokens.DeleteUserTokensAsync(user.UserId);
+
+                    Random rnd = new Random();
+                    string otpCode = rnd.Next(100000, 999999).ToString();
+                    string tokenHash = ComputeTokenHash(otpCode);
+
+                    var resetToken = new PasswordResetToken
+                    {
+                        UserId = user.UserId,
+                        TokenHash = tokenHash,
+                        ExpirationTime = DateTime.UtcNow.AddMinutes(15),
+                        IsUsed = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _unitOfWork.PasswordResetTokens.AddAsync(resetToken);
+                    await _unitOfWork.CompleteAsync();
+
+                    bool emailSent = await _emailService.SendPasswordResetEmailAsync(user.Email, otpCode);
+                    
+                    if (!emailSent)
+                    {
+                        ViewBag.ErrorMessage = "Failed to send the password reset email. Please check your SMTP configuration in appsettings.json or try again later.";
+                        return View(model);
+                    }
+                    
+                    TempData["SuccessMessage"] = "An OTP has been sent to your email address.";
+                    return RedirectToAction("VerifyOTP", "Account", new { email = model.Email });
+                }
+
+                TempData["SuccessMessage"] = "If an account exists with this email, an OTP has been sent.";
+                return RedirectToAction("VerifyOTP", "Account", new { email = model.Email });
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult VerifyOTP(string email)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Home");
+
+            var model = new VerifyOtpVM { Email = email };
+            if (TempData["SuccessMessage"] != null)
+                ViewBag.SuccessMessage = TempData["SuccessMessage"];
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyOTP(VerifyOtpVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _unitOfWork.Users.GetByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    ViewBag.ErrorMessage = "Invalid OTP.";
+                    return View(model);
+                }
+
+                string tokenHash = ComputeTokenHash(model.OTP);
+                var resetToken = await _unitOfWork.PasswordResetTokens.GetByTokenHashAsync(tokenHash);
+
+                if (resetToken == null || resetToken.UserId != user.UserId || resetToken.IsUsed)
+                {
+                    ViewBag.ErrorMessage = "Invalid OTP.";
+                    return View(model);
+                }
+
+                if (resetToken.ExpirationTime <= DateTime.UtcNow)
+                {
+                    _unitOfWork.PasswordResetTokens.Delete(resetToken);
+                    await _unitOfWork.CompleteAsync();
+                    ViewBag.ErrorMessage = "OTP has expired.";
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = "OTP verified! Please create a new password.";
+                return RedirectToAction("ResetPassword", "Account", new { email = model.Email, otp = model.OTP });
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email, string otp)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Home");
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(otp))
+                return RedirectToAction("ForgotPassword");
+
+            var model = new ResetPasswordVM { Email = email, OTP = otp };
+            
+            if (TempData["SuccessMessage"] != null)
+            {
+                ViewBag.SuccessMessage = TempData["SuccessMessage"];
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _unitOfWork.Users.GetByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    ViewBag.ErrorMessage = "Invalid OTP or email.";
+                    return View(model);
+                }
+
+                string tokenHash = ComputeTokenHash(model.OTP);
+                var resetToken = await _unitOfWork.PasswordResetTokens.GetByTokenHashAsync(tokenHash);
+
+                if (resetToken == null || resetToken.UserId != user.UserId || resetToken.IsUsed)
+                {
+                    ViewBag.ErrorMessage = "Invalid OTP.";
+                    return View(model);
+                }
+
+                if (resetToken.ExpirationTime <= DateTime.UtcNow)
+                {
+                    _unitOfWork.PasswordResetTokens.Delete(resetToken);
+                    await _unitOfWork.CompleteAsync();
+                    ViewBag.ErrorMessage = "OTP has expired.";
+                    return View(model);
+                }
+
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                resetToken.IsUsed = true;
+                _unitOfWork.Users.Update(user);
+                _unitOfWork.PasswordResetTokens.Update(resetToken);
+                await _unitOfWork.CompleteAsync();
+
+                TempData["Success"] = "Password reset successfully. You can now login.";
+                return RedirectToAction("Login");
+            }
+            return View(model);
+        }
+
+        private string ComputeTokenHash(string token)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(token);
+                byte[] hash = sha256.ComputeHash(bytes);
+                return Convert.ToBase64String(hash);
+            }
         }
     }
 }

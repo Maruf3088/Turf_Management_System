@@ -26,8 +26,8 @@ namespace turf_management_system.Services
         {
             // ── Validate Turf ────────────────────────────────────────────────────
             var turf = await _unitOfWork.Turfs.GetTurfWithDetailsAsync(turfId);
-            if (turf == null || !turf.IsActive || turf.IsDeleted)
-                return (false, "Turf is not available.", null);
+            if (turf == null || !turf.IsActive || turf.IsDeleted || (turf.Owner != null && !turf.Owner.IsActive))
+                return (false, "This turf is currently blocked or suspended by administration and cannot be booked.", null);
 
             if (!turf.IsApproved)
                 return (false, "This turf has not been verified by admin yet.", null);
@@ -533,7 +533,7 @@ namespace turf_management_system.Services
                 Guid? bookingId = null;
                 DateTime? lockedUntil = null;
 
-                if (!slot.IsAvailable)
+                if (!slot.IsAvailable || !turf.IsActive || (turf.Owner != null && !turf.Owner.IsActive))
                     status = SlotStatus.Unavailable;
                 else if (bookedSlotIds.Contains(slot.Id))
                     status = SlotStatus.Booked;

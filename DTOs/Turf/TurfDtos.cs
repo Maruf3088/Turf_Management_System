@@ -107,6 +107,8 @@ namespace turf_management_system.DTOs.Turf
         public string? ContactNumber { get; set; }
         public bool IsApproved { get; set; }
         public bool IsActive { get; set; }
+        public bool IsOwnerActive { get; set; } = true;
+        public bool IsBlocked => !IsActive || !IsOwnerActive;
         public int OwnerId { get; set; }
         public string OwnerName { get; set; } = string.Empty;
         public string? MainImageUrl { get; set; }
@@ -127,6 +129,9 @@ namespace turf_management_system.DTOs.Turf
 
         public string? TurfSize { get; set; }
         public bool IsApproved { get; set; }
+        public bool IsActive { get; set; } = true;
+        public bool IsOwnerActive { get; set; } = true;
+        public bool IsBlocked => !IsActive || !IsOwnerActive;
         public string? MainImageUrl { get; set; }
     }
 

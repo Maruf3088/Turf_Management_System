@@ -128,6 +128,8 @@ namespace turf_management_system.Services
                     EveningPricePerHour = t.EveningPricePerHour,
                     TurfSize = t.TurfSize,
                     IsApproved = t.IsApproved,
+                    IsActive = t.IsActive,
+                    IsOwnerActive = t.Owner?.IsActive ?? true,
                     MainImageUrl = t.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? t.Images.FirstOrDefault()?.ImageUrl
                 }),
                 TotalCount = totalCount,
@@ -152,6 +154,8 @@ namespace turf_management_system.Services
                 EveningPricePerHour = t.EveningPricePerHour,
                 TurfSize = t.TurfSize,
                 IsApproved = t.IsApproved,
+                IsActive = t.IsActive,
+                IsOwnerActive = t.Owner?.IsActive ?? true,
                 MainImageUrl = t.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl ?? t.Images.FirstOrDefault()?.ImageUrl
             });
 
@@ -413,6 +417,7 @@ namespace turf_management_system.Services
                 ContactNumber = turf.ContactNumber,
                 IsApproved = turf.IsApproved,
                 IsActive = turf.IsActive,
+                IsOwnerActive = turf.Owner?.IsActive ?? true,
                 OwnerId = turf.OwnerId,
                 OwnerName = turf.Owner?.FullName ?? "Unknown",
                 CreatedAt = turf.CreatedAt,

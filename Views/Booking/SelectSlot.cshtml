@@ -23,7 +23,17 @@
     </div>
 
     <!-- Alert Messages -->
-    @if (TempData["Error"] != null)
+    @if (!Model.Turf.IsActive || (Model.Turf.Owner != null && !Model.Turf.Owner.IsActive))
+    {
+        <div class="alert alert-danger shadow-sm rounded-4 p-4 mb-4 d-flex align-items-center gap-3 border-2 border-danger">
+            <i class="fas fa-ban fa-3x text-danger"></i>
+            <div>
+                <h4 class="fw-bold mb-1 text-danger"><i class="fas fa-lock me-2"></i>VENUE BLOCKED / TEMPORARILY CLOSED</h4>
+                <p class="mb-0 fs-6 text-dark">This turf owner account has been inactivated or put under administrative hold. Customers cannot reserve or book slots for this field.</p>
+            </div>
+        </div>
+    }
+    else if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show rounded-3">
             <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]

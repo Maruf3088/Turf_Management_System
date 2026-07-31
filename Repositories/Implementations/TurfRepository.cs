@@ -37,6 +37,7 @@ namespace turf_management_system.Repositories.Implementations
 
             int totalCount = await query.CountAsync();
             var items = await query.Include(t => t.Images)
+                                   .Include(t => t.Owner)
                                    .OrderByDescending(t => t.CreatedAt)
                                    .Skip((pageNumber - 1) * pageSize)
                                    .Take(pageSize)

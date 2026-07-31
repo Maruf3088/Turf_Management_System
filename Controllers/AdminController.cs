@@ -74,9 +74,23 @@ namespace turf_management_system.Controllers
                     user.IsActive = !user.IsActive;
                     user.UpdatedAt = DateTime.UtcNow;
                     _unitOfWork.Users.Update(user);
+
+                    // Sync turfs active status with owner's status
+                    if (user.Role?.RoleName == "TurfOwner" || user.Role?.RoleName == "TurfManager")
+                    {
+                        var turfs = await _unitOfWork.Turfs.GetAllAsync();
+                        var ownerTurfs = turfs.Where(t => t.OwnerId == userId).ToList();
+                        foreach (var turf in ownerTurfs)
+                        {
+                            turf.IsActive = user.IsActive;
+                            turf.UpdatedAt = DateTime.UtcNow;
+                            _unitOfWork.Turfs.Update(turf);
+                        }
+                    }
+
                     await _unitOfWork.CompleteAsync();
                     
-                    TempData["Success"] = $"User {user.FullName} status updated.";
+                    TempData["Success"] = $"User {user.FullName} status updated to {(user.IsActive ? "Active" : "Inactive")}.";
                 }
                 else
                 {
@@ -165,29 +179,28 @@ namespace turf_management_system.Controllers
                 user.Role = await _unitOfWork.Roles.GetByIdAsync(user.RoleId) ?? new Role { RoleName = "User" };
             }
 
-            var roleName = user.Role?.RoleName ?? "";
+            // Unconditionally load OwnerProfile & Turfs if present
+            var ownerProfile = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == id);
+            ViewBag.OwnerProfile = ownerProfile;
+            
+            var turfs = await _unitOfWork.Turfs.GetAllAsync();
+            ViewBag.Turfs = turfs.Where(t => t.OwnerId == id).ToList();
 
-            // Load associated data based on Role
-            if (roleName.Equals("TurfOwner", StringComparison.OrdinalIgnoreCase))
+            // Unconditionally load Bookings if present
+            try
             {
-                var ownerProfile = await _unitOfWork.TurfOwners.FindAsync(o => o.UserId == id);
-                ViewBag.OwnerProfile = ownerProfile;
-                
-                var turfs = await _unitOfWork.Turfs.GetAllAsync();
-                var ownerTurfs = turfs.Where(t => t.OwnerId == id).ToList();
-                ViewBag.Turfs = ownerTurfs;
+                var allBookings = await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf");
+                ViewBag.Bookings = allBookings.Where(b => b.UserId == id).OrderByDescending(b => b.CreatedAt).ToList();
             }
-            else if (roleName.Equals("User", StringComparison.OrdinalIgnoreCase) || roleName.Equals("Customer", StringComparison.OrdinalIgnoreCase))
+            catch
             {
-                var bookings = await _unitOfWork.Bookings.GetAllAsync(includeProperties: "Turf");
-                var userBookings = bookings.Where(b => b.UserId == id).OrderByDescending(b => b.CreatedAt).ToList();
-                ViewBag.Bookings = userBookings;
+                var allBookings = await _unitOfWork.Bookings.GetAllAsync();
+                ViewBag.Bookings = allBookings.Where(b => b.UserId == id).OrderByDescending(b => b.CreatedAt).ToList();
             }
-            else if (new[] { "TurfManager", "Receptionist", "Groundskeeper", "Cashier", "SecurityGuard" }.Any(r => r.Equals(roleName, StringComparison.OrdinalIgnoreCase)))
-            {
-                var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == id, includeProperties: "Turf");
-                ViewBag.StaffProfile = staffProfile;
-            }
+
+            // Unconditionally load StaffProfile if present
+            var staffProfile = await _unitOfWork.StaffProfiles.FindAsync(s => s.UserId == id, includeProperties: "Turf");
+            ViewBag.StaffProfile = staffProfile;
 
             return View(user);
         }

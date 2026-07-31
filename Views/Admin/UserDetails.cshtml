@@ -1,43 +1,49 @@
 @model turf_management_system.Models.Domain.User
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "User Details - " + Model.FullName;
+    ViewData["Title"] = "User Details - " + (Model?.FullName ?? "User");
     var ownerProfile = ViewBag.OwnerProfile as turf_management_system.Models.Domain.TurfOwner;
-    var turfs = ViewBag.Turfs as List<turf_management_system.Models.Domain.Turf>;
-    var bookings = ViewBag.Bookings as List<turf_management_system.Models.Domain.Booking>;
+    var turfs = ViewBag.Turfs as List<turf_management_system.Models.Domain.Turf> ?? new List<turf_management_system.Models.Domain.Turf>();
+    var bookings = ViewBag.Bookings as List<turf_management_system.Models.Domain.Booking> ?? new List<turf_management_system.Models.Domain.Booking>();
     var staffProfile = ViewBag.StaffProfile as turf_management_system.Models.Domain.StaffProfile;
-    var roleName = Model.Role?.RoleName ?? "User";
+    var roleName = Model?.Role?.RoleName ?? "User";
+    bool isTurfOwner = roleName.Equals("TurfOwner", StringComparison.OrdinalIgnoreCase) || ownerProfile != null || turfs.Any();
+    bool isCustomer = roleName.Equals("User", StringComparison.OrdinalIgnoreCase) || roleName.Equals("Customer", StringComparison.OrdinalIgnoreCase) || bookings.Any();
+    bool isStaff = staffProfile != null;
 }
 
 <div class="mb-4">
     <a asp-action="Users" class="btn btn-outline-success btn-sm mb-3"><i class="fas fa-arrow-left me-2"></i>Back to Users</a>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <h2 class="fw-bold mb-1">@Model.FullName's Profile</h2>
+            <h2 class="fw-bold mb-1">@(Model?.FullName ?? "User")'s Profile</h2>
             <p class="text-muted mb-0">
                 Role: <span class="badge bg-success fs-6">@roleName</span> | 
-                Status: <span class="badge @(Model.IsActive ? "badge-active bg-success" : "badge-inactive bg-danger") fs-6">@(Model.IsActive ? "Active Account" : "Inactive / Deactivated")</span>
+                Status: <span class="badge @(Model != null && Model.IsActive ? "badge-active bg-success" : "badge-inactive bg-danger") fs-6">@(Model != null && Model.IsActive ? "Active Account" : "Inactive / Deactivated")</span>
             </p>
         </div>
         <div class="d-flex gap-2">
-            <!-- Toggle Status -->
-            <form asp-action="ToggleStatus" method="post" class="d-inline">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="userId" value="@Model.UserId" />
-                <button type="submit" class="btn @(Model.IsActive ? "btn-warning" : "btn-success") px-4 shadow-sm">
-                    <i class="fas @(Model.IsActive ? "fa-user-slash" : "fa-user-check") me-2"></i>
-                    @(Model.IsActive ? "Deactivate Account" : "Activate Account")
-                </button>
-            </form>
-            
-            <!-- Delete -->
-            <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('CRITICAL: Are you sure you want to permanently delete this user? This cannot be undone.')">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="userId" value="@Model.UserId" />
-                <button type="submit" class="btn btn-danger px-4 shadow-sm">
-                    <i class="fas fa-trash-alt me-2"></i>Delete User
-                </button>
-            </form>
+            @if (Model != null)
+            {
+                <!-- Toggle Status -->
+                <form asp-action="ToggleStatus" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+                    <button type="submit" class="btn @(Model.IsActive ? "btn-warning" : "btn-success") px-4 shadow-sm">
+                        <i class="fas @(Model.IsActive ? "fa-user-slash" : "fa-user-check") me-2"></i>
+                        @(Model.IsActive ? "Deactivate Account" : "Activate Account")
+                    </button>
+                </form>
+                
+                <!-- Delete -->
+                <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('CRITICAL: Are you sure you want to permanently delete this user? This cannot be undone.')">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+                    <button type="submit" class="btn btn-danger px-4 shadow-sm">
+                        <i class="fas fa-trash-alt me-2"></i>Delete User
+                    </button>
+                </form>
+            }
         </div>
     </div>
 </div>
@@ -48,11 +54,11 @@
         <div class="card border-0 shadow-sm p-4 h-100">
             <div class="text-center mb-4">
                 <div class="bg-success bg-opacity-10 text-success rounded-circle p-4 d-inline-block mb-3">
-                    @if (roleName.Equals("TurfOwner", StringComparison.OrdinalIgnoreCase))
+                    @if (isTurfOwner)
                     {
                         <i class="fas fa-user-tie fa-4x"></i>
                     }
-                    else if (roleName.Equals("User", StringComparison.OrdinalIgnoreCase))
+                    else if (isCustomer)
                     {
                         <i class="fas fa-user fa-4x"></i>
                     }
@@ -61,9 +67,9 @@
                         <i class="fas fa-user-shield fa-4x"></i>
                     }
                 </div>
-                <h4 class="fw-bold mb-1">@Model.FullName</h4>
+                <h4 class="fw-bold mb-1">@(Model?.FullName ?? "User")</h4>
                 <span class="badge bg-secondary mb-2">@roleName</span>
-                <p class="text-muted small mb-0">Registered: @Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</p>
+                <p class="text-muted small mb-0">Registered: @(Model != null ? Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm") : "N/A")</p>
             </div>
             
             <hr class="text-muted">
@@ -73,22 +79,22 @@
                 
                 <div class="mb-3">
                     <small class="text-muted d-block">User ID</small>
-                    <strong class="text-dark">#@Model.UserId</strong>
+                    <strong class="text-dark">#@(Model?.UserId ?? 0)</strong>
                 </div>
 
                 <div class="mb-3">
                     <small class="text-muted d-block">Email Address</small>
-                    <strong class="text-dark">@Model.Email</strong>
+                    <strong class="text-dark">@(Model?.Email ?? "N/A")</strong>
                 </div>
 
                 <div class="mb-3">
                     <small class="text-muted d-block">Phone Number</small>
-                    <strong class="text-dark">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "N/A" : Model.PhoneNumber)</strong>
+                    <strong class="text-dark">@(string.IsNullOrEmpty(Model?.PhoneNumber) ? "N/A" : Model.PhoneNumber)</strong>
                 </div>
 
                 <div class="mb-3">
                     <small class="text-muted d-block">Last Updated</small>
-                    <strong class="text-dark">@(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm") : "Never")</strong>
+                    <strong class="text-dark">@(Model?.UpdatedAt.HasValue == true ? Model.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm") : "Never")</strong>
                 </div>
             </div>
         </div>
@@ -96,8 +102,7 @@
 
     <!-- Right Column: Role-Specific Details -->
     <div class="col-lg-8">
-        <!-- Case 1: Turf Owner Profile & Turfs -->
-        @if (roleName.Equals("TurfOwner", StringComparison.OrdinalIgnoreCase))
+        @if (isTurfOwner)
         {
             <div class="card border-0 shadow-sm p-4 mb-4">
                 <h4 class="fw-bold text-success mb-4"><i class="fas fa-briefcase me-2"></i>Business & KYC Information</h4>
@@ -107,7 +112,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <small class="text-muted d-block">Business Name</small>
-                            <strong class="text-dark fs-5">@ownerProfile.BusinessName</strong>
+                            <strong class="text-dark fs-5">@(ownerProfile.BusinessName ?? "N/A")</strong>
                         </div>
                         <div class="col-md-6">
                             <small class="text-muted d-block">Contact Number</small>
@@ -192,10 +197,10 @@
                 }
             </div>
 
-            <div class="card border-0 shadow-sm p-4">
-                <h4 class="fw-bold text-success mb-4"><i class="fas fa-futbol me-2"></i>Managed Turfs (@(turfs?.Count ?? 0))</h4>
+            <div class="card border-0 shadow-sm p-4 mb-4">
+                <h4 class="fw-bold text-success mb-4"><i class="fas fa-futbol me-2"></i>Managed Turfs (@turfs.Count)</h4>
                 
-                @if (turfs != null && turfs.Any())
+                @if (turfs.Count > 0)
                 {
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
@@ -212,14 +217,19 @@
                                 @foreach (var turf in turfs)
                                 {
                                     <tr>
-                                        <td><strong>@turf.Name</strong></td>
-                                        <td>@turf.SportType</td>
-                                        <td>@turf.City</td>
-                                        <td>Tk. @turf.PricePerHour</td>
+                                        <td><strong>@(turf?.Name ?? "N/A")</strong></td>
+                                        <td>@(turf?.SportType ?? "N/A")</td>
+                                        <td>@(turf?.City ?? "N/A")</td>
+                                        <td>Tk. @(turf?.PricePerHour ?? 0)</td>
                                         <td>
-                                            <span class="badge @(turf.IsApproved ? "bg-success" : "bg-warning text-dark")">
-                                                @(turf.IsApproved ? "Approved" : "Pending Approval")
-                                            </span>
+                                            @if (turf != null && turf.IsApproved)
+                                            {
+                                                <span class="badge bg-success">Approved</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending Approval</span>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -234,16 +244,15 @@
             </div>
         }
         
-        <!-- Case 2: Customer Bookings -->
-        else if (roleName.Equals("User", StringComparison.OrdinalIgnoreCase) || roleName.Equals("Customer", StringComparison.OrdinalIgnoreCase))
+        @if (isCustomer)
         {
-            <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="card border-0 shadow-sm p-4 h-100 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="fw-bold text-success mb-0"><i class="fas fa-calendar-check me-2"></i>Customer Booking History</h4>
-                    <span class="badge bg-success fs-6">Total Bookings: @(bookings?.Count ?? 0)</span>
+                    <span class="badge bg-success fs-6">Total Bookings: @bookings.Count</span>
                 </div>
                 
-                @if (bookings != null && bookings.Any())
+                @if (bookings.Count > 0)
                 {
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
@@ -259,17 +268,26 @@
                             <tbody>
                                 @foreach (var booking in bookings)
                                 {
-                                    <tr>
-                                        <td><code class="text-success fw-bold">#@(booking.Id.ToString().Substring(0, 8).ToUpper())</code></td>
-                                        <td>@(booking.Turf?.Name ?? "N/A")</td>
-                                        <td>@(booking.BookingDate.ToString("yyyy-MM-dd"))</td>
-                                        <td>Tk. @(booking.TotalAmount)</td>
-                                        <td>
-                                            <span class="badge @(booking.Status.ToString() == "Confirmed" ? "bg-success" : booking.Status.ToString() == "PendingPayment" ? "bg-warning text-dark" : "bg-danger")">
-                                                @(booking.Status.ToString())
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    if (booking != null)
+                                    {
+                                        var bRef = booking.Id.ToString();
+                                        var displayRef = bRef.Length >= 8 ? bRef.Substring(0, 8).ToUpper() : bRef;
+                                        var tName = booking.Turf != null ? booking.Turf.Name : "N/A";
+                                        var bDate = booking.BookingDate.ToString("yyyy-MM-dd");
+                                        var sText = booking.Status.ToString();
+                                        var sBadge = sText == "Confirmed" ? "bg-success" :
+                                                     sText == "PendingPayment" ? "bg-warning text-dark" :
+                                                     sText == "Cancelled" || sText == "Expired" ? "bg-danger" :
+                                                     sText == "Refunded" ? "bg-info" :
+                                                     sText == "Completed" ? "bg-primary" : "bg-secondary";
+                                        <tr>
+                                            <td><code class="text-success fw-bold">#@displayRef</code></td>
+                                            <td>@tName</td>
+                                            <td>@bDate</td>
+                                            <td>Tk. @booking.TotalAmount</td>
+                                            <td><span class="badge @sBadge">@sText</span></td>
+                                        </tr>
+                                    }
                                 }
                             </tbody>
                         </table>
@@ -285,35 +303,40 @@
             </div>
         }
         
-        <!-- Case 3: Staff details -->
-        else if (staffProfile != null)
+        @if (isStaff)
         {
-            <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="card border-0 shadow-sm p-4 h-100 mb-4">
                 <h4 class="fw-bold text-success mb-4"><i class="fas fa-id-badge me-2"></i>Staff Assignment Details</h4>
                 
                 <div class="row g-3">
                     <div class="col-md-6">
                         <small class="text-muted d-block">Assigned Turf Name</small>
-                        <strong class="text-dark fs-5">@(staffProfile.Turf?.Name ?? "No Assigned Turf")</strong>
+                        <strong class="text-dark fs-5">@(staffProfile?.Turf?.Name ?? "No Assigned Turf")</strong>
                     </div>
                     <div class="col-md-6">
                         <small class="text-muted d-block">Location</small>
-                        <strong class="text-dark">@(staffProfile.Turf?.Location ?? "N/A"), @(staffProfile.Turf?.City ?? "N/A")</strong>
+                        <strong class="text-dark">@(staffProfile?.Turf?.Location ?? "N/A"), @(staffProfile?.Turf?.City ?? "N/A")</strong>
                     </div>
                     <div class="col-md-6">
                         <small class="text-muted d-block">Hiring Date</small>
-                        <strong class="text-dark">@staffProfile.HiredAt.ToString("yyyy-MM-dd")</strong>
+                        <strong class="text-dark">@(staffProfile != null ? staffProfile.HiredAt.ToString("yyyy-MM-dd") : "N/A")</strong>
                     </div>
                     <div class="col-md-6">
                         <small class="text-muted d-block">Employment Status</small>
-                        <span class="badge @(staffProfile.IsActive ? "badge-active bg-success" : "badge-inactive bg-secondary")">
-                            @(staffProfile.IsActive ? "Active Employment" : "Inactive / Terminated")
-                        </span>
+                        @if (staffProfile != null && staffProfile.IsActive)
+                        {
+                            <span class="badge badge-active bg-success">Active Employment</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-inactive bg-secondary">Inactive / Terminated</span>
+                        }
                     </div>
                 </div>
             </div>
         }
-        else
+
+        @if (!isTurfOwner && !isCustomer && !isStaff)
         {
             <div class="card border-0 shadow-sm p-4 h-100">
                 <h4 class="fw-bold text-success mb-4"><i class="fas fa-user-shield me-2"></i>System Administrative Activity</h4>

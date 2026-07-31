@@ -59,6 +59,19 @@
     </div>
 </section>
 
+@if (Model.IsBlocked)
+{
+    <div class="container mt-3 mb-2">
+        <div class="alert alert-danger shadow-sm rounded-4 p-4 d-flex align-items-center gap-3 border-2 border-danger">
+            <i class="fas fa-ban fa-3x text-danger"></i>
+            <div>
+                <h4 class="fw-bold mb-1 text-danger"><i class="fas fa-lock me-2"></i>VENUE BLOCKED / CLOSED BY ADMIN</h4>
+                <p class="mb-0 fs-6 text-dark">This turf owner account has been inactivated or put under administrative hold. Slot booking is currently disabled for this field.</p>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Sticky Smart Info Bar displaying detailed rates -->
 <div class="full-width-breakout info-bar sticky-top shadow-sm border-bottom py-3 bg-white mb-5" style="top:70px; z-index:1000;">
     <div class="container d-flex justify-content-between align-items-center">
@@ -76,7 +89,16 @@
                 <strong class="fs-5 text-gold-accent">৳@Model.PricePerHour<small class="text-muted small">/hr</small></strong>
             </div>
         </div>
-        <a asp-controller="Booking" asp-action="SelectSlot" asp-route-turfId="@Model.Id" class="btn btn-gold rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size:0.85rem;">Select Slot</a>
+        @if (Model.IsBlocked)
+        {
+            <button disabled class="btn btn-secondary rounded-3 px-4 py-2 fw-bold text-uppercase opacity-75" style="font-size:0.85rem;">
+                <i class="fas fa-lock me-1"></i> Venue Closed
+            </button>
+        }
+        else
+        {
+            <a asp-controller="Booking" asp-action="SelectSlot" asp-route-turfId="@Model.Id" class="btn btn-gold rounded-3 px-4 py-2 fw-bold text-uppercase shadow-sm" style="font-size:0.85rem;">Select Slot</a>
+        }
     </div>
 </div>
 
@@ -199,7 +221,13 @@
                             </div>
                         </div>
 
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (Model.IsBlocked)
+                        {
+                            <button disabled class="btn btn-secondary btn-lg w-100 py-3 fw-bold text-uppercase rounded-3 opacity-75" style="font-size:0.9rem;">
+                                <i class="fas fa-ban me-1"></i> Closed / Blocked
+                            </button>
+                        }
+                        else if (User.Identity?.IsAuthenticated == true)
                         {
                             <button type="submit" id="btn-proceed" class="btn btn-gold btn-lg w-100 py-3 fw-bold text-uppercase rounded-3 shadow-md" disabled style="font-size:0.9rem;">
                                 Proceed to Checkout
@@ -213,13 +241,31 @@
                         }
                     </form>
 
-                    <div class="mt-4 pt-3 border-top d-flex align-items-center">
-                        <div class="avatar-circle-profile bg-primary text-white d-flex align-items-center justify-content-center rounded-circle me-3" style="width:40px; height:40px; font-weight:bold; font-size:1.1rem;">
-                            @Model.OwnerName[0].ToString().ToUpper()
-                        </div>
-                        <div>
-                            <p class="mb-0 fw-bold text-dark small">@Model.OwnerName</p>
-                            <p class="mb-0 text-muted small" style="font-size:0.75rem;"><i class="fas fa-circle-check text-success me-1"></i>Verified Venue Owner</p>
+                    <div class="mt-4 pt-3 border-top">
+                        <p class="text-muted small text-uppercase fw-bold mb-2" style="font-size:0.68rem; letter-spacing:0.08em;">
+                            <i class="fas fa-user-tie me-1"></i>Venue Owner
+                        </p>
+                        <a asp-controller="Home" asp-action="OwnerProfile" asp-route-id="@Model.OwnerId"
+                           class="d-flex align-items-center gap-3 text-decoration-none p-2 rounded-3 owner-profile-link"
+                           style="transition: background 0.2s;" 
+                           title="View @Model.OwnerName's profile">
+                            <div class="avatar-circle-profile bg-primary text-white d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:44px; height:44px; font-weight:900; font-size:1.15rem;">
+                                @Model.OwnerName[0].ToString().ToUpper()
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-0 fw-bold text-dark small">@Model.OwnerName</p>
+                                <p class="mb-0 text-muted" style="font-size:0.72rem;">
+                                    <i class="fas fa-circle-check text-success me-1"></i>Verified Venue Owner
+                                </p>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted" style="font-size:0.75rem;"></i>
+                        </a>
+                        <div class="mt-2 text-center">
+                            <a asp-controller="Home" asp-action="OwnerProfile" asp-route-id="@Model.OwnerId"
+                               class="btn btn-outline-secondary btn-sm w-100 rounded-3" style="font-size:0.78rem;">
+                                <i class="fas fa-store me-1"></i> View All Owner's Turfs
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -443,6 +489,12 @@
 
         .sticky-sidebar { position: sticky; top: 155px; }
         .leading-relaxed { line-height: 1.85; }
+
+        .owner-profile-link:hover {
+            background: #f8fafc !important;
+            text-decoration: none;
+        }
+        .owner-profile-link:hover .fw-bold { color: #1a6f5a !important; }
     </style>
 }
 

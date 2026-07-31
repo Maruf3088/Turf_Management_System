@@ -56,8 +56,12 @@
                         <td>@user.Email</td>
                         <td>@user.PhoneNumber</td>
                         <td>
-                            <span class="badge @(user.Role.RoleName == "Admin" ? "bg-warning text-dark" : "bg-info text-white")">
-                                @user.Role.RoleName
+                            @{
+                                var userRoleName = user.Role?.RoleName ?? "User";
+                                var roleBadgeClass = userRoleName == "Admin" || userRoleName == "SuperAdmin" ? "bg-warning text-dark" : "bg-info text-white";
+                            }
+                            <span class="badge @roleBadgeClass">
+                                @userRoleName
                             </span>
                         </td>
                         <td>
